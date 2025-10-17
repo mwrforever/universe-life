@@ -1,0 +1,32 @@
+server:
+  port: 8086
+spring:
+  profiles:
+    active: dev
+  application:
+    name: message-service
+  cloud:
+    nacos:
+      config:
+        enabled: true
+        server-addr: localhost:6848
+        file-extension: yaml
+        group: DEFAULT_GROUP
+        namespace: a40a1d4b-4110-45e7-b16d-dc842e7ba324
+        username: ${NACOS_ACCOUNT:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+        shared-configs:
+          - data-id: shared-datasource.yaml
+            refresh: true
+          - data-id: shared-redis.yaml
+            refresh: true
+          - data-id: shared-mybatis-plus.yaml
+            refresh: true
+          - data-id: shared-logging.yaml
+            refresh: true
+      discovery:
+        server-addr: localhost:6848          # Nacos 注册中心地址
+        namespace: a40a1d4b-4110-45e7-b16d-dc842e7ba324
+        group: DEFAULT_GROUP
+        username: ${NACOS_ACCOUNT:nacos}
+        password: ${NACOS_PASSWORD:nacos}
