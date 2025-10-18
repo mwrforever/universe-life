@@ -100,7 +100,7 @@
         <module>universe-life-chat</module>
         <module>universe-life-customer</module>
         <module>universe-life-gateway</module>
-        <module>universe-life-order</module>
+        <module>universe-life-pay</module>
         <module>universe-life-search</module>
         <module>universe-life-task</module>
         <module>universe-life-trade</module>
