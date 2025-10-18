@@ -29,6 +29,7 @@
             <groupId>com.universe.life</groupId>
             <artifactId>universe-life-common</artifactId>
         </dependency>
+
     </dependencies>
 
 

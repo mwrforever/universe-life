@@ -107,6 +107,7 @@
         <module>universe-life-user</module>
         <module>universe-life-common</module>
         <module>universe-life-message</module>
+        <module>universe-life-notify</module>
     </modules>
 
 </project>
