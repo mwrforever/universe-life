@@ -1,4 +1,4 @@
-person:
+universe-life:
   datasource:
     host: localhost
     port: 13306

@@ -208,3 +208,9 @@ specs/*/contracts/generated/
 
 *.env
 
+.claude
+**/*.md
+.bmad-core
+
+
+

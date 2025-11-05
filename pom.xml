@@ -12,7 +12,7 @@
     <groupId>com.universe.life</groupId>
     <artifactId>universe-life-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -26,8 +26,19 @@
         <hutool.version>5.8.40</hutool.version>
         <mybatis.plus.version>3.5.7</mybatis.plus.version>
         <lettuce.version>6.6.0.RELEASE</lettuce.version>
+        <springdoc.openai.web.mvc.version>2.5.0</springdoc.openai.web.mvc.version>
+        <knife4j.openapi3.web.mvc.version>4.4.0</knife4j.openapi3.web.mvc.version>
 
-        <common.version>0.0.1-SNAPSHOT</common.version>
+        <springdoc.openapi.web.flux.version>2.5.0</springdoc.openapi.web.flux.version>
+        <knife4j.openapi3.web.flux.version>4.4.0</knife4j.openapi3.web.flux.version>
+
+
+        <!-- 项目模块统一版本管理 -->
+        <universe.life.version>1.0.0-SNAPSHOT</universe.life.version>
+        <common.version>${universe.life.version}</common.version>
+        <user.common.model.version>${universe.life.version}</user.common.model.version>
+        <user.common.api.version>${universe.life.version}</user.common.api.version>
+        <auth.common.version>${universe.life.version}</auth.common.version>
     </properties>
 
     <dependencies>
@@ -40,10 +51,69 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <!--            系统内部模块依赖管理-->
+
             <dependency>
                 <groupId>com.universe.life</groupId>
                 <artifactId>universe-life-common</artifactId>
                 <version>${common.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.universe.life</groupId>
+                <artifactId>universe-life-user-common-model</artifactId>
+                <version>${user.common.model.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.universe.life</groupId>
+                <artifactId>universe-life-user-common-api</artifactId>
+                <version>${user.common.api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.universe.life</groupId>
+                <artifactId>universe-life-auth-common</artifactId>
+                <version>${auth.common.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.universe.life</groupId>
+                <artifactId>universe-life-auth-resource-jdk</artifactId>
+                <version>${universe.life.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.universe.life</groupId>
+                <artifactId>universe-life-auth-gateway-jdk</artifactId>
+                <version>${universe.life.version}</version>
+            </dependency>
+
+            <!--            外部依赖管理-->
+
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+                <version>${springdoc.openapi.web.flux.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-gateway-spring-boot-starter</artifactId>
+                <version>${knife4j.openapi3.web.flux.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+                <version>${knife4j.openapi3.web.mvc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.openai.web.mvc.version}</version>
             </dependency>
 
             <dependency>
