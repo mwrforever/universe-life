@@ -31,6 +31,8 @@
 
         <springdoc.openapi.web.flux.version>2.5.0</springdoc.openapi.web.flux.version>
         <knife4j.openapi3.web.flux.version>4.4.0</knife4j.openapi3.web.flux.version>
+        <powerjob.version>5.1.2</powerjob.version>
+        <redisson.version>3.34.1</redisson.version>
 
 
         <!-- 项目模块统一版本管理 -->
@@ -52,6 +54,12 @@
     <dependencyManagement>
         <dependencies>
 
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+
             <!--            系统内部模块依赖管理-->
 
             <dependency>
@@ -59,6 +67,13 @@
                 <artifactId>universe-life-common</artifactId>
                 <version>${common.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>tech.powerjob</groupId>
+                <artifactId>powerjob-worker-spring-boot-starter</artifactId>
+                <version>${powerjob.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>com.universe.life</groupId>

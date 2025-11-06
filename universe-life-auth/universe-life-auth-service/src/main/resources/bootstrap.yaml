@@ -30,3 +30,30 @@ spring:
         group: DEFAULT_GROUP
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
+
+# PowerJob Worker 配置
+powerjob:
+  worker:
+    # Worker 端口（替换已弃用的 akka-port）
+    port: 27777
+    # 接入应用名称，用于分组隔离，推荐填写 本 Java 项目名称
+    app-name: my-powerjob-worker
+    # 调度服务器地址，IP:Port 或 域名，多值逗号分隔
+    server-address: 127.0.0.1:7700
+    # 通讯协议，支持 HTTP 和 AKKA 两种协议
+    protocol: http
+    # 持久化方式，可选：disk, memory（PowerJob 原生支持）
+    store-strategy: disk
+    # 任务返回结果信息的最大长度，超过这个长度的信息会被截断
+    max-result-length: 4096
+    # 单个任务追加的工作流上下文最大长度
+    max-appended-wf-context-length: 4096
+    # 同时运行的轻量级任务数量上限
+    max-lightweight-task-num: 1024
+    # 同时运行的重量级任务数量上限（修正属性名）
+    max-heavyweight-task-num: 64
+    # 健康报告间隔（秒）
+    health-report-interval: 10
+    # 允许延迟连接服务器
+    allow-lazy-connect-server: false
+

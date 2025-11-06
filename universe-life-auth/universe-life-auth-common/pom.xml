@@ -13,6 +13,7 @@
 
     <dependencies>
 
+
         <dependency>
             <groupId>com.universe.life</groupId>
             <artifactId>universe-life-user-common-api</artifactId>
