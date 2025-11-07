@@ -212,5 +212,17 @@ specs/*/contracts/generated/
 **/*.md
 .bmad-core
 
+doc
+docs
+
+prometheus
+nginx
+oap
+scripts
+sql
+ssl
+ui
+elasticsearch
+grafana
 
 

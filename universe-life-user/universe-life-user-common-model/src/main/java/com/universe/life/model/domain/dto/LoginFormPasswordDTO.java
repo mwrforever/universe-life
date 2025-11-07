@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
  */
 @Schema(description = "密码登录校验表单")
 @Data
-@RequiredArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class LoginFormPasswordDTO extends LoginFormBaseDTO {

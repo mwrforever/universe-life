@@ -3,7 +3,16 @@
   <component name="AdditionalModuleElements">
     <content url="file://$MODULE_DIR$" dumb="true">
       <excludeFolder url="file://$MODULE_DIR$/.bmad-core" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude" />
+      <excludeFolder url="file://$MODULE_DIR$/data" />
+      <excludeFolder url="file://$MODULE_DIR$/doc" />
+      <excludeFolder url="file://$MODULE_DIR$/docs" />
+      <excludeFolder url="file://$MODULE_DIR$/elasticsearch/data" />
+      <excludeFolder url="file://$MODULE_DIR$/elasticsearch/logs" />
+      <excludeFolder url="file://$MODULE_DIR$/grafana/data" />
       <excludeFolder url="file://$MODULE_DIR$/logs" />
+      <excludeFolder url="file://$MODULE_DIR$/oap/logs" />
+      <excludeFolder url="file://$MODULE_DIR$/prometheus/data" />
     </content>
   </component>
 </module>

@@ -30,4 +30,17 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <!-- 禁用Spring Boot插件，因为这是一个公共API模块，没有主类 -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
