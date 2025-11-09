@@ -1,19 +1,5 @@
 server:
   port: 8099
-
-# 授权服务配置
-auth:
-  service:
-    # 授权服务器的 issuer URI，支持分布式部署
-    # 如果不配置，将使用默认配置自动构建
-    # 示例：http://auth-service.example.com:8099 或 http://192.168.1.100:8099
-    issuer-uri: ${AUTH_SERVICE_ISSUER_URI:}
-
-    # 服务端口配置（可选，默认值为 8099）
-    server-port: ${SERVER_PORT:}
-
-    # Nacos 注册的 IP 地址（可选，默认值为 localhost）
-    nacos-ip: ${NACOS_IP:}
 spring:
   profiles:
     active: dev
