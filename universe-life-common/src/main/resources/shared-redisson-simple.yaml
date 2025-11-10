@@ -1,0 +1,70 @@
+# Redisson 分布式锁配置 (简化版 - 兼容 Redisson 3.34.1)
+# 只包含Redisson 3.34.1版本完全支持的配置项
+
+universe-life:
+  data:
+    redisson:
+      # Redis基础连接配置
+      redis:
+        host: localhost                  # Redis主机地址
+        port: 6379                      # Redis端口
+        password: ""                    # Redis密码（空字符串表示无密码）
+        database: 0                     # Redis数据库索引
+        timeout: 10000                  # Redis超时时间（毫秒）
+
+      # 集群配置
+      cluster:
+        enabled: false                  # 是否启用集群模式
+        nodes: ""                       # 集群节点地址，多个用逗号分隔，如："192.168.1.100:6379,192.168.1.101:6379"
+        readMode: "SLAVE"               # 读取模式：MASTER/SLAVE/MASTER_SLAVE
+        subscriptionMode: "SLAVE"       # 订阅模式：MASTER/SLAVE
+
+      # 线程池配置
+      threadPool:
+        threadPoolSize: 64              # 线程池大小
+        nettyThreads: 32                # Netty线程数
+
+      # 连接超时配置
+      timeout:
+        idleConnectionTimeout: 10000    # 空闲连接超时时间（毫秒）
+        connectTimeout: 10000           # 连接超时时间（毫秒）
+        timeout: 3000                   # 命令执行超时时间（毫秒）
+        pingConnectionInterval: 30000   # Ping连接间隔（毫秒）
+
+      # 重试配置
+      retry:
+        attempts: 3                     # 重试次数
+        interval: 1500                  # 重试间隔（毫秒）
+
+      # 订阅配置
+      subscription:
+        subscriptionsPerConnection: 5   # 每个连接的订阅数
+        connectionMinimumIdleSize: 1    # 订阅连接最小空闲数
+        connectionPoolSize: 50          # 订阅连接池大小
+
+      # 连接池配置
+      connectionPool:
+        connectionMinimumIdleSize: 24   # 连接最小空闲数
+        connectionPoolSize: 64          # 连接池大小
+
+      # 高级配置
+      advanced:
+        lockWatchdogTimeout: 30000      # 看门狗超时时间（毫秒）
+        keepPubSubOrder: true           # 保持发布订阅顺序
+        useScriptCache: true            # 使用脚本缓存
+        transportMode: "NIO"            # 传输模式：NIO/EPOLL
+
+---
+
+# 最小化配置示例（开发环境推荐）
+universe-life:
+  data:
+    redisson:
+      redis:
+        host: localhost
+        port: 6379
+        password: ""
+        database: 0
+      cluster:
+        enabled: false
+      # 其他配置将使用默认值

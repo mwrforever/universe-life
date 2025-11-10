@@ -1,0 +1,40 @@
+# Redisson 分布式锁配置 (极简版 - 兼容所有Redisson版本)
+# 只包含最基础的配置，确保100%兼容性
+
+universe-life:
+  data:
+    redisson:
+      # Redis基础连接配置
+      redis:
+        host: localhost          # Redis主机地址
+        port: 6379              # Redis端口
+        password: ""            # Redis密码（空字符串表示无密码）
+        database: 0             # Redis数据库索引
+
+      # 集群配置
+      cluster:
+        enabled: false          # 是否启用集群模式
+        nodes: ""               # 集群节点地址，多个用逗号分隔，如："192.168.1.100:6379,192.168.1.101:6379"
+
+      # 线程池配置
+      threadPool:
+        threadPoolSize: 64      # 线程池大小
+        nettyThreads: 32        # Netty线程数
+
+      # 连接池配置
+      connectionPool:
+        connectionMinimumIdleSize: 24  # 连接最小空闲数
+        connectionPoolSize: 64         # 连接池大小
+
+---
+
+# 最小化配置示例（推荐用于开发环境）
+universe-life:
+  data:
+    redisson:
+      redis:
+        host: localhost
+        port: 6379
+        password: ""
+        database: 0
+      # 其他配置将使用默认值
