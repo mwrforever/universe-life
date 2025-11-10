@@ -11,4 +11,7 @@ public interface RedisConstants {
 
     String REDISSON_DELAYED_QUEUE_JWK = "redisson:delayed:queue:jwk";
 
+    String AUTH_SECRET_KEY_GENERATE_LOCK = "auth:secret:key:generate:lock";
+
+
 }

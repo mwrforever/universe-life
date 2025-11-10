@@ -1,7 +1,6 @@
-package com.universe.life.auth.service.config;
+package com.universe.life.auth.service.security;
 
-import com.universe.life.auth.service.handler.JwtAccessDeniedHandler;
-import com.universe.life.auth.service.handler.JwtAuthenticationExceptionHandler;
+import com.universe.life.auth.service.manager.JwkManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
@@ -9,9 +8,11 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -19,6 +20,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -40,7 +45,15 @@ import java.util.UUID;
  */
 @Slf4j
 @Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
 public class UniverseAuthorizationServerConfiguration {
+
+    @Bean
+    public JwkManager jwkManager() {
+        // 创建JwkManager对象，用于管理JWT密钥对
+        return new JwkManager();
+    }
 
     /**
      * 授权服务器基本设置Bean
@@ -66,6 +79,22 @@ public class UniverseAuthorizationServerConfiguration {
                 .build();  // 构建最终的配置对象
     }
 
+    @Bean
+    public OAuth2AuthorizationService oAuth2AuthorizationService(
+            JdbcTemplate jdbcTemplate,
+            RegisteredClientRepository registeredClientRepository
+    ) {
+        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+    }
+
+    @Bean
+    public OAuth2AuthorizationConsentService oAuth2AuthorizationConsentService(
+            JdbcTemplate jdbcTemplate,
+            RegisteredClientRepository registeredClientRepository
+    ) {
+        return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
+    }
+
 
     /**
      * 客户端注册仓库Bean - 生产环境数据库存储
@@ -73,7 +102,7 @@ public class UniverseAuthorizationServerConfiguration {
      * <p>配置OAuth2客户端信息的持久化存储，使用JdbcOperations进行数据库操作。
      * 支持动态客户端注册和管理，自动初始化默认客户端。</p>
      *
-     * @param jdbcOperations      Spring的JDBC操作模板，用于执行SQL语句
+     * @param jdbcTemplate        Spring的JDBC操作模板，用于执行SQL语句
      * @param gatewayClientId     网关客户端ID，默认值为universe-life-gateway
      * @param gatewayClientSecret 网关客户端密钥，可通过配置设置
      * @param gatewayRedirectUri  网关客户端回调URI，用于OAuth2授权码重定向
@@ -81,7 +110,7 @@ public class UniverseAuthorizationServerConfiguration {
      */
     @Bean  // Spring注解：注册客户端仓库Bean
     public RegisteredClientRepository registeredClientRepository(
-            JdbcOperations jdbcOperations,  // Spring JDBC操作对象，用于数据库访问
+            JdbcTemplate jdbcTemplate,  // Spring JDBC操作对象，用于数据库访问
             @Value("${auth.clients.gateway.id:universe-life-gateway}") String gatewayClientId,  // 网关客户端ID
             @Value("${auth.clients.gateway.secret:#{null}}") String gatewayClientSecret,  // 网关客户端密钥
             @Value("${auth.clients.gateway.redirect-uri:http://localhost:8101/login/oauth2/code/gateway}") String gatewayRedirectUri) {  // 回调URI
@@ -90,7 +119,7 @@ public class UniverseAuthorizationServerConfiguration {
         log.info("初始化客户端注册仓库 - 数据库模式");
 
         // 创建基于数据库的客户端注册仓库
-        JdbcRegisteredClientRepository repository = new JdbcRegisteredClientRepository(jdbcOperations);
+        JdbcRegisteredClientRepository repository = new JdbcRegisteredClientRepository(jdbcTemplate);
 
         // 检查默认客户端是否已存在，避免重复创建
         if (!isClientExists(repository, gatewayClientId)) {
@@ -125,7 +154,7 @@ public class UniverseAuthorizationServerConfiguration {
         // 使用建造者模式创建RegisteredClient对象
         return RegisteredClient.withId(UUID.randomUUID().toString())  // 生成唯一客户端ID
                 .clientId(clientId)  // 设置客户端标识符
-                .clientSecret(encodedSecret)  // 设置加密后的客户端密钥
+                .clientSecret(encodedSecret)  // 设置加密后的客户端密钥                                                                                      jdbcTemplate
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)  // 客户端认证方式：HTTP Basic认证
                 .authorizationGrantTypes(grants -> grants.addAll(Arrays.asList(  // 支持的授权类型
                         AuthorizationGrantType.AUTHORIZATION_CODE,  // 授权码模式，最安全的OAuth2流程

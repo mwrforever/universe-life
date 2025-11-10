@@ -30,5 +30,4 @@ public class UserAuthController {
     public UserInfoDTO getUserInfo(String username) {
         return userAuthService.getUserInfo(username);
     }
-
 }

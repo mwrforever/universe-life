@@ -18,4 +18,5 @@ public interface JwtConstants {
 
     Duration REMEMBER_REFRESH_TOKEN_EXPIRE = Duration.ofDays(7);
 
+
 }

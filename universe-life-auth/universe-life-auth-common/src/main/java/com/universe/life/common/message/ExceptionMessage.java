@@ -40,6 +40,7 @@ public interface ExceptionMessage {
     String SESSION_TIMEOUT = "会话已超时，请重新登录";
     String CAPTCHA_ERROR = "验证码错误";
     String TOO_MANY_ATTEMPTS = "登录尝试次数过多，请稍后再试";
+    String ACCOUNT_PASSWORD_ERROR = "账户密码错误";
 
     // ==================== 业务错误消息 ====================
     String BUSINESS_ERROR = "业务处理失败";
@@ -262,14 +263,14 @@ public interface ExceptionMessage {
         /**
          * 根据错误码获取消息，支持自定义消息
          *
-         * @param errorCode    错误码
+         * @param errorCode     错误码
          * @param customMessage 自定义消息
          * @return 错误消息
          */
         public static String getByCodeOrCustom(int errorCode, String customMessage) {
             return customMessage != null && !customMessage.trim().isEmpty()
-                ? customMessage
-                : getByCode(errorCode);
+                    ? customMessage
+                    : getByCode(errorCode);
         }
 
         /**
