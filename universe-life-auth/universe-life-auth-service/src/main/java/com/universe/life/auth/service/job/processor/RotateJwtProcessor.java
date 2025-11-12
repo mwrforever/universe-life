@@ -30,7 +30,7 @@ public class RotateJwtProcessor implements BasicProcessor {
         jwkManager.rotate();
         // 生成清理jwk延时任务
         RedissonDelayJob<Object> clearJwkJob = new RedissonDelayJob<>();
-        clearJwkJob.setJobId(UUID.randomUUID().toString());
+        clearJwkJob.setJobId(UUID.randomUUID().toString().replace("-", ""));
         clearJwkJob.setData(null);
         clearJwkJob.setDelayTime(7L);
         clearJwkJob.setTimeUnit(TimeUnit.DAYS);

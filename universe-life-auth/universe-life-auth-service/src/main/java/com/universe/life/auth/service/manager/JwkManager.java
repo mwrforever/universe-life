@@ -89,9 +89,8 @@ public class JwkManager {
      * 清空现有密钥并重新生成指定数量的主用密钥
      * </p>
      *
-     * @return 生成的密钥对列表
      */
-    public List<KeyPair> refresh() {
+    public void refresh() {
         store.clear();
         algorithmStore.clear();
 
@@ -101,26 +100,21 @@ public class JwkManager {
         }
         primary = new AtomicReferenceArray<>(primaryCount);
 
-        List<KeyPair> keyPairs = new ArrayList<>();
-
         // 生成指定数量的主用密钥
         for (int i = 0; i < primaryCount; i++) {
             String newId = UUID.randomUUID().toString().replace("-", "");
-            KeyPair key = (KeyPair) generateKey(JwkAlgorithm.fromAlgorithm(defaultAlgorithm));
+            Object key = generateKey(JwkAlgorithm.fromAlgorithm(defaultAlgorithm));
 
             // 存储密钥和算法类型
             store.put(newId, key);
             algorithmStore.put(newId, JwkAlgorithm.fromAlgorithm(defaultAlgorithm));
             primary.set(i, newId);
 
-            keyPairs.add(key);
-
             log.info(">>>> 刷新生成密钥，算法类型: {}, 密钥ID: {}, 位置: {}",
                     defaultAlgorithm, newId, i);
         }
 
         log.info(">>>> 密钥刷新完成，共生成{}个主用密钥", primaryCount);
-        return keyPairs;
     }
 
     /**
@@ -382,14 +376,11 @@ public class JwkManager {
         // 非对称算法返回公钥，对称算法返回null
         if (algorithm.isAsymmetric()) {
             KeyPair keyPair = (KeyPair) key;
-            switch (algorithm) {
-                case RS256:
-                    return (RSAPublicKey) keyPair.getPublic();
-                case ES256:
-                    return (ECPublicKey) keyPair.getPublic();
-                default:
-                    return keyPair.getPublic();
-            }
+            return switch (algorithm) {
+                case RS256 -> (RSAPublicKey) keyPair.getPublic();
+                case ES256 -> (ECPublicKey) keyPair.getPublic();
+                default -> keyPair.getPublic();
+            };
         } else {
             return null; // HMAC算法没有公钥
         }

@@ -1,15 +1,18 @@
 package com.universe.life.auth.service.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.nimbusds.jose.jwk.JWKSet;
 import com.universe.life.auth.service.domain.po.Oauth2Jwk;
+import com.universe.life.auth.service.enums.JwkState;
 import com.universe.life.auth.service.manager.JwkManager;
 import com.universe.life.auth.service.mapper.Oauth2JwkMapper;
 import com.universe.life.auth.service.service.IOauth2JwkService;
+import com.universe.life.common.constants.RabbitMqConstants;
 import com.universe.life.common.domain.dto.UserAuthInfo;
 import com.universe.life.common.exception.DatabaseException;
 import com.universe.life.common.message.ExceptionMessage;
+import com.universe.life.common.util.RabbitMqSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
-import java.security.KeyPair;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateKey;
@@ -26,6 +28,8 @@ import java.security.interfaces.RSAPublicKey;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * <p>
@@ -45,78 +49,8 @@ public class Oauth2JwkServiceImpl extends ServiceImpl<Oauth2JwkMapper, Oauth2Jwk
 
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    /**
-     * 从KeyPair中提取公钥和私钥的Base64编码字符串
-     * <p>
-     * 该方法用于将JWK密钥对转换为可存储到数据库的字符串格式。
-     * 支持RSA和ECDSA非对称算法的密钥提取。
-     * 注意：HS256算法不使用KeyPair，而是使用SecretKey。
-     * </p>
-     *
-     * @param keyPair 密钥对对象
-     * @param kid     密钥ID
-     * @return 包含公钥和私钥Base64字符串的数组，索引0为公钥，索引1为私钥
-     * @throws IllegalArgumentException 当密钥对为null或算法不支持时抛出异常
-     */
-    private String[] extractKeyPairFromKeyPair(KeyPair keyPair, String kid) {
-        if (keyPair == null) {
-            throw new IllegalArgumentException("密钥对不能为空");
-        }
+    private final RabbitMqSender rabbitMqSender;
 
-        if (kid == null || kid.trim().isEmpty()) {
-            throw new IllegalArgumentException("密钥ID不能为空");
-        }
-
-        try {
-            // 获取算法类型
-            String algorithm = jwkManager.getAlgorithm(kid) != null ?
-                    jwkManager.getAlgorithm(kid).getAlgorithm() : "RS256";
-
-            return switch (algorithm) {
-                case "RS256" -> extractRSAKeyPair(keyPair);
-                case "ES256" -> extractECKeyPair(keyPair);
-                case "HS256" -> {
-                    // HS256算法不使用KeyPair，应该使用extractKeyPairFromJwkManager方法
-                    throw new IllegalArgumentException("HS256算法应使用extractKeyPairFromJwkManager方法，不是KeyPair");
-                }
-                default -> throw new IllegalArgumentException("不支持的算法类型: " + algorithm);
-            };
-        } catch (Exception e) {
-            throw new IllegalArgumentException("密钥对提取失败: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 提取RSA密钥对的Base64编码字符串
-     *
-     * @param keyPair RSA密钥对
-     * @return 包含公钥和私钥Base64字符串的数组
-     */
-    private String[] extractRSAKeyPair(KeyPair keyPair) {
-        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-        RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-
-        String publicKeyStr = Base64.getEncoder().encodeToString(publicKey.getEncoded());
-        String privateKeyStr = Base64.getEncoder().encodeToString(privateKey.getEncoded());
-
-        return new String[]{publicKeyStr, privateKeyStr};
-    }
-
-    /**
-     * 提取ECDSA密钥对的Base64编码字符串
-     *
-     * @param keyPair ECDSA密钥对
-     * @return 包含公钥和私钥Base64字符串的数组
-     */
-    private String[] extractECKeyPair(KeyPair keyPair) {
-        ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
-        ECPrivateKey privateKey = (ECPrivateKey) keyPair.getPrivate();
-
-        String publicKeyStr = Base64.getEncoder().encodeToString(publicKey.getEncoded());
-        String privateKeyStr = Base64.getEncoder().encodeToString(privateKey.getEncoded());
-
-        return new String[]{publicKeyStr, privateKeyStr};
-    }
 
     /**
      * 从JwkManager中提取密钥对信息用于保存到数据库
@@ -224,6 +158,7 @@ public class Oauth2JwkServiceImpl extends ServiceImpl<Oauth2JwkMapper, Oauth2Jwk
     }
 
     @Override
+    @Transactional
     public Boolean update(String password) {
         // 对密码进行校验
         UserAuthInfo userAuthInfo = (UserAuthInfo) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -233,18 +168,34 @@ public class Oauth2JwkServiceImpl extends ServiceImpl<Oauth2JwkMapper, Oauth2Jwk
         if (!bCryptPasswordEncoder.matches(password, userAuthInfo.getPassword())) {
             throw new DatabaseException.QueryException(ExceptionMessage.ACCOUNT_PASSWORD_ERROR);
         }
-
-        // TODO 通过rabbitmq通知其它服务立即将旧公钥加入黑名单
-
         // 先将数据库中的密钥失效
-        // TODO: 实现将现有密钥状态设为INACTIVE的逻辑
-
+        // 实现将现有密钥状态设为INACTIVE的逻辑
+        Set<String> allKeyIds = jwkManager.getAllKeyIds();
+        if (CollUtil.isNotEmpty(allKeyIds)) {
+            lambdaUpdate()
+                    .set(Oauth2Jwk::getState, JwkState.INACTIVE.getState())
+                    .in(Oauth2Jwk::getKid, allKeyIds)
+                    .update();
+        }
         // 轮换密钥
-        List<KeyPair> keyPairs = jwkManager.refresh();
-
+        jwkManager.refresh();
         // 将新密钥保存到数据库
         List<String> primaryKids = jwkManager.allPrimaryKids();
-        List<Oauth2Jwk> newJwks = primaryKids.stream().map(kid -> {
+        List<Oauth2Jwk> newJwks = getOauth2Jwks(primaryKids);
+
+        // 批量保存新密钥到数据库
+        saveBatch(newJwks);
+        // 通过rabbitmq通知其它服务立即将旧公钥加入黑名单
+        rabbitMqSender.builder()
+                .to(
+                        RabbitMqConstants.Exchange.AUTH_NOTIFY_JWK_EXCHANGE,
+                        RabbitMqConstants.Binding.AUTH_NOTIFY_BLACK_JWK_BINDING
+                ).send(null);
+        return true;
+    }
+
+    private List<Oauth2Jwk> getOauth2Jwks(List<String> primaryKids) {
+        return primaryKids.stream().map(kid -> {
                     Oauth2Jwk oauth2Jwk = new Oauth2Jwk();
                     oauth2Jwk.setKid(kid);
 
@@ -268,41 +219,18 @@ public class Oauth2JwkServiceImpl extends ServiceImpl<Oauth2JwkMapper, Oauth2Jwk
                     oauth2Jwk.setExpireTime(LocalDateTime.now().plusDays(30));
                     return oauth2Jwk;
                 })
-                .filter(oauth2Jwk -> oauth2Jwk != null) // 过滤掉失败的记录
+                .filter(Objects::nonNull) // 过滤掉失败的记录
                 .toList();
-
-        // 批量保存新密钥到数据库
-        boolean saveResult = saveBatch(newJwks);
-
-        // TODO 通过rabbitmq更新其它服务的公钥并将清除黑名单
-
-        return saveResult;
     }
 
     @Override
     @Transactional
-    public Boolean saveBatch(JWKSet jwkSet) {
-        List<Oauth2Jwk> oauth2Jwks = jwkSet.getKeys().stream().map(jwk -> {
-            Oauth2Jwk oauth2Jwk = new Oauth2Jwk();
-            oauth2Jwk.setKid(jwk.getKeyID());
-
-            // 使用密钥提取函数从JwkManager获取Base64编码的密钥字符串
-            try {
-                String[] keyPair = extractKeyPairFromJwkManager(jwk.getKeyID());
-                oauth2Jwk.setPublicKey(keyPair[0]); // 公钥
-                oauth2Jwk.setPrivateKey(keyPair[1]); // 私钥
-            } catch (Exception e) {
-                // 如果提取失败，使用原来的JWK字符串作为备用方案
-                oauth2Jwk.setPublicKey(jwk.toJSONString());
-                oauth2Jwk.setPrivateKey(jwk.toJSONString());
-            }
-            oauth2Jwk.setAlgorithm(jwk.getAlgorithm().getName());
-            oauth2Jwk.setState("ACTIVE");
-            oauth2Jwk.setCreateTime(LocalDateTime.now());
-            oauth2Jwk.setExpireTime(LocalDateTime.now().plusDays(30));
-            return oauth2Jwk;
-        }).toList();
+    public Boolean saveBatch(List<String> jwkids) {
+        List<Oauth2Jwk> oauth2Jwks = getOauth2Jwks(jwkids);
         // 批量保存到数据库
+        if (CollUtil.isEmpty(oauth2Jwks)) {
+            return false;
+        }
         return saveBatch(oauth2Jwks);
     }
 

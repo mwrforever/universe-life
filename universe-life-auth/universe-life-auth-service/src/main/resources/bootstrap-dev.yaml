@@ -4,7 +4,7 @@ universe-life:
     port: 13306
     username: root
     password: 1010520Mao@@
-    database: universe_life_auth
+    database: oauth2_authorization
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
@@ -13,7 +13,30 @@ universe-life:
       port: 16379
       password: 1010520mao
       timeout: 10000
-  logging:
-    level:
-      path: com.universe.life.authservice
-      value: info
+  security:
+    authorization:
+      server:
+        consent-page: http://localhost:5000/auth/consent
+        issuer: http://localhost:8099
+        client-id: fCSYj5XOia6J4O9shfka
+        client-secret: m&#H:YN&@[Ijhn3s&ehV
+        redirect-uri: http://localhost:8101/callback
+  # Redisson 分布式锁配置（测试环境）
+  redisson:
+    # 基础配置
+    password: ${TEST_REDISSON_PASSWORD:test_redis_pass}
+    connection-pool-size: 10
+    connect-timeout: 8000
+    timeout: 2500
+    retry-attempts: 2
+    retry-interval: 1000
+    read-mode: MASTER
+    subscription-mode: MASTER
+
+    # 单机模式配置（测试环境推荐）
+    single:
+      enabled: true
+      address: redis://localhost:16380
+      database: 1
+  mybatis-plus:
+    type-aliases-package: com.universe.life.auth.service.domain

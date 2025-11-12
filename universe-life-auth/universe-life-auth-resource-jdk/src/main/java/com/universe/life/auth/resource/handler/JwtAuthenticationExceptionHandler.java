@@ -1,4 +1,4 @@
-package com.universe.life.auth.resource.service;
+package com.universe.life.auth.resource.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.universe.life.common.domain.Result;

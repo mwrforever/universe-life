@@ -2,9 +2,9 @@ package com.universe.life.auth.resource.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.universe.life.auth.resource.filter.LoginFilter;
-import com.universe.life.auth.resource.properties.AuthPathProperties;
-import com.universe.life.auth.resource.service.JwtAccessDeniedHandler;
-import com.universe.life.auth.resource.service.JwtAuthenticationExceptionHandler;
+import com.universe.life.common.properties.AuthPathProperties;
+import com.universe.life.auth.resource.handler.JwtAccessDeniedHandler;
+import com.universe.life.auth.resource.handler.JwtAuthenticationExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -35,14 +35,12 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @RequiredArgsConstructor
 public class SecurityConfiguration {
 
+    private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
+    private final AuthPathProperties authPathProperties;
+
     @Bean
-    public SecurityFilterChain filterChain(
-            HttpSecurity http,
-            AuthPathProperties authPathProperties,
-            JwtAuthenticationExceptionHandler jwtAuthenticationExceptionHandler,
-            JwtAccessDeniedHandler jwtAccessDeniedHandler,
-            LoginFilter loginFilter
-    ) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // 设置请求权限
         http.authorizeHttpRequests(auth -> {
             auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
@@ -61,11 +59,11 @@ public class SecurityConfiguration {
         http.cors(withDefaults());
         // 配置统一的认证失败处理
         http.exceptionHandling(exception -> {
-            exception.authenticationEntryPoint(jwtAuthenticationExceptionHandler);
-            exception.accessDeniedHandler(jwtAccessDeniedHandler);
+            exception.authenticationEntryPoint(authenticationEntryPoint());
+            exception.accessDeniedHandler(accessDeniedHandler());
         });
         // 创建一个jwt认证过滤器
-        http.addFilterBefore(loginFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(loginFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -76,17 +74,17 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public AuthenticationEntryPoint authenticationEntryPoint(ObjectMapper objectMapper) {
+    public AuthenticationEntryPoint authenticationEntryPoint() {
         return new JwtAuthenticationExceptionHandler(objectMapper);
     }
 
     @Bean
-    public AccessDeniedHandler accessDeniedHandler(ObjectMapper objectMapper) {
+    public AccessDeniedHandler accessDeniedHandler() {
         return new JwtAccessDeniedHandler(objectMapper);
     }
 
     @Bean
-    public OncePerRequestFilter loginFilter(StringRedisTemplate stringRedisTemplate) {
+    public OncePerRequestFilter loginFilter() {
         return new LoginFilter(stringRedisTemplate);
     }
 

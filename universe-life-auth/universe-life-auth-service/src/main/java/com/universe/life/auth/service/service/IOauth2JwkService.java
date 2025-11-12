@@ -1,8 +1,9 @@
 package com.universe.life.auth.service.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.nimbusds.jose.jwk.JWKSet;
 import com.universe.life.auth.service.domain.po.Oauth2Jwk;
+
+import java.util.List;
 
 /**
  * <p>
@@ -23,6 +24,12 @@ public interface IOauth2JwkService extends IService<Oauth2Jwk> {
      */
     Boolean update(String checkPasswordDTO);
 
-    Boolean saveBatch(JWKSet jwkSet);
+    /**
+     * 批量保存JWK密钥对
+     *
+     * @param jwkids JWK密钥对ID列表
+     * @return 状态
+     */
+    Boolean saveBatch(List<String> jwkids);
 
 }

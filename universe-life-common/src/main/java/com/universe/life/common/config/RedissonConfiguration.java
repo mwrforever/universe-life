@@ -9,7 +9,6 @@ import org.redisson.config.Config;
 import org.redisson.config.ReadMode;
 import org.redisson.config.SubscriptionMode;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,7 +34,6 @@ public class RedissonConfiguration {
      */
     @Bean(destroyMethod = "shutdown")
     @ConditionalOnMissingBean(RedissonClient.class)
-    @ConditionalOnProperty(prefix = "spring.redis.redisson", name = "enabled", havingValue = "true", matchIfMissing = true)
     public RedissonClient redissonClient() {
         log.info("开始初始化RedissonClient...");
 
@@ -62,7 +60,6 @@ public class RedissonConfiguration {
             // 默认单机模式
             setupSingleConfig(config);
         }
-
         return config;
     }
 

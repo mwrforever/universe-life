@@ -10,6 +10,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.universe.life.auth.service.constants.RedisConstants;
 import com.universe.life.auth.service.domain.po.Oauth2Jwk;
+import com.universe.life.auth.service.enums.JwkState;
 import com.universe.life.auth.service.manager.JwkManager;
 import com.universe.life.auth.service.service.IOauth2JwkService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -51,19 +53,20 @@ public class DbJwKResource implements JWKSource<SecurityContext> {
                             Oauth2Jwk::getPrivateKey,
                             Oauth2Jwk::getAlgorithm
                     )
-                    .eq(Oauth2Jwk::getState, "ACTIVE")
+                    .eq(Oauth2Jwk::getState, JwkState.ACTIVE.getState())
                     .gt(Oauth2Jwk::getExpireTime, LocalDateTime.now())
                     .list();
             // 如果为空，重新生成密钥对
             newJwkSet = jwkManager.loadFromDatabase(oauth2Jwks);
+            List<String> primaryKids = new ArrayList<>();
             if (ObjectUtil.isNull(newJwkSet)) {
                 // 重新生成密钥对，并保存到数据库中
                 jwkManager.rotate();
                 // 获取密钥对
-                newJwkSet = jwkManager.jwkSet();
+                primaryKids = jwkManager.allPrimaryKids();
             }
             // 更新到数据库中
-            oauth2JwkService.saveBatch(newJwkSet);
+            oauth2JwkService.saveBatch(primaryKids);
         } finally {
             lock.unlock();
         }

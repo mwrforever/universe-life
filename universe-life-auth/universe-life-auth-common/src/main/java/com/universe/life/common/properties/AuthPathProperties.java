@@ -1,4 +1,4 @@
-package com.universe.life.auth.resource.properties;
+package com.universe.life.common.properties;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,10 +1,12 @@
 package com.universe.life.auth.service.security;
 
 import com.universe.life.auth.service.manager.JwkManager;
+import com.universe.life.auth.service.properties.AuthorizationServerProperties;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -47,7 +49,11 @@ import java.util.UUID;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@EnableConfigurationProperties(AuthorizationServerProperties.class)
+@RequiredArgsConstructor
 public class UniverseAuthorizationServerConfiguration {
+
+    private final AuthorizationServerProperties authorizationServerProperties;
 
     @Bean
     public JwkManager jwkManager() {
@@ -60,22 +66,19 @@ public class UniverseAuthorizationServerConfiguration {
      *
      * <p>配置OAuth2授权服务器的核心参数，主要是issuer URI。
      * issuer是授权服务器的唯一标识符，用于JWT令牌验证和发现服务。</p>
+     * 可通过spring.security.oauth2.authorizationserver.issuer配置
      *
-     * @param issuer 授权服务器的URL，默认值为http://localhost:8099，
-     *               可通过spring.security.oauth2.authorizationserver.issuer配置
      * @return 配置好的AuthorizationServerSettings对象
      */
     @Bean  // Spring注解：将方法返回的对象注册为Spring容器中的Bean
-    public AuthorizationServerSettings authorizationServerSettings(
-            // Spring注解：从配置文件或环境变量中读取值，支持默认值
-            @Value("${spring.security.oauth2.authorizationserver.issuer:http://localhost:8099}") String issuer) {
+    public AuthorizationServerSettings authorizationServerSettings() {
 
         // 记录配置信息到日志，便于调试和监控
-        log.info("配置授权服务器设置 - Issuer: {}", issuer);
+        log.info("配置授权服务器设置 - Issuer: {}", authorizationServerProperties.getIssuer());
 
         // 使用建造者模式创建AuthorizationServerSettings对象
         return AuthorizationServerSettings.builder()
-                .issuer(issuer)  // 设置授权服务器的issuer URI
+                .issuer(authorizationServerProperties.getIssuer())  // 设置授权服务器的issuer URI
                 .build();  // 构建最终的配置对象
     }
 
@@ -102,18 +105,11 @@ public class UniverseAuthorizationServerConfiguration {
      * <p>配置OAuth2客户端信息的持久化存储，使用JdbcOperations进行数据库操作。
      * 支持动态客户端注册和管理，自动初始化默认客户端。</p>
      *
-     * @param jdbcTemplate        Spring的JDBC操作模板，用于执行SQL语句
-     * @param gatewayClientId     网关客户端ID，默认值为universe-life-gateway
-     * @param gatewayClientSecret 网关客户端密钥，可通过配置设置
-     * @param gatewayRedirectUri  网关客户端回调URI，用于OAuth2授权码重定向
+     * @param jdbcTemplate Spring的JDBC操作模板，用于执行SQL语句
      * @return 配置好的RegisteredClientRepository对象
      */
     @Bean  // Spring注解：注册客户端仓库Bean
-    public RegisteredClientRepository registeredClientRepository(
-            JdbcTemplate jdbcTemplate,  // Spring JDBC操作对象，用于数据库访问
-            @Value("${auth.clients.gateway.id:universe-life-gateway}") String gatewayClientId,  // 网关客户端ID
-            @Value("${auth.clients.gateway.secret:#{null}}") String gatewayClientSecret,  // 网关客户端密钥
-            @Value("${auth.clients.gateway.redirect-uri:http://localhost:8101/login/oauth2/code/gateway}") String gatewayRedirectUri) {  // 回调URI
+    public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
 
         // 记录初始化信息到日志
         log.info("初始化客户端注册仓库 - 数据库模式");
@@ -122,12 +118,16 @@ public class UniverseAuthorizationServerConfiguration {
         JdbcRegisteredClientRepository repository = new JdbcRegisteredClientRepository(jdbcTemplate);
 
         // 检查默认客户端是否已存在，避免重复创建
-        if (!isClientExists(repository, gatewayClientId)) {
+        if (!isClientExists(repository, authorizationServerProperties.getClientId())) {
             // 创建网关客户端配置
-            RegisteredClient gatewayClient = createGatewayClient(gatewayClientId, gatewayClientSecret, gatewayRedirectUri);
+            RegisteredClient gatewayClient = createGatewayClient(
+                    authorizationServerProperties.getClientId(),
+                    authorizationServerProperties.getClientSecret(),
+                    authorizationServerProperties.getRedirectUri()
+            );
             // 保存客户端到数据库
             repository.save(gatewayClient);
-            log.info("已创建网关客户端: {}", gatewayClientId);
+            log.info("已创建网关客户端: {}", authorizationServerProperties.getClientId());
         }
 
         // 返回配置好的客户端仓库
@@ -147,10 +147,7 @@ public class UniverseAuthorizationServerConfiguration {
      */
     private RegisteredClient createGatewayClient(String clientId, String clientSecret, String redirectUri) {
         // 使用BCrypt算法加密客户端密钥，强度12，提供强密码保护
-        String encodedSecret = clientSecret != null ?
-                passwordEncoder().encode(clientSecret) :
-                "{bcrypt}$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iKVjzieMwkOmANgNOgKQNNBDvAGK";  // 默认开发环境密钥
-
+        String encodedSecret = passwordEncoder().encode(clientSecret);
         // 使用建造者模式创建RegisteredClient对象
         return RegisteredClient.withId(UUID.randomUUID().toString())  // 生成唯一客户端ID
                 .clientId(clientId)  // 设置客户端标识符
@@ -162,11 +159,7 @@ public class UniverseAuthorizationServerConfiguration {
                         AuthorizationGrantType.CLIENT_CREDENTIALS,  // 客户端凭证模式，用于服务间调用
                         AuthorizationGrantType.JWT_BEARER  // JWT Bearer模式，支持JWT令牌
                 )))
-                .redirectUris(uris -> uris.addAll(Arrays.asList(  // 支持的回调URI列表
-                        redirectUri,  // 主要回调URI，从配置获取
-                        "http://localhost:8101",  // 开发环境本地地址
-                        "https://gateway.yourdomain.com/login/oauth2/code/gateway"  // 生产环境地址
-                )))
+                .redirectUris(uris -> uris.add(redirectUri))
                 .scopes(scopes -> scopes.addAll(Arrays.asList(  // 支持的权限范围
                         OidcScopes.OPENID,  // OpenID Connect标准范围，获取用户标识
                         OidcScopes.PROFILE,  // 用户基本信息范围
@@ -270,8 +263,7 @@ public class UniverseAuthorizationServerConfiguration {
     public SecurityFilterChain authorizationServerSecurityFilterChain(
             HttpSecurity http,
             JwtAccessDeniedHandler jwtAccessDeniedHandler,
-            JwtAuthenticationExceptionHandler jwtAuthenticationExceptionHandler,
-            @Value("${spring.security.oauth2.authorizationserver.authorization-consent-page:/oauth2/consent}") String consentPage) throws Exception {
+            JwtAuthenticationExceptionHandler jwtAuthenticationExceptionHandler) throws Exception {
 
         log.info("配置授权服务器安全过滤器链");
 
@@ -283,8 +275,11 @@ public class UniverseAuthorizationServerConfiguration {
 
         // 自定义授权端点配置，设置用户授权同意页面路径
         authorizationServerConfigurer
+                // 配置authorizationServerSettings
+                .authorizationServerSettings(AuthorizationServerSettings.builder().build())
+                .oidc(Customizer.withDefaults())
                 .authorizationEndpoint(authorizationEndpoint ->
-                        authorizationEndpoint.consentPage(consentPage));
+                        authorizationEndpoint.consentPage(authorizationServerProperties.getConsentPage()));
 
         return http
                 // 设置安全匹配器，只处理授权服务器端点请求
@@ -297,7 +292,7 @@ public class UniverseAuthorizationServerConfiguration {
                         // 错误页面和静态资源 - 允许公开访问
                         .requestMatchers("/error", "/favicon.ico").permitAll()
                         // 授权同意页面 - 需要用户登录认证
-                        .requestMatchers(consentPage).authenticated()
+                        .requestMatchers(authorizationServerProperties.getConsentPage()).authenticated()
                         // 其他所有请求 - 需要认证
                         .anyRequest().authenticated())
 

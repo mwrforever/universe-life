@@ -12,7 +12,7 @@ spring:
         server-addr: localhost:6848
         file-extension: yaml
         group: DEFAULT_GROUP
-        namespace: a40a1d4b-4110-45e7-b16d-dc842e7ba324
+        namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
         shared-configs:
@@ -22,68 +22,26 @@ spring:
             refresh: true
           - data-id: shared-mybatis-plus.yaml
             refresh: true
-          - data-id: shared-logging.yaml
+          - data-id: shared-powerjob.yaml
+            refresh: true
+          - data-id: shared-jackson.yaml
+            refresh: true
+          - data-id: shared-rabbitmq.yaml
             refresh: true
       discovery:
         server-addr: localhost:6848          # Nacos 注册中心地址
-        namespace: a40a1d4b-4110-45e7-b16d-dc842e7ba324
+        namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
         group: DEFAULT_GROUP
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
-  rabbitmq:
-    # ====== 基础连接 ======
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    virtual-host: /
-    connection-timeout: 5s           # TCP 连接超时
-    requested-heartbeat: 30s         # 心跳保活
 
-    # ====== 生产者可靠性 ======
-    publisher-confirm-type: correlated   # 开启发布确认（correlated 异步回调）
-    publisher-returns: true              # 开启返回回调（路由失败时触发）
-    template:
-      mandatory: true                    # 必须路由到队列，否则触发 ReturnsCallback
 
-    # ====== 消费者并发 ======
-    listener:
-      simple:
-        concurrency: 5           # 最小消费者线程
-        max-concurrency: 10      # 最大消费者线程
-        prefetch: 50             # 每个线程预取 50 条
-        acknowledge-mode: manual # 手动 ACK（业务处理完才 basicAck）
-        default-requeue-rejected: false   # 异常时不重新入队，直接进 DLX
+logging:
+  level:
+    org.springframework.amqp: INFO
+    com.rabbitmq.client: INFO
+    com.universe.life.rabbitmq: DEBUG
+    com.universe.life.auth.service: DEBUG
 
-  # ====== JSON 序列化（LocalDateTime 等） ======
-  jackson:
-    serialization:
-      write-dates-as-timestamps: false
-
-# PowerJob Worker 配置
-powerjob:
-  worker:
-    # Worker 端口（替换已弃用的 akka-port）
-    port: 27777
-    # 接入应用名称，用于分组隔离，推荐填写 本 Java 项目名称
-    app-name: my-powerjob-worker
-    # 调度服务器地址，IP:Port 或 域名，多值逗号分隔
-    server-address: 127.0.0.1:7700
-    # 通讯协议，支持 HTTP 和 AKKA 两种协议
-    protocol: http
-    # 持久化方式，可选：disk, memory（PowerJob 原生支持）
-    store-strategy: disk
-    # 任务返回结果信息的最大长度，超过这个长度的信息会被截断
-    max-result-length: 4096
-    # 单个任务追加的工作流上下文最大长度
-    max-appended-wf-context-length: 4096
-    # 同时运行的轻量级任务数量上限
-    max-lightweight-task-num: 1024
-    # 同时运行的重量级任务数量上限（修正属性名）
-    max-heavyweight-task-num: 64
-    # 健康报告间隔（秒）
-    health-report-interval: 10
-    # 允许延迟连接服务器
-    allow-lazy-connect-server: false
 
 

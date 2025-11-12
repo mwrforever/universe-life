@@ -18,8 +18,6 @@ spring:
         shared-configs:
           - data-id: shared-routes.yaml
             refresh: true
-          - data-id: shared-logging.yaml
-            refresh: true
           - data-id: shared-gateway-spingdoc-knife.yaml
             refresh: true
       discovery:
@@ -45,5 +43,14 @@ spring:
             allowed-headers: "*"
             allow-credentials: true
             max-age: 3600
+      default-filters:
+        - StripPrefix=1
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8099
+
+
 
 

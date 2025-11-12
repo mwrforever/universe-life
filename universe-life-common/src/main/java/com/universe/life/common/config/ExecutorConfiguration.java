@@ -61,4 +61,28 @@ public class ExecutorConfiguration {
         );
     }
 
+    @Bean
+    public Executor rabbitMqSendMessageExecutor() {
+        ThreadFactory factory = new ThreadFactoryBuilder()
+                .setNamePrefix("rabbitMq-send-message-")
+                .setUncaughtExceptionHandler((t, e) -> {
+                    log.error("线程{} 发送rabbitMq消息出现异常：{}", t.getName(), e.getMessage());
+                    try {
+                        Thread.sleep(200_000);
+                    } catch (InterruptedException ex) {
+                    }
+                })
+                .build();
+        return new ThreadPoolExecutor(
+                5,
+                40,
+                2L,
+                TimeUnit.MINUTES,
+                new LinkedBlockingDeque<>(9999),
+                factory,
+                new ThreadPoolExecutor.CallerRunsPolicy()
+
+        );
+    }
+
 }
