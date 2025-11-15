@@ -1,6 +1,7 @@
 package com.universe.life.auth.service.security;
 
-import com.universe.life.auth.service.manager.JwkManager;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
 import com.universe.life.auth.service.properties.AuthorizationServerProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,13 +16,13 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
@@ -34,7 +35,13 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
+import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator;
+import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2RefreshTokenGenerator;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import java.time.Duration;
@@ -55,15 +62,38 @@ public class UniverseAuthorizationServerConfiguration {
 
     private final AuthorizationServerProperties authorizationServerProperties;
 
+    private final PasswordEncoder bCryptPasswordEncoder;
+
+    private final AccessDeniedHandler jwtAccessDeniedHandler;
+
+    private final AuthenticationEntryPoint jwtAuthenticationExceptionHandler;
+
+
     @Bean
-    public JwkManager jwkManager() {
-        // 创建JwkManager对象，用于管理JWT密钥对
-        return new JwkManager();
+    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
+        return new NimbusJwtEncoder(jwkSource);
     }
 
     /**
-     * 授权服务器基本设置Bean
+     * OAuth2令牌生成器Bean
+     * <p>配置JWT访问令牌和刷新令牌的生成器，支持自定义JWT声明。</p>
      *
+     * @param jwtEncoder JWT编码器
+     * @return OAuth2令牌生成器
+     */
+    @Bean
+    public OAuth2TokenGenerator<?> oAuth2TokenGenerator(JwtEncoder jwtEncoder) {
+        log.info("配置OAuth2令牌生成器 - 支持JWT访问令牌和刷新令牌");
+
+        JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
+        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
+
+        return new DelegatingOAuth2TokenGenerator(jwtGenerator, refreshTokenGenerator);
+    }
+
+
+    /**
+     * 授权服务器基本设置Bean
      * <p>配置OAuth2授权服务器的核心参数，主要是issuer URI。
      * issuer是授权服务器的唯一标识符，用于JWT令牌验证和发现服务。</p>
      * 可通过spring.security.oauth2.authorizationserver.issuer配置
@@ -147,7 +177,7 @@ public class UniverseAuthorizationServerConfiguration {
      */
     private RegisteredClient createGatewayClient(String clientId, String clientSecret, String redirectUri) {
         // 使用BCrypt算法加密客户端密钥，强度12，提供强密码保护
-        String encodedSecret = passwordEncoder().encode(clientSecret);
+        String encodedSecret = bCryptPasswordEncoder.encode(clientSecret);
         // 使用建造者模式创建RegisteredClient对象
         return RegisteredClient.withId(UUID.randomUUID().toString())  // 生成唯一客户端ID
                 .clientId(clientId)  // 设置客户端标识符
@@ -157,7 +187,8 @@ public class UniverseAuthorizationServerConfiguration {
                         AuthorizationGrantType.AUTHORIZATION_CODE,  // 授权码模式，最安全的OAuth2流程
                         AuthorizationGrantType.REFRESH_TOKEN,  // 刷新令牌模式，支持令牌续期
                         AuthorizationGrantType.CLIENT_CREDENTIALS,  // 客户端凭证模式，用于服务间调用
-                        AuthorizationGrantType.JWT_BEARER  // JWT Bearer模式，支持JWT令牌
+                        AuthorizationGrantType.JWT_BEARER,  // JWT Bearer模式，支持JWT令牌
+                        AuthorizationGrantType.PASSWORD  // 密码模式，用于内部系统简化登录
                 )))
                 .redirectUris(uris -> uris.add(redirectUri))
                 .scopes(scopes -> scopes.addAll(Arrays.asList(  // 支持的权限范围
@@ -262,40 +293,25 @@ public class UniverseAuthorizationServerConfiguration {
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(
             HttpSecurity http,
-            JwtAccessDeniedHandler jwtAccessDeniedHandler,
-            JwtAuthenticationExceptionHandler jwtAuthenticationExceptionHandler) throws Exception {
+            AuthorizationServerSettings authorizationServerSettings
+    ) throws Exception {
 
         log.info("配置授权服务器安全过滤器链");
-
         // 应用Spring Authorization Server默认安全配置
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
         // 创建授权服务器配置器，用于自定义OAuth2端点行为
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
-
-        // 自定义授权端点配置，设置用户授权同意页面路径
-        authorizationServerConfigurer
-                // 配置authorizationServerSettings
-                .authorizationServerSettings(AuthorizationServerSettings.builder().build())
-                .oidc(Customizer.withDefaults())
-                .authorizationEndpoint(authorizationEndpoint ->
-                        authorizationEndpoint.consentPage(authorizationServerProperties.getConsentPage()));
-
         return http
                 // 设置安全匹配器，只处理授权服务器端点请求
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-
-                // 配置请求授权规则
-                .authorizeHttpRequests(authorize -> authorize
-                        // 健康检查端点 - 允许公开访问，用于监控和服务发现
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        // 错误页面和静态资源 - 允许公开访问
-                        .requestMatchers("/error", "/favicon.ico").permitAll()
-                        // 授权同意页面 - 需要用户登录认证
-                        .requestMatchers(authorizationServerProperties.getConsentPage()).authenticated()
-                        // 其他所有请求 - 需要认证
-                        .anyRequest().authenticated())
-
+                //                 应用授权服务器配置
+                .with(authorizationServerConfigurer, configurer -> {
+                    configurer.authorizationServerSettings(authorizationServerSettings)
+                            .oidc(Customizer.withDefaults())
+                            .authorizationEndpoint(authorizationEndpoint ->
+                                    authorizationEndpoint.consentPage(authorizationServerProperties.getConsentPage()));
+                })
                 // 配置CSRF保护 - 对授权服务器端点禁用CSRF（符合OAuth2标准）
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(authorizationServerConfigurer.getEndpointsMatcher()))
@@ -308,10 +324,6 @@ public class UniverseAuthorizationServerConfiguration {
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(jwtAuthenticationExceptionHandler)
                         .accessDeniedHandler(jwtAccessDeniedHandler))
-
-                // 应用授权服务器配置
-                .with(authorizationServerConfigurer, Customizer.withDefaults())
-
                 // 配置HTTP安全头 - 开发阶段简化配置，避免影响前后端分离开发
                 .headers((headers) -> {
                 })
@@ -352,142 +364,6 @@ public class UniverseAuthorizationServerConfiguration {
         */
     }
 
-    /**
-     * 默认安全过滤器链 - 优先级为2
-     * 处理非OAuth2授权服务器的其他HTTP请求
-     */
-    @Bean
-    @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(
-            HttpSecurity http,
-            JwtAccessDeniedHandler jwtAccessDeniedHandler,
-            JwtAuthenticationExceptionHandler jwtAuthenticationExceptionHandler) throws Exception {
-
-        log.info("配置默认安全过滤器链");
-
-        return http
-                // 匹配所有请求（除了已被授权服务器过滤器链处理的OAuth2端点）
-                .securityMatcher("/**")
-
-                // 配置请求授权规则
-                .authorizeHttpRequests(authorize -> authorize
-                        // 登录页面 - 允许公开访问，用于用户登录
-                        .requestMatchers("/login", "/admin/login").permitAll()
-                        // 注册界面 - 允许公开访问，用于用户注册
-                        .requestMatchers("/register").permitAll()
-                        // 健康检查端点 - 允许公开访问，用于服务监控
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        // 错误页面和网站图标 - 允许公开访问
-                        .requestMatchers("/error", "/favicon.ico").permitAll()
-                        // 静态资源文件 - 允许公开访问
-                        .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**").permitAll()
-                        // API文档 - 需要用户认证后访问
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/doc.html").authenticated()
-                        // 管理端点 - 需要管理员权限访问
-                        .requestMatchers("/actuator/**", "/admin/**").hasRole("ADMIN")
-                        // 其他所有请求 - 需要认证
-                        .anyRequest().authenticated())
-
-                // 完全禁用CSRF保护 - 适用于RESTful API服务
-                .csrf(AbstractHttpConfigurer::disable)
-
-                // 配置会话管理 - 使用无状态会话（STATELESS）
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // 配置异常处理 - 设置认证失败和权限不足的处理逻辑
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(jwtAuthenticationExceptionHandler)
-                        .accessDeniedHandler(jwtAccessDeniedHandler))
-
-                // 配置HTTP安全头 - 开发阶段简化配置
-                .headers((headers) -> {
-                })
-                .build();  // 构建并返回默认安全过滤器链对象
-
-        // ================================================================================
-        // 生产环境默认安全过滤器链配置 - 注释状态，需要时启用
-        // ================================================================================
-        /*
-        // 生产环境完整安全配置
-        return http
-                // 匹配所有请求（除了已被授权服务器过滤器链处理的OAuth2端点）
-                .securityMatcher("/**")
-
-                // 配置请求授权规则 - 生产环境更严格的访问控制
-                .authorizeHttpRequests(authorize -> authorize
-                        // 健康检查端点 - 允许公开访问，用于服务监控
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        // 错误页面和网站图标 - 允许公开访问
-                        .requestMatchers("/error", "/favicon.ico").permitAll()
-                        // 静态资源文件 - 生产环境需要认证访问
-                        .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**").authenticated()
-                        // API文档 - 生产环境禁用或需要管理员权限
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/doc.html").hasRole("ADMIN")
-                        // 管理端点 - 需要管理员权限访问
-                        .requestMatchers("/actuator/**", "/admin/**").hasRole("ADMIN")
-                        // 其他所有请求 - 需要认证
-                        .anyRequest().authenticated())
-
-                // 生产环境CSRF保护 - 对关键操作启用CSRF
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/actuator/health", "/actuator/info"))
-
-                // 配置会话管理 - 生产环境启用会话保护
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .maximumSessions(10)
-                        .maxSessionsPreventsLogin(true))
-
-                // 配置异常处理 - 设置认证失败和权限不足的处理逻辑
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(jwtAuthenticationExceptionHandler)
-                        .accessDeniedHandler(jwtAccessDeniedHandler))
-
-                // 完整的HTTP安全头配置 - 生产环境启用
-                .headers(headers -> headers
-                        // 内容安全策略 - 防止XSS攻击
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'"))
-
-                        // 跨域嵌入保护 - 防止点击劫持
-                        .frameOptions(frame -> frame.sameOrigin())
-
-                        // 传输安全 - 强制HTTPS
-                        .hsts(hsts -> hsts
-                                .maxAgeInSeconds(31536000)  // 1年
-                                .includeSubDomains(true))
-
-                        // 内容类型选项 - 防止MIME类型嗅探
-                        .contentTypeOptions(contentType -> {})
-
-                        // XSS保护 - 启用浏览器XSS过滤器
-                        .xssProtection(xss -> xss.headerValue(HeaderWriterFilter.XXSSProtectionMode.ENABLED_MODE_BLOCK))
-
-                        // 引用策略 - 防止敏感信息泄露
-                        .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-                )
-                .build();  // 构建并返回生产环境安全过滤器链对象
-        */
-    }
-
-    // ================================
-    // 4. 支持组件配置
-    // ================================
-
-    /**
-     * 密码编码器Bean
-     *
-     * <p>提供BCrypt密码编码器，用于加密敏感信息如客户端密钥等。
-     * BCrypt是一种强哈希算法，专门用于密码存储。</p>
-     *
-     * @return BCryptPasswordEncoder实例
-     */
-    @Bean  // Spring注解：注册密码编码器Bean
-    public PasswordEncoder passwordEncoder() {
-        // 创建强度为12的BCrypt密码编码器，提供良好的安全性和性能平衡
-        return new BCryptPasswordEncoder(12);
-    }
 
     /**
      * HTTP会话事件发布器Bean

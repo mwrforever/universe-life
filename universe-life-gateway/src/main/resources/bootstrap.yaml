@@ -12,7 +12,7 @@ spring:
         server-addr: localhost:6848
         file-extension: yaml
         group: DEFAULT_GROUP
-        namespace: a40a1d4b-4110-45e7-b16d-dc842e7ba324
+        namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
         shared-configs:
@@ -20,10 +20,12 @@ spring:
             refresh: true
           - data-id: shared-gateway-spingdoc-knife.yaml
             refresh: true
+          - data-id: shared-rabbitmq.yaml
+            refresh: true
       discovery:
         enabled: true
         server-addr: localhost:6848
-        namespace: a40a1d4b-4110-45e7-b16d-dc842e7ba324
+        namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
         group: DEFAULT_GROUP
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
@@ -45,11 +47,6 @@ spring:
             max-age: 3600
       default-filters:
         - StripPrefix=1
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8099
 
 
 

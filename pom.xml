@@ -24,8 +24,7 @@
         <spring-cloud.version>2023.0.6</spring-cloud.version>
         <spring-cloud-alibaba.version>2023.0.1.0</spring-cloud-alibaba.version>
         <hutool.version>5.8.40</hutool.version>
-        <mybatis.plus.version>3.5.7</mybatis.plus.version>
-        <lettuce.version>6.6.0.RELEASE</lettuce.version>
+        <mybatis.plus.version>3.5.14</mybatis.plus.version>
         <springdoc.openai.web.mvc.version>2.5.0</springdoc.openai.web.mvc.version>
         <knife4j.openapi3.web.mvc.version>4.4.0</knife4j.openapi3.web.mvc.version>
 
@@ -141,6 +140,18 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-boot-starter</artifactId>
                 <version>${mybatis.plus.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.mybatis</groupId>
+                        <artifactId>mybatis-spring</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis-spring</artifactId>
+                <version>3.0.5</version>
             </dependency>
 
             <dependency>
@@ -193,6 +204,7 @@
         <module>universe-life-common</module>
         <module>universe-life-message</module>
         <module>universe-life-notify</module>
+        <module>universe-life-comment</module>
     </modules>
 
 </project>

@@ -39,5 +39,4 @@ public class JwkNotifyListener {
     public void blackJwkNotify(String message) {
         jwtDecoderManager.resetDecoder();
     }
-
 }

@@ -16,6 +16,8 @@ import lombok.NoArgsConstructor;
 @Schema(description = "用户登录基础表单")
 public class LoginFormBaseDTO {
 
+    @Schema(description = "用户名")
+
     private String username;
 
     private Boolean remember;

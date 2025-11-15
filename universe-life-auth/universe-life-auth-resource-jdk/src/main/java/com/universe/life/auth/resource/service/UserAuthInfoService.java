@@ -1,4 +1,4 @@
-package com.universe.life.common.service;
+package com.universe.life.auth.resource.service;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
@@ -33,7 +33,7 @@ public class UserAuthInfoService implements UserDetailsService {
         }
         // TODO 查询用户权限信息
         // 封装用户信息
-        UserAuthInfo userAuthInfo = new UserAuthInfo(userInfo.getUserId(), userInfo.getUsername(), userInfo.getPassword(), null);
+        UserAuthInfo userAuthInfo = new UserAuthInfo(userInfo.getUserId(), username, userInfo.getPassword(), null);
         // 写入缓存
         String userInfoKey = RedisConstants.USER_AUTH_UID_KEY + userInfo.getUserId();
         stringRedisTemplate.opsForValue().set(

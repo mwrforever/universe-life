@@ -1,0 +1,37 @@
+package com.universe.life.model.domain.dto;
+
+import com.universe.life.model.enums.UserAuthType;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * @author 毛伟然
+ * @since 2025/11/13 15:21
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Schema(description = "注册表单")
+public class RegisterFormDTO {
+
+    @NotNull
+    @Pattern(regexp = "^[a-zA-Z0-9_-]{3,20}$", message = "用户名格式错误")
+    @Schema(description = "用户名")
+    private String username;
+
+    @NotNull
+    @Schema(description = "密码")
+    private String password;
+
+    @NotNull
+    @Schema(description = "认证类型")
+    private UserAuthType identificationType;
+
+    @NotNull
+    @Schema(description = "验证实体")
+    private String identification;
+}

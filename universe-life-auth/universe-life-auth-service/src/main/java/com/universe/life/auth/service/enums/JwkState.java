@@ -20,7 +20,7 @@ public enum JwkState {
             return null;
         }
         for (JwkState value : values()) {
-            if (value.status.equals(status)) {
+            if (value.state.equals(status)) {
                 return value;
             }
         }

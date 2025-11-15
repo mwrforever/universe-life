@@ -41,6 +41,10 @@ public interface ExceptionMessage {
     String CAPTCHA_ERROR = "验证码错误";
     String TOO_MANY_ATTEMPTS = "登录尝试次数过多，请稍后再试";
     String ACCOUNT_PASSWORD_ERROR = "账户密码错误";
+    String USER_ALREADY_EXISTS = "用户已存在";
+    String CLIENT_NOT_FOUND = "客户端不存在";
+    String USER_INFO_NOT_FOUND = "用户认证信息不存在";
+    String TOKEN_GENERATION_FAILED = "令牌生成失败";
 
     // ==================== 业务错误消息 ====================
     String BUSINESS_ERROR = "业务处理失败";

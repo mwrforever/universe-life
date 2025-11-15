@@ -1,7 +1,7 @@
 package com.universe.life.auth.service.mapper;
 
-import com.universe.life.auth.service.domain.po.Oauth2Jwk;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.universe.life.auth.service.domain.po.Oauth2Jwk;
 
 /**
  * <p>

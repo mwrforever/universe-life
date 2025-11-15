@@ -1,11 +1,13 @@
 package com.universe.life.auth.gateway.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.universe.life.auth.gateway.AuthorizationProperties;
 import com.universe.life.auth.gateway.handler.JwtAccessDeniedHandler;
 import com.universe.life.auth.gateway.handler.JwtAuthenticationExceptionHandler;
 import com.universe.life.auth.gateway.manager.JwtDecoderManager;
 import com.universe.life.common.properties.AuthPathProperties;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -35,25 +37,18 @@ import static org.springframework.security.config.Customizer.withDefaults;
  */
 @Configuration
 @EnableWebFluxSecurity
+@EnableConfigurationProperties(AuthorizationProperties.class)
+@RequiredArgsConstructor
 public class SecurityConfiguration {
 
     private final ObjectMapper objectMapper;
 
-
-    private String issuerUri;
-
-    public SecurityConfiguration(
-            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri,
-            ObjectMapper objectMapper
-    ) {
-        this.objectMapper = objectMapper;
-        this.issuerUri = issuerUri;
-    }
+    private final AuthorizationProperties authorizationProperties;
 
 
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
-        ReactiveJwtDecoder reactiveJwtDecoder = ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri);
+        ReactiveJwtDecoder reactiveJwtDecoder = ReactiveJwtDecoders.fromOidcIssuerLocation(authorizationProperties.getIssuerUri());
         JwtDecoderManager jwtDecoderManager = jwtDecoderManager();
         jwtDecoderManager.setDecoder(reactiveJwtDecoder);
         return jwt -> jwtDecoderManager.getDecoder().decode(jwt);
@@ -61,7 +56,7 @@ public class SecurityConfiguration {
 
     @Bean
     public JwtDecoderManager jwtDecoderManager() {
-        return new JwtDecoderManager(issuerUri);
+        return new JwtDecoderManager(authorizationProperties.getIssuerUri());
     }
 
 
@@ -72,8 +67,8 @@ public class SecurityConfiguration {
     ) {
         // 设置请求权限
         http.authorizeExchange(exchanges -> {
-            exchanges.pathMatchers(HttpMethod.OPTIONS, "/**").permitAll();
             if (authPathProperties.getEnable()) {
+                exchanges.pathMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                 exchanges.pathMatchers(authPathProperties.getExcludePath().toArray(new String[0])).permitAll();
                 exchanges.anyExchange().authenticated();
             } else {

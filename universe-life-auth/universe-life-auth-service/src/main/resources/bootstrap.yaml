@@ -28,20 +28,14 @@ spring:
             refresh: true
           - data-id: shared-rabbitmq.yaml
             refresh: true
+          - data-id: shared-server-springdoc.yaml
+            refresh: true
       discovery:
         server-addr: localhost:6848          # Nacos 注册中心地址
         namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
         group: DEFAULT_GROUP
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
-
-
-logging:
-  level:
-    org.springframework.amqp: INFO
-    com.rabbitmq.client: INFO
-    com.universe.life.rabbitmq: DEBUG
-    com.universe.life.auth.service: DEBUG
 
 
 

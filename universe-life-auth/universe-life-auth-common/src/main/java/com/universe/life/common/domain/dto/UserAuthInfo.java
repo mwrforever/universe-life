@@ -1,6 +1,5 @@
 package com.universe.life.common.domain.dto;
 
-import cn.hutool.core.collection.CollUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
@@ -39,7 +38,7 @@ public class UserAuthInfo implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (CollUtil.isNotEmpty(permissions)) {
+        if (permissions != null) {
             return permissions;
         }
         return prePermissions.stream().map(SimpleGrantedAuthority::new).toList();

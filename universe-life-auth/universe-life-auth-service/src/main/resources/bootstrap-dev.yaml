@@ -3,7 +3,7 @@ universe-life:
     host: localhost
     port: 13306
     username: root
-    password: 1010520Mao@@
+    password: 1010520mao
     database: oauth2_authorization
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
@@ -13,6 +13,16 @@ universe-life:
       port: 16379
       password: 1010520mao
       timeout: 10000
+  auth:
+    enable: true
+    exclude-path:
+      - /auth/user/login
+      - /auth/user/register
+      - /auth/admin/login
+      - /auth/admin/register
+      - /v3/api-docs/**
+      - /swagger-ui/**
+      - /doc.html
   security:
     authorization:
       server:
@@ -24,8 +34,8 @@ universe-life:
   # Redisson 分布式锁配置（测试环境）
   redisson:
     # 基础配置
-    password: ${TEST_REDISSON_PASSWORD:test_redis_pass}
-    connection-pool-size: 10
+    password: 1010520mao
+    connection-pool-size: 30
     connect-timeout: 8000
     timeout: 2500
     retry-attempts: 2
@@ -36,7 +46,13 @@ universe-life:
     # 单机模式配置（测试环境推荐）
     single:
       enabled: true
-      address: redis://localhost:16380
-      database: 1
+      address: redis://localhost:16379
+      database: 0
   mybatis-plus:
     type-aliases-package: com.universe.life.auth.service.domain
+
+logging:
+  level:
+    org.springframework.amqp: INFO
+    com.rabbitmq.client: INFO
+    com.universe.life.auth.service: DEBUG

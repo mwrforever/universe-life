@@ -4,7 +4,7 @@ spring:
   profiles:
     active: dev
   application:
-    name: order-service
+    name: pay-service
   cloud:
     nacos:
       config:
@@ -12,7 +12,7 @@ spring:
         server-addr: localhost:6848
         file-extension: yaml
         group: DEFAULT_GROUP
-        namespace: a40a1d4b-4110-45e7-b16d-dc842e7ba324
+        namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
         shared-configs:
@@ -22,11 +22,18 @@ spring:
             refresh: true
           - data-id: shared-mybatis-plus.yaml
             refresh: true
-          - data-id: shared-logging.yaml
+          - data-id: shared-powerjob.yaml
+            refresh: true
+          - data-id: shared-jackson.yaml
+            refresh: true
+          - data-id: shared-rabbitmq.yaml
+            refresh: true
+          - data-id: shared-server-springdoc.yaml
             refresh: true
       discovery:
         server-addr: localhost:6848          # Nacos 注册中心地址
-        namespace: a40a1d4b-4110-45e7-b16d-dc842e7ba324
+        namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
         group: DEFAULT_GROUP
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
+

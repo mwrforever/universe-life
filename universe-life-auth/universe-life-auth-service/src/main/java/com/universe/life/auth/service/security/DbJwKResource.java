@@ -33,7 +33,7 @@ public class DbJwKResource implements JWKSource<SecurityContext> {
     private final IOauth2JwkService oauth2JwkService;
     private final JwkManager jwkManager;
     private final RedissonClient redissonClient;
-    private final RLock lock = redissonClient.getLock(RedisConstants.AUTH_SECRET_KEY_GENERATE_LOCK);
+    private RLock lock;
 
     @Override
     public List<JWK> get(JWKSelector jwkSelector, SecurityContext securityContext) throws KeySourceException {
@@ -44,6 +44,9 @@ public class DbJwKResource implements JWKSource<SecurityContext> {
         }
         JWKSet newJwkSet;
         try {
+            if (lock == null) {
+                lock = redissonClient.getLock(RedisConstants.AUTH_SECRET_KEY_GENERATE_LOCK);
+            }
             lock.lock();
             // 再从数据库中获取密钥对
             List<Oauth2Jwk> oauth2Jwks = oauth2JwkService.lambdaQuery()

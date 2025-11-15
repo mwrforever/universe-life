@@ -5,6 +5,7 @@ import com.universe.life.auth.service.domain.po.Oauth2Jwk;
 import com.universe.life.auth.service.enums.JwkAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -47,6 +48,7 @@ import static com.nimbusds.jose.jwk.Curve.P_256;
  * @since 2025/11/5 09:34
  */
 @Slf4j
+@Component
 public class JwkManager {
 
 

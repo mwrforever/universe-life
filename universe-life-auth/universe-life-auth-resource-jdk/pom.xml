@@ -18,6 +18,21 @@
             <artifactId>universe-life-auth-common</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.universe.life</groupId>
+            <artifactId>universe-life-user-common-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.universe.life</groupId>
+            <artifactId>universe-life-user-common-model</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.universe.life</groupId>
+            <artifactId>universe-life-common</artifactId>
+        </dependency>
+
 
         <dependency>
             <groupId>org.springframework.security</groupId>
