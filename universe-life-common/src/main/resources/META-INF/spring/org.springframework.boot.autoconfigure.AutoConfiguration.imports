@@ -2,3 +2,5 @@ com.universe.life.common.config.ExecutorConfiguration
 com.universe.life.common.config.RedissonConfiguration
 com.universe.life.common.config.RedissonDelayedJobConfiguration
 com.universe.life.common.config.RabbitMqConfiguration
+com.universe.life.common.config.RedisConfiguration
+com.universe.life.common.config.CaptchaConfiguration

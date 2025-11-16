@@ -1,6 +1,7 @@
 package com.universe.life.auth.service.controller;
 
 import com.universe.life.auth.service.domain.dto.request.LoginFormRequest;
+import com.universe.life.auth.service.domain.dto.request.RegisterFormRequest;
 import com.universe.life.auth.service.domain.vo.UserLoginVO;
 import com.universe.life.auth.service.service.IAuthUserService;
 import com.universe.life.common.domain.Result;
@@ -28,8 +29,9 @@ public class AuthUserController {
 
     @PostMapping("/register")
     @Operation(description = "用户注册")
-    public Result<Void> register() {
-        return null;
+    public Result<Void> register(RegisterFormRequest request) {
+        authUserService.register(request);
+        return Result.success();
     }
 
     @PostMapping("/login")

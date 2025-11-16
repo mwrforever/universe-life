@@ -1,6 +1,11 @@
 package com.universe.life.auth.service.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.ObjectUtil;
+import com.universe.life.api.client.UserClient;
+import com.universe.life.auth.service.constants.RedisConstants;
 import com.universe.life.auth.service.domain.dto.request.LoginFormRequest;
+import com.universe.life.auth.service.domain.dto.request.RegisterFormRequest;
 import com.universe.life.auth.service.domain.vo.UserLoginVO;
 import com.universe.life.auth.service.properties.AuthorizationServerProperties;
 import com.universe.life.auth.service.service.IAuthUserService;
@@ -8,8 +13,10 @@ import com.universe.life.common.domain.Result;
 import com.universe.life.common.domain.dto.UserAuthInfo;
 import com.universe.life.common.exception.AuthException;
 import com.universe.life.common.message.ExceptionMessage;
+import com.universe.life.model.domain.dto.RegisterFormDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -52,6 +59,8 @@ public class AuthUserServiceImpl implements IAuthUserService {
     private final OAuth2AuthorizationService authorizationService;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final AuthorizationServerProperties authorizationServerProperties;
+    private final UserClient userClient;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     public Result<UserLoginVO> login(LoginFormRequest loginFormRequest) {
@@ -158,6 +167,29 @@ public class AuthUserServiceImpl implements IAuthUserService {
             log.error("用户登录失败，用户标识: {}", loginFormRequest.getIdentification(), e);
             throw new AuthException.AuthenticationException(ExceptionMessage.AUTH_FAILED);
         }
+    }
+
+    @Override
+    public void register(RegisterFormRequest request) {
+        // 用户注册
+
+        // 先在redis中查看当前验证的业务标识
+        Object codeObj = stringRedisTemplate.opsForHash().get(
+                RedisConstants.AUTH_USER_CAPTCHA_KEY_PREFIX + request.getIdentification(),
+                RedisConstants.AUTH_ISSUER
+        );
+        // 如果验证码已过期，则返回错误
+        if (ObjectUtil.isNull(codeObj)) {
+            throw new AuthException.AuthenticationException(ExceptionMessage.AUTHORIZATION_CODE_EXPIRED);
+        }
+        // 校验授权码与当前业务标识的验证码是否一致
+        if (!String.valueOf(codeObj).equals(request.getIssuer())) {
+            throw new AuthException.AuthenticationException(ExceptionMessage.AUTHORIZATION_CODE_INVALID);
+        }
+        // 封装用户数据
+        RegisterFormDTO registerFormDTO = BeanUtil.toBean(request, RegisterFormDTO.class);
+        // 保存用户数据
+        userClient.add(registerFormDTO);
     }
 
 
