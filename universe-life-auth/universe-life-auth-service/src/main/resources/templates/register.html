@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title ?: '万象生活 - 注册'}">万象生活 - 注册</title>
+
+    <!-- CSRF Meta Tags for Spring Security -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" th:href="@{/css/fontawesome-all.min.css}">
+    <!-- Main CSS -->
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <!-- 动画背景 -->
+    <div class="animated-background">
+        <div class="floating-shapes"></div>
+        <div class="floating-icons">
+            <!-- 图标将由JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Logo和标题 -->
+            <div class="logo-container">
+                <div class="logo">🏠</div>
+                <h2 class="title" th:text="${appName ?: '注册万象生活'}">注册万象生活</h2>
+                <p class="subtitle">开启品质生活之旅</p>
+            </div>
+
+            <!-- 注册表单区域 -->
+            <div class="register-content">
+                <!-- 第一步：邮箱验证码验证 -->
+                <form class="register-form" id="register-form">
+                    <div class="form-item">
+                        <label class="form-label">邮箱</label>
+                        <div class="input-wrapper">
+                            <i class="far fa-envelope input-icon"></i>
+                            <input type="email" placeholder="请输入邮箱地址" id="identification" name="identification" autocomplete="off">
+                        </div>
+                        <div class="error-message" id="identification-error"></div>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">验证码</label>
+                        <div class="input-wrapper verification-input">
+                            <i class="fas fa-mobile-alt input-icon"></i>
+                            <input type="tel" placeholder="请输入6位数字验证码" id="verifyCode" name="verifyCode" maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="off">
+                            <button type="button" class="verification-btn" id="send-code-btn">获取验证码</button>
+                        </div>
+                        <div class="error-message" id="verifyCode-error"></div>
+                    </div>
+
+                    <!-- 验证码用途类型：2=注册验证码 -->
+                    <input type="hidden" id="usageType" name="usageType" value="2">
+
+                    <div class="form-item">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="agreement" name="agreement">
+                            <span class="checkmark"></span>
+                            我已阅读并同意
+                            <a href="#" class="agreement-link" data-terms="user">《用户服务协议》</a>
+                            和
+                            <a href="#" class="agreement-link" data-terms="privacy">《隐私政策》</a>
+                            及
+                            <a href="#" class="agreement-link" data-terms="disclaimer">《平台免责声明》</a>
+                        </label>
+                        <div class="error-message" id="agreement-error"></div>
+                    </div>
+
+                    <button type="button" class="submit-btn" id="register-submit">
+                        <span class="btn-text">验证</span>
+                        <span class="btn-loading">验证中...</span>
+                    </button>
+                </form>
+
+                <!-- 分隔线 -->
+                <div class="divider">
+                    <span>或使用以下方式注册</span>
+                </div>
+
+                <!-- 第三方注册按钮 -->
+                <div class="social-buttons">
+                    <button class="social-btn wechat" title="微信注册" data-social="微信">
+                        <i class="fab fa-weixin"></i>
+                    </button>
+                    <button class="social-btn qq" title="QQ注册" data-social="QQ">
+                        <i class="fab fa-qq"></i>
+                    </button>
+                    <button class="social-btn alipay" title="支付宝注册" data-social="支付宝">
+                        <i class="fab fa-alipay"></i>
+                    </button>
+                    <button class="social-btn weibo" title="微博注册" data-social="微博">
+                        <i class="fab fa-weibo"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 底部链接 -->
+            <div class="auth-links">
+                <span class="login-text">已有账号？</span>
+                <a th:href="@{/login}" class="login-link-btn">立即登录</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- JavaScript -->
+    <script th:src="@{/js/form-validator.js}"></script>
+    <script th:src="@{/js/terms-loader.js}"></script>
+    <script th:src="@{/js/register.js}"></script>
+
+    <!-- 协议弹窗 -->
+    <div class="modal-overlay" id="terms-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">用户服务协议</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tabs-content">
+                    <button class="modal-tab active" data-tab="user">用户协议</button>
+                    <button class="modal-tab" data-tab="privacy">隐私政策</button>
+                    <button class="modal-tab" data-tab="disclaimer">免责声明</button>
+                </div>
+                <div class="modal-text">
+                    <div id="user-content" class="terms-content active">
+                        <p style="text-align: center; padding: 20px;">正在加载用户服务协议...</p>
+                    </div>
+                    <div id="privacy-content" class="terms-content">
+                        <p style="text-align: center; padding: 20px;">正在加载隐私政策...</p>
+                    </div>
+                    <div id="disclaimer-content" class="terms-content">
+                        <p style="text-align: center; padding: 20px;">正在加载平台免责声明...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" id="modal-confirm">确认</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

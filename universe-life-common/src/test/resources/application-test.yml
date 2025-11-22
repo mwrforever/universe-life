@@ -1,0 +1,42 @@
+# 测试环境配置
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+
+    # 测试环境配置
+    connection-timeout: 5000
+    publisher-confirm-type: simple
+    publisher-returns: true
+
+    # 模板配置
+    template:
+      retry:
+        enabled: false
+      receive-timeout: 10000
+      reply-timeout: 10000
+
+# 简化的RabbitMQ发送器测试配置
+universe:
+  rabbitmq:
+    sender:
+      enable-confirm: false          # 测试时关闭确认以提高速度
+      enable-return: false           # 测试时关闭返回以提高速度
+      default-exchange: ""
+      default-persistent: false      # 测试时使用非持久化消息
+      async-thread-pool-size: 5
+      send-timeout: 3000
+      debug-log: false               # 测试时关闭调试日志
+      retry-on-failure: false
+      max-retry-attempts: 1
+      retry-interval: 500
+
+# 日志配置
+logging:
+  level:
+    com.universe.life.common.util: INFO
+    org.springframework.amqp: WARN
+    com.rabbitmq: WARN

@@ -1,0 +1,47 @@
+# 邮件服务配置示例
+# 复制到你的 application.yml 或 application-dev.yml 文件中
+
+spring:
+  mail:
+    # 邮件服务器配置
+    host: smtp.qq.com  # QQ邮箱SMTP服务器
+    port: 587          # SSL端口
+    username: your-email@qq.com
+    password: your-authorization-code  # 不是QQ密码，是授权码
+
+    # 编码配置
+    default-encoding: UTF-8
+
+    # SMTP协议配置
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false  # 开发时可以设置为true查看详细日志
+
+# 应用配置
+app:
+  name: Universe Life
+  url: http://127.0.0.1:3000
+  description: 探索无限可能，连接美好生活
+
+# 其他常用邮箱配置示例:
+
+# 163邮箱:
+# spring.mail.host: smtp.163.com
+# spring.mail.port: 465
+# spring.mail.properties.mail.smtp.auth: true
+# spring.mail.properties.mail.smtp.ssl.enable: true
+
+# Gmail:
+# spring.mail.host: smtp.gmail.com
+# spring.mail.port: 587
+# spring.mail.properties.mail.smtp.auth: true
+# spring.mail.properties.mail.smtp.starttls.enable: true
+
+# Outlook:
+# spring.mail.host: smtp-mail.outlook.com
+# spring.mail.port: 587

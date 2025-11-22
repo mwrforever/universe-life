@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title ?: '万象生活 - 完善账户信息'}">万象生活 - 完善账户信息</title>
+
+    <!-- CSRF Meta Tags for Spring Security -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" th:href="@{/css/fontawesome-all.min.css}">
+    <!-- Main CSS -->
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <!-- 动画背景 -->
+    <div class="animated-background">
+        <div class="floating-shapes"></div>
+        <div class="floating-icons">
+            <!-- 图标将由JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- 极简返回按钮 - 纯图标 -->
+            <div class="back-button">
+                <a th:href="@{/register}" id="back-link" title="返回上一步" aria-label="返回上一步">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+
+            <!-- Logo和标题 -->
+            <div class="logo-container">
+                <div class="logo">🏠</div>
+                <h2 class="title" th:text="${appName ?: '完善账户信息'}">完善账户信息</h2>
+                <p class="subtitle" th:text="${appDescription ?: '请设置您的账户信息'}">请设置您的账户信息</p>
+            </div>
+
+            <!-- 注册信息表单区域 -->
+            <div class="register-info-content">
+                <form class="register-form" id="register-info-form">
+                    <!-- 从URL参数获取已验证的邮箱 -->
+                    <input type="hidden" id="identification" name="identification" />
+
+                    <!-- 固定参数：认证方式为邮箱 -->
+                    <input type="hidden" id="identificationType" name="identificationType" value="6" />
+
+                    <!-- 固定参数：验证码用途为注册 -->
+                    <input type="hidden" id="captchaUsageType" name="captchaUsageType" value="2" />
+
+                    <!-- 从URL参数获取验证码请求唯一标识 -->
+                    <input type="hidden" id="issuer" name="issuer" />
+
+                    <div class="form-item">
+                        <label class="form-label">用户名</label>
+                        <div class="input-wrapper">
+                            <i class="far fa-user input-icon"></i>
+                            <input type="text" placeholder="请输入4-16位用户名（字母、数字、下划线、连字符）" id="username" name="username" autocomplete="off">
+                        </div>
+                        <div class="error-message" id="username-error"></div>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">密码</label>
+                        <div class="input-wrapper password-input">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" placeholder="请输入6-20位密码" id="password" name="password" autocomplete="off">
+                            <button type="button" class="password-toggle-btn" id="password-toggle" title="显示密码">
+                                <i class="far fa-eye password-toggle-icon"></i>
+                            </button>
+                        </div>
+                        <div class="error-message" id="password-error"></div>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">确认密码</label>
+                        <div class="input-wrapper password-input">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" placeholder="请再次输入密码" id="confirmPassword" name="confirmPassword" autocomplete="off">
+                            <button type="button" class="password-toggle-btn" id="confirm-password-toggle" title="显示密码">
+                                <i class="far fa-eye password-toggle-icon"></i>
+                            </button>
+                        </div>
+                        <div class="error-message" id="confirmPassword-error"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="register-submit">
+                        <span class="btn-text">完成注册</span>
+                        <span class="btn-loading">注册中...</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- 底部链接 -->
+            <div class="auth-links">
+                <span class="login-text">已有账号？</span>
+                <a th:href="@{/login}" class="login-link-btn">立即登录</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- JavaScript -->
+    <script th:src="@{/js/form-validator.js}"></script>
+    <script th:src="@{/js/register-info.js}"></script>
+</body>
+</html>
