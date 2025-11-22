@@ -1,1 +1,2 @@
 com.universe.life.auth.resource.config.SecurityConfiguration
+com.universe.life.auth.resource.config.FeignClientConfiguration

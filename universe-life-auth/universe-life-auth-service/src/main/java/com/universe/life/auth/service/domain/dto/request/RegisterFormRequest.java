@@ -1,5 +1,6 @@
 package com.universe.life.auth.service.domain.dto.request;
 
+import com.universe.life.common.enums.CaptchaUsageType;
 import com.universe.life.model.enums.UserAuthType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -34,6 +35,10 @@ public class RegisterFormRequest {
     @Schema(description = "用户认证方式")
     @NotNull(message = "用户认证方式不能为空")
     private UserAuthType identificationType;
+
+    @Schema(description = "验证码用途")
+    @NotNull(message = "验证码用途不能为空")
+    private CaptchaUsageType captchaUsageType;
 
     @Schema(description = "验证码请求唯一标识")
     @NotNull(message = "验证码请求唯一标识不能为空")

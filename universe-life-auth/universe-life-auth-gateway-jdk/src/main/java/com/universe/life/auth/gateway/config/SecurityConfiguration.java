@@ -7,9 +7,11 @@ import com.universe.life.auth.gateway.handler.JwtAuthenticationExceptionHandler;
 import com.universe.life.auth.gateway.manager.JwtDecoderManager;
 import com.universe.life.common.properties.AuthPathProperties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -35,9 +37,10 @@ import static org.springframework.security.config.Customizer.withDefaults;
  * @author 毛伟然
  * @since 2025/11/3 15:40
  */
+@Slf4j
 @Configuration
 @EnableWebFluxSecurity
-@EnableConfigurationProperties(AuthorizationProperties.class)
+@EnableConfigurationProperties({AuthorizationProperties.class, AuthPathProperties.class})
 @RequiredArgsConstructor
 public class SecurityConfiguration {
 
@@ -61,11 +64,13 @@ public class SecurityConfiguration {
 
 
     @Bean
+    @Order(1)
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
             AuthPathProperties authPathProperties
     ) {
         // 设置请求权限
+        log.info("网关服务的过滤器链注册中：{}", authPathProperties);
         http.authorizeExchange(exchanges -> {
             if (authPathProperties.getEnable()) {
                 exchanges.pathMatchers(HttpMethod.OPTIONS, "/**").permitAll();

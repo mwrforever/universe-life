@@ -41,7 +41,7 @@ public class UserAuthInfo implements UserDetails {
         if (permissions != null) {
             return permissions;
         }
-        return prePermissions.stream().map(SimpleGrantedAuthority::new).toList();
+        return prePermissions == null ? List.of() : prePermissions.stream().map(SimpleGrantedAuthority::new).toList();
     }
 
     @Override

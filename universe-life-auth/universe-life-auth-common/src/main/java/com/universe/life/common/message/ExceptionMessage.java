@@ -47,10 +47,11 @@ public interface ExceptionMessage {
     String TOKEN_GENERATION_FAILED = "令牌生成失败";
     String CAPTCHA_ALREADY_EXPIRED = "验证码已过期";
     String AUTHORIZATION_CODE_REQUIRED = "请提供授权码";
-    String AUTHORIZATION_CODE_EXPIRED = "授权码已过期";
+    String AUTHORIZATION_CODE_EXPIRED = "授权码已过期，请重新获取";
     String AUTHORIZATION_CODE_INVALID = "授权码无效";
     String CAPTCHA_ALREADY_EXISTS = "验证码已存在，请勿重复提交";
     String PHONE_EMAIL_FORMAT_ERROR = "手机号或邮箱格式错误";
+    String REQUEST_METHOD_NOT_ALLOWED = "请求方法 {0} 不允许";
 
     // ==================== 业务错误消息 ====================
     String BUSINESS_ERROR = "业务处理失败";

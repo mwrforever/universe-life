@@ -6,6 +6,8 @@ import com.universe.life.model.domain.dto.UserInfoDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * @author 毛伟然
@@ -14,11 +16,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 @FeignClient(value = "user-service", fallbackFactory = UserClientFallback.class)
 public interface UserClient {
 
-    @GetMapping("/users/auth/getUserInfo")
-    UserInfoDTO getUserInfo(String username);
+    @GetMapping("/auth/getUserInfo")
+    UserInfoDTO getUserInfo(@RequestParam String username);
 
-    @PostMapping("/users/add")
-    void add(RegisterFormDTO registerFormDTO);
+    @PostMapping("/add")
+    void add(@RequestBody RegisterFormDTO registerFormDTO);
 
 
 }

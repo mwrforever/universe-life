@@ -18,20 +18,20 @@ import lombok.NoArgsConstructor;
 @Schema(description = "注册表单")
 public class RegisterFormDTO {
 
-    @NotNull
-    @Pattern(regexp = "^[a-zA-Z0-9_-]{3,20}$", message = "用户名格式错误")
+    @NotNull(message = "用户名不能为空")
+    @Pattern(regexp = "^[a-zA-Z0-9_-]{4,20}$", message = "用户名格式错误")
     @Schema(description = "用户名")
     private String username;
 
-    @NotNull
+    @NotNull(message = "密码不能为空")
     @Schema(description = "密码")
     private String password;
 
-    @NotNull
+    @NotNull(message = "认证类型不能为空")
     @Schema(description = "认证类型")
     private UserAuthType identificationType;
 
-    @NotNull
+    @NotNull(message = "验证实体不能为空")
     @Schema(description = "验证实体")
     private String identification;
 }

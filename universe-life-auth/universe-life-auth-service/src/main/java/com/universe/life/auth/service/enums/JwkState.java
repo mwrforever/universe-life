@@ -11,6 +11,7 @@ import lombok.Getter;
 @Getter
 public enum JwkState {
     ACTIVE("ACTIVE"),
+    RESOLVED("RESOLVED"),
     INACTIVE("INACTIVE");
 
     private final String state;

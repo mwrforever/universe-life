@@ -2,7 +2,14 @@ package com.universe.life.auth.service.security;
 
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.universe.life.auth.service.manager.JwkManager;
 import com.universe.life.auth.service.properties.AuthorizationServerProperties;
+import com.universe.life.auth.service.properties.JwkProperties;
+import com.universe.life.auth.service.security.filter.MyUsernamePasswordAuthenticationFilter;
+import com.universe.life.auth.service.security.filter.SmsAuthenticationFilter;
+import com.universe.life.auth.service.security.provider.SmsAuthenticationProvider;
+import com.universe.life.auth.service.security.provider.UsernamePasswordAuthenticationProvider;
+import com.universe.life.auth.service.service.impl.AuthCommonServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.actuate.health.Health;
@@ -11,12 +18,16 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -42,7 +53,13 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -56,7 +73,7 @@ import java.util.UUID;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@EnableConfigurationProperties(AuthorizationServerProperties.class)
+@EnableConfigurationProperties({AuthorizationServerProperties.class, JwkProperties.class})
 @RequiredArgsConstructor
 public class UniverseAuthorizationServerConfiguration {
 
@@ -68,6 +85,13 @@ public class UniverseAuthorizationServerConfiguration {
 
     private final AuthenticationEntryPoint jwtAuthenticationExceptionHandler;
 
+    private final JwkProperties jwkProperties;
+
+    @Bean
+    public JwkManager jwkManager() {
+        log.info("创建JwkManager对象");
+        return new JwkManager(jwkProperties);
+    }
 
     @Bean
     public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
@@ -179,16 +203,13 @@ public class UniverseAuthorizationServerConfiguration {
         // 使用BCrypt算法加密客户端密钥，强度12，提供强密码保护
         String encodedSecret = bCryptPasswordEncoder.encode(clientSecret);
         // 使用建造者模式创建RegisteredClient对象
-        return RegisteredClient.withId(UUID.randomUUID().toString())  // 生成唯一客户端ID
+        return RegisteredClient.withId(UUID.randomUUID().toString().replace("-", ""))  // 生成唯一客户端ID
                 .clientId(clientId)  // 设置客户端标识符
                 .clientSecret(encodedSecret)  // 设置加密后的客户端密钥                                                                                      jdbcTemplate
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)  // 客户端认证方式：HTTP Basic认证
+                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)  // 客户端认证方式：HTTP Basic认证
                 .authorizationGrantTypes(grants -> grants.addAll(Arrays.asList(  // 支持的授权类型
                         AuthorizationGrantType.AUTHORIZATION_CODE,  // 授权码模式，最安全的OAuth2流程
-                        AuthorizationGrantType.REFRESH_TOKEN,  // 刷新令牌模式，支持令牌续期
-                        AuthorizationGrantType.CLIENT_CREDENTIALS,  // 客户端凭证模式，用于服务间调用
-                        AuthorizationGrantType.JWT_BEARER,  // JWT Bearer模式，支持JWT令牌
-                        AuthorizationGrantType.PASSWORD  // 密码模式，用于内部系统简化登录
+                        AuthorizationGrantType.REFRESH_TOKEN  // 刷新令牌模式，支持令牌续期
                 )))
                 .redirectUris(uris -> uris.add(redirectUri))
                 .scopes(scopes -> scopes.addAll(Arrays.asList(  // 支持的权限范围
@@ -286,11 +307,81 @@ public class UniverseAuthorizationServerConfiguration {
 
 
     /**
+     * 用户认证安全过滤器链 - 优先级为1
+     * 处理登录、注册相关的所有请求和静态资源
+     */
+    @Bean
+    @Order(1)
+    public SecurityFilterChain authenficationSecurityFilterChain(
+            HttpSecurity http,
+            UserDetailsService userDetailsService,
+            AuthCommonServiceImpl authCommonService) throws Exception {
+        log.info("配置用户认证安全过滤器链");
+        // 1. 获取 AuthenticationManager
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        // 注册我们的 Provider
+        SmsAuthenticationProvider smsProvider = new SmsAuthenticationProvider(userDetailsService, authCommonService);
+        UsernamePasswordAuthenticationProvider usernamePasswordProvider =
+                new UsernamePasswordAuthenticationProvider(userDetailsService, bCryptPasswordEncoder);
+        authenticationManagerBuilder.authenticationProvider(smsProvider);
+        authenticationManagerBuilder.authenticationProvider(usernamePasswordProvider);
+        AuthenticationManager authenticationManager = authenticationManagerBuilder.build();
+        // 2. 配置 Filter
+        SmsAuthenticationFilter smsFilter = new SmsAuthenticationFilter(authenticationManager);
+        MyUsernamePasswordAuthenticationFilter usernamePasswordFilter =
+                new MyUsernamePasswordAuthenticationFilter(authenticationManager);
+
+        // 登录成功后，重定向回之前的请求（例如 /oauth2/authorize）
+        smsFilter.setAuthenticationSuccessHandler(new SavedRequestAwareAuthenticationSuccessHandler());
+        // 登录失败去哪里
+        smsFilter.setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler("/login"));
+
+        // 配置用户名密码过滤器
+        usernamePasswordFilter.setAuthenticationSuccessHandler(new SavedRequestAwareAuthenticationSuccessHandler());
+        usernamePasswordFilter.setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler("/login"));
+        http
+                .securityMatcher(
+                        "/user-agreement",
+                        "/privacy-policy",
+                        "/disclaimer",
+                        "/register-info",
+                        "/login",
+                        "/login/**",
+                        "/register",
+                        "/register/**",
+                        "/css/**",
+                        "/js/**",
+                        "/img/**",
+                        "/favicon.ico",
+                        "/static/**"
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .anyRequest().permitAll()
+                )
+                .exceptionHandling(exception -> exception
+                        .defaultAuthenticationEntryPointFor(
+                                new LoginUrlAuthenticationEntryPoint("/login"),
+                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+                        ))
+                // 将我们的 Manager 重新设置回去
+                .authenticationManager(authenticationManager)
+                // ★ 把短信 Filter 加在用户名密码 Filter 之前
+                .addFilterBefore(smsFilter, UsernamePasswordAuthenticationFilter.class)
+                // 添加我们自定义的用户名密码过滤器
+                .addFilterBefore(usernamePasswordFilter, UsernamePasswordAuthenticationFilter.class)
+                // 启用CSRF保护，Thymeleaf会自动处理CSRF token，登录注册页面无需CSRF
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                );
+        return http.build();
+    }
+
+    /**
      * 授权服务器安全过滤器链 - 优先级为1
      * 处理所有OAuth2授权服务器端点请求
      */
     @Bean
-    @Order(1)
+    @Order(2)
     public SecurityFilterChain authorizationServerSecurityFilterChain(
             HttpSecurity http,
             AuthorizationServerSettings authorizationServerSettings
@@ -299,27 +390,24 @@ public class UniverseAuthorizationServerConfiguration {
         log.info("配置授权服务器安全过滤器链");
         // 应用Spring Authorization Server默认安全配置
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-
         // 创建授权服务器配置器，用于自定义OAuth2端点行为
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
         return http
                 // 设置安全匹配器，只处理授权服务器端点请求
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
                 //                 应用授权服务器配置
-                .with(authorizationServerConfigurer, configurer -> {
-                    configurer.authorizationServerSettings(authorizationServerSettings)
-                            .oidc(Customizer.withDefaults())
-                            .authorizationEndpoint(authorizationEndpoint ->
-                                    authorizationEndpoint.consentPage(authorizationServerProperties.getConsentPage()));
-                })
+                .with(authorizationServerConfigurer, configurer ->
+                        configurer.authorizationServerSettings(authorizationServerSettings)
+                                .oidc(Customizer.withDefaults())
+                                .authorizationEndpoint(authorizationEndpoint ->
+                                        authorizationEndpoint.consentPage(authorizationServerProperties.getConsentPage()))
+                )
                 // 配置CSRF保护 - 对授权服务器端点禁用CSRF（符合OAuth2标准）
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(authorizationServerConfigurer.getEndpointsMatcher()))
-
                 // 配置会话管理 - 使用无状态会话（STATELESS）
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
                 // 配置异常处理 - 设置认证入口点和访问拒绝处理器
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(jwtAuthenticationExceptionHandler)

@@ -16,17 +16,22 @@ universe-life:
   auth:
     enable: true
     exclude-path:
-      - /auth/user/login
-      - /auth/user/register
-      - /auth/admin/login
-      - /auth/admin/register
-      - /v3/api-docs/**
-      - /swagger-ui/**
-      - /doc.html
+      - /common/captcha/send
+      - /common/captcha/verify
+      - /actuator/health
+      - /actuator/info
+      - /v3/api-docs
+      - /favicon.ico
+      - /swagger-ui.html
+      - /error
+      - /static/**
+      - /css/**
+      - /js/**
+      - /html/**
   security:
     authorization:
       server:
-        consent-page: http://localhost:5000/auth/consent
+        consent-page: http://localhost:3000/auth/consent
         issuer: http://localhost:8099
         client-id: fCSYj5XOia6J4O9shfka
         client-secret: m&#H:YN&@[Ijhn3s&ehV
@@ -50,9 +55,16 @@ universe-life:
       database: 0
   mybatis-plus:
     type-aliases-package: com.universe.life.auth.service.domain
+  mail:
+    app-name: 万象生活
+    from: 18229923842@163.com
+    app-url: http://127.0.0.1:3000
+
 
 logging:
   level:
     org.springframework.amqp: INFO
     com.rabbitmq.client: INFO
     com.universe.life.auth.service: DEBUG
+    com.github.xiaoymin.knife4j: DEBUG
+    org.springframework.security: DEBUG

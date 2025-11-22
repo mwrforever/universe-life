@@ -4,11 +4,15 @@ universe-life:
     exclude-path:
       - /api/auth/user/login
       - /api/auth/user/register
-      - /api/auth/admin/login
-      - /api/auth/admin/register
-      - /api/v3/api-docs/**
-      - /api/swagger-ui/**
-      - /api/doc.html
+      - /api/auth/common/captcha/send
+      - /api/auth/oauth2-jwk/update
+      - /api/auth/v3/api-docs
+      - /api/user/v3/api-docs
+      - /webjars/**
+      - /v3/api-docs/**
+      - /swagger-ui/**
+      - /doc.html
+      - /favicon.ico
       - /actuator/health
       - /actuator/info
   security:
@@ -21,3 +25,5 @@ logging:
     org.springframework.amqp: INFO
     com.rabbitmq.client: INFO
     com.universe.life.gateway: DEBUG
+    com.github.xiaoymin.knife4j: DEBUG
+    org.springframework.security: DEBUG

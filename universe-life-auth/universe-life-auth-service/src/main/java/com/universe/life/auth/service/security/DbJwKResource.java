@@ -13,10 +13,15 @@ import com.universe.life.auth.service.domain.po.Oauth2Jwk;
 import com.universe.life.auth.service.enums.JwkState;
 import com.universe.life.auth.service.manager.JwkManager;
 import com.universe.life.auth.service.service.IOauth2JwkService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,6 +31,7 @@ import java.util.List;
  * @author 毛伟然
  * @since 2025/11/10 09:23
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class DbJwKResource implements JWKSource<SecurityContext> {
@@ -37,12 +43,16 @@ public class DbJwKResource implements JWKSource<SecurityContext> {
 
     @Override
     public List<JWK> get(JWKSelector jwkSelector, SecurityContext securityContext) throws KeySourceException {
-        // 先从JwkManager中获取密钥对
-        JWKSet jwkSet = jwkManager.jwkSet();
-        if (ObjectUtil.isNotNull(jwkSet) && CollUtil.isNotEmpty(jwkSet.getKeys())) {
-            return jwkSelector.select(jwkSet);
+        JWKSet jwkSet = isJwkSetEndpointRequest() ? jwkManager.jwkSet() : jwkManager.primaryJwkSet();
+        if (ObjectUtil.isNull(jwkSet) || CollUtil.isEmpty(jwkSet.getKeys())) {
+            jwkSet = loadJwkSet();
         }
-        JWKSet newJwkSet;
+        return jwkSelector.select(jwkSet);
+    }
+
+
+    private JWKSet loadJwkSet() {
+        JWKSet jwkSet;
         try {
             if (lock == null) {
                 lock = redissonClient.getLock(RedisConstants.AUTH_SECRET_KEY_GENERATE_LOCK);
@@ -56,24 +66,51 @@ public class DbJwKResource implements JWKSource<SecurityContext> {
                             Oauth2Jwk::getPrivateKey,
                             Oauth2Jwk::getAlgorithm
                     )
-                    .eq(Oauth2Jwk::getState, JwkState.ACTIVE.getState())
+                    .eq(!isJwkSetEndpointRequest(), Oauth2Jwk::getState, JwkState.ACTIVE.getState())
+                    .in(isJwkSetEndpointRequest(),Oauth2Jwk::getState, List.of(JwkState.ACTIVE.getState(), JwkState.RESOLVED.getState()))
                     .gt(Oauth2Jwk::getExpireTime, LocalDateTime.now())
                     .list();
             // 如果为空，重新生成密钥对
-            newJwkSet = jwkManager.loadFromDatabase(oauth2Jwks);
+            jwkSet = jwkManager.loadFromDatabase(oauth2Jwks);
             List<String> primaryKids = new ArrayList<>();
-            if (ObjectUtil.isNull(newJwkSet)) {
+            if (ObjectUtil.isNull(jwkSet)) {
                 // 重新生成密钥对，并保存到数据库中
                 jwkManager.rotate();
+                // 获取密钥对
+                jwkSet = jwkManager.jwkSet();
                 // 获取密钥对
                 primaryKids = jwkManager.allPrimaryKids();
             }
             // 更新到数据库中
             oauth2JwkService.saveBatch(primaryKids);
         } finally {
-            lock.unlock();
+            if (lock != null && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
-        return jwkSelector.select(newJwkSet);
+        return jwkSet;
+    }
+
+
+    /**
+     * 判断是否为JWK Set端点请求
+     */
+    private boolean isJwkSetEndpointRequest() {
+        try {
+            // 获取当前请求上下文
+            RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+            if (requestAttributes instanceof ServletRequestAttributes) {
+                HttpServletRequest request = ((ServletRequestAttributes) requestAttributes).getRequest();
+                String uri = request.getRequestURI();
+                // 判断是否访问JWK Set端点
+                return uri.endsWith("/.well-known/jwks.json") ||
+                        uri.contains("/jwks") ||
+                        "application/json".equals(request.getHeader("Accept"));
+            }
+        } catch (Exception e) {
+            log.debug("无法获取请求上下文，默认使用签名模式");
+        }
+        return false;
     }
 
 

@@ -7,11 +7,14 @@ import com.universe.life.common.constants.RedisConstants;
 import com.universe.life.common.domain.dto.UserAuthInfo;
 import com.universe.life.common.exception.AuthException;
 import com.universe.life.common.message.ExceptionMessage;
+import com.universe.life.common.properties.AuthPathProperties;
+import com.universe.life.common.util.AntRequestMatchUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,20 +25,24 @@ import java.io.IOException;
 
 /**
  * @author 毛伟然
- * @since 2025/11/3 16:02
+ * @since 2025/11/18 12:19
  */
+@Slf4j
 @RequiredArgsConstructor
 public class LoginFilter extends OncePerRequestFilter {
 
     private final StringRedisTemplate stringRedisTemplate;
+    private final AuthPathProperties authPathProperties;
+    private final AntRequestMatchUtil antRequestMatchUtil;
+
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        log.info("{}：进入过滤器链进行认证", request.getRequestURL());
         // 1. 从请求头中获取用户信息
         String userId = request.getHeader(JwtConstants.USER_INFO);
         if (StrUtil.isBlank(userId)) {
+            log.info("{}：用户未登录", request.getRequestURL());
             throw new AuthException.AuthorizationException(ExceptionMessage.LOGIN_REQUIRED);
         }
         // 2. 设置用户以及认证完毕
@@ -48,5 +55,14 @@ public class LoginFilter extends OncePerRequestFilter {
         Authentication authentication = new UsernamePasswordAuthenticationToken(userAuthInfo, null, userAuthInfo.getPermissions());
         SecurityContextHolder.getContext().setAuthentication(authentication);
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        if (authPathProperties.getExcludePath() == null) {
+            return false;
+        }
+        return antRequestMatchUtil.matchAny(requestURI, authPathProperties.getExcludePath());
     }
 }

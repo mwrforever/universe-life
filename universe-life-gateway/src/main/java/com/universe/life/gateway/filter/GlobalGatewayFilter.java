@@ -3,6 +3,8 @@ package com.universe.life.gateway.filter;
 import com.universe.life.common.constants.JwtConstants;
 import com.universe.life.common.exception.AuthException;
 import com.universe.life.common.message.ExceptionMessage;
+import com.universe.life.common.properties.AuthPathProperties;
+import com.universe.life.common.util.AntRequestMatchUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -35,23 +37,36 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class GlobalGatewayFilter implements GlobalFilter, Ordered {
 
+    private final AntRequestMatchUtil antRequestMatchUtil;
+
+    private final AuthPathProperties authPathProperties;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String path = exchange.getRequest().getURI().getPath();
+        String path = exchange.getRequest().getURI().getRawPath();
+        log.info("GlobalGatewayFilter: 开始处理请求：{}", path);
 
-        // 记录请求开始
-        log.info("GlobalGatewayFilter: 处理请求路径: {}", path);
+        // 排除不需要处理的路径
+        if (!authPathProperties.getEnable() || antRequestMatchUtil.matchAny(path, authPathProperties.getExcludePath())) {
+            // 将请求中的前缀去除
+            return chain.filter(exchange);
+        }
 
-        // 在Security过滤器执行后获取用户信息
+        // 安全地获取SecurityContext，如果没有则继续执行
         return ReactiveSecurityContextHolder.getContext()
                 .cast(SecurityContext.class)
                 .map(SecurityContext::getAuthentication)
                 .flatMap(authentication -> {
                     // 处理用户信息并转发（authentication可能为null）
                     return processRequest(exchange, chain, authentication);
+                })
+                .onErrorResume(throwable -> {
+                    log.error("GlobalGatewayFilter: 处理请求时发生异常 - 路径: {}", path, throwable);
+                    // 发生异常时继续执行原始请求
+                    return chain.filter(exchange);
                 });
     }
+
 
     /**
      * 处理请求，添加用户信息到请求头
@@ -63,7 +78,7 @@ public class GlobalGatewayFilter implements GlobalFilter, Ordered {
      */
     private Mono<Void> processRequest(ServerWebExchange exchange, GatewayFilterChain chain, Authentication authentication) {
         ServerHttpRequest request = exchange.getRequest();
-        String path = request.getURI().getPath();
+        String path = request.getURI().getRawPath();
         try {
             // 构建修改后的请求
             Consumer<HttpHeaders> headersMapper = headers -> {
@@ -87,9 +102,10 @@ public class GlobalGatewayFilter implements GlobalFilter, Ordered {
                     headers.add(JwtConstants.USER_INFO, String.valueOf(userId));
                 }
             };
+            ServerHttpRequest.Builder mutate = request.mutate();
 
             // 创建修改后的请求
-            ServerHttpRequest modifiedRequest = request.mutate()
+            ServerHttpRequest modifiedRequest = mutate
                     .headers(headersMapper)
                     .build();
 
@@ -107,6 +123,6 @@ public class GlobalGatewayFilter implements GlobalFilter, Ordered {
     @Override
     public int getOrder() {
         // 设置较低的优先级，确保在Security过滤器之后执行
-        return Ordered.LOWEST_PRECEDENCE - 10;
+        return -90;
     }
 }

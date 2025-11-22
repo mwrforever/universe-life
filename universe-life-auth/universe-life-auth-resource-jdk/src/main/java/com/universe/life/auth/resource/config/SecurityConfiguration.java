@@ -7,6 +7,7 @@ import com.universe.life.auth.resource.handler.JwtAccessDeniedHandler;
 import com.universe.life.auth.resource.handler.JwtAuthenticationExceptionHandler;
 import com.universe.life.auth.resource.service.UserAuthInfoService;
 import com.universe.life.common.properties.AuthPathProperties;
+import com.universe.life.common.util.AntRequestMatchUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,7 +26,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
  * @author 毛伟然
@@ -41,27 +42,32 @@ public class SecurityConfiguration {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
     private final AuthPathProperties authPathProperties;
+    private final AntRequestMatchUtil antRequestMatchUtil;
 
     /**
      * 默认安全过滤器链 - 优先级为2
      * 处理非OAuth2授权服务器的其他HTTP请求
      */
     @Bean
-    @Order(2)
+    @Order(3)
     public SecurityFilterChain defaultSecurityFilterChain(
             HttpSecurity http,
             AccessDeniedHandler jwtAccessDeniedHandler,
             AuthenticationEntryPoint jwtAuthenticationExceptionHandler) throws Exception {
-
         log.info("配置默认安全过滤器链");
-
         return http
-                // 匹配所有请求（除了已被授权服务器过滤器链处理的OAuth2端点）
+                // 排除登录、注册和静态资源路径，避免与authenficationSecurityFilterChain冲突
                 .securityMatcher("/**")
                 // 配置请求授权规则
                 .authorizeHttpRequests(authorize -> {
                     if (authPathProperties.getEnable()) {
-                        authorize.requestMatchers(authPathProperties.getExcludePath().toArray(new String[0])).permitAll();
+                        // 应用配置文件中的排除路径
+                        authorize.requestMatchers(
+                                authPathProperties.getExcludePath().stream()
+                                        .map(AntPathRequestMatcher::new)
+                                        .toArray(AntPathRequestMatcher[]::new)
+                        ).permitAll();
+
                         authorize.anyRequest().authenticated();
                     } else {
                         authorize.anyRequest().permitAll();
@@ -79,7 +85,7 @@ public class SecurityConfiguration {
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(jwtAuthenticationExceptionHandler)
                         .accessDeniedHandler(jwtAccessDeniedHandler))
-                .addFilterBefore(loginFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new LoginFilter(stringRedisTemplate, authPathProperties, antRequestMatchUtil), UsernamePasswordAuthenticationFilter.class)
                 // 配置HTTP安全头 - 开发阶段简化配置
                 .headers((headers) -> {
                 })
@@ -166,11 +172,6 @@ public class SecurityConfiguration {
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return new JwtAccessDeniedHandler(objectMapper);
-    }
-
-    @Bean
-    public OncePerRequestFilter loginFilter() {
-        return new LoginFilter(stringRedisTemplate);
     }
 
     @Bean

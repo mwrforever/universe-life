@@ -1,6 +1,6 @@
 package com.universe.life.auth.service.service;
 
-import com.universe.life.auth.service.domain.dto.request.LoginFormRequest;
+import com.universe.life.auth.resource.domain.dto.request.VerifyFormRequest;
 import com.universe.life.auth.service.domain.dto.request.RegisterFormRequest;
 import com.universe.life.auth.service.domain.vo.UserLoginVO;
 import com.universe.life.common.domain.Result;
@@ -13,10 +13,10 @@ public interface IAuthUserService {
     /**
      * 用户登录
      *
-     * @param loginFormRequest 登录表单
+     * @param verifyFormRequest 登录表单
      * @return 登录结果
      */
-    Result<UserLoginVO> login(LoginFormRequest loginFormRequest);
+    Result<UserLoginVO> login(VerifyFormRequest verifyFormRequest);
 
     /**
      * 用户注册
@@ -24,4 +24,6 @@ public interface IAuthUserService {
      * @param request 注册表单
      */
     void register(RegisterFormRequest request);
+
+
 }

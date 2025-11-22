@@ -14,9 +14,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "验证码响应对象")
 public class CaptchaVO {
-
-    private String code;
-
     private String issuer;
-
 }

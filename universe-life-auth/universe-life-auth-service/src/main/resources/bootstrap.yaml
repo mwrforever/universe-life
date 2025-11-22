@@ -28,7 +28,7 @@ spring:
             refresh: true
           - data-id: shared-rabbitmq.yaml
             refresh: true
-          - data-id: shared-server-springdoc.yaml
+          - data-id: shared-mail.yaml
             refresh: true
       discovery:
         server-addr: localhost:6848          # Nacos 注册中心地址
@@ -36,6 +36,49 @@ spring:
         group: DEFAULT_GROUP
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
+  session:
+    store-type: redis       # 指定 Session 存储在 Redis
+    redis:
+      namespace: "spring:session" # Redis Key 的前缀，防止冲突
+    timeout: 30m
+  # Thymeleaf模板引擎配置
+  thymeleaf:
+    # 模板文件路径
+    prefix: classpath:/templates/
+    # 模板文件后缀
+    suffix: .html
+    # 模板文件编码
+    encoding: UTF-8
+    # 启用模板缓存（开发环境关闭，生产环境开启）
+    cache: false
+    # 启用严格HTML模式
+    mode: HTML
+    # 内容类型
+    servlet:
+      content-type: text/html
 
-
+  # 静态资源配置
+  web:
+    resources:
+      # 静态资源位置
+      static-locations: classpath:/static/
+      # 静态资源路径模式
+      static-path-pattern: /**
+# springdoc-openapi 项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan:
+        - com.universe.life.auth.service.controller
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
 

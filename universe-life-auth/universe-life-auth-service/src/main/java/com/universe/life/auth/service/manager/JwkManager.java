@@ -1,11 +1,11 @@
 package com.universe.life.auth.service.manager;
 
+import cn.hutool.core.collection.CollUtil;
 import com.nimbusds.jose.jwk.*;
 import com.universe.life.auth.service.domain.po.Oauth2Jwk;
 import com.universe.life.auth.service.enums.JwkAlgorithm;
+import com.universe.life.auth.service.properties.JwkProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -18,10 +18,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -48,7 +45,6 @@ import static com.nimbusds.jose.jwk.Curve.P_256;
  * @since 2025/11/5 09:34
  */
 @Slf4j
-@Component
 public class JwkManager {
 
 
@@ -70,20 +66,15 @@ public class JwkManager {
      * 主用密钥ID
      * 用于标识当前活跃的密钥
      */
-    private AtomicReferenceArray<String> primary;
+    private final AtomicReferenceArray<String> primary;
 
-    /**
-     * 默认算法类型，可通过配置文件指定
-     */
-    @Value("${universe-life.auth.jwk.algorithm:RS256}")
-    private String defaultAlgorithm;
+    private final JwkProperties jwkProperties;
 
-    /**
-     * 主用密钥数量，可通过配置文件指定，默认为3
-     */
-    @Value("${universe-life.auth.jwk.primary-count:3}")
-    private int primaryCount;
 
+    public JwkManager(JwkProperties jwkProperties) {
+        this.jwkProperties = jwkProperties;
+        primary = new AtomicReferenceArray<>(jwkProperties.getPrimaryCount());
+    }
 
     /**
      * 刷新所有密钥
@@ -96,27 +87,21 @@ public class JwkManager {
         store.clear();
         algorithmStore.clear();
 
-        // 重新初始化主用密钥数组
-        if (primaryCount <= 0) {
-            primaryCount = 3;
-        }
-        primary = new AtomicReferenceArray<>(primaryCount);
-
         // 生成指定数量的主用密钥
-        for (int i = 0; i < primaryCount; i++) {
+        for (int i = 0; i < jwkProperties.getPrimaryCount(); i++) {
             String newId = UUID.randomUUID().toString().replace("-", "");
-            Object key = generateKey(JwkAlgorithm.fromAlgorithm(defaultAlgorithm));
+            Object key = generateKey(JwkAlgorithm.fromAlgorithm(jwkProperties.getDefaultAlgorithm()));
 
             // 存储密钥和算法类型
             store.put(newId, key);
-            algorithmStore.put(newId, JwkAlgorithm.fromAlgorithm(defaultAlgorithm));
+            algorithmStore.put(newId, JwkAlgorithm.fromAlgorithm(jwkProperties.getDefaultAlgorithm()));
             primary.set(i, newId);
 
             log.info(">>>> 刷新生成密钥，算法类型: {}, 密钥ID: {}, 位置: {}",
-                    defaultAlgorithm, newId, i);
+                    jwkProperties.getDefaultAlgorithm(), newId, i);
         }
 
-        log.info(">>>> 密钥刷新完成，共生成{}个主用密钥", primaryCount);
+        log.info(">>>> 密钥刷新完成，共生成{}个主用密钥", jwkProperties.getPrimaryCount());
     }
 
     /**
@@ -130,7 +115,7 @@ public class JwkManager {
      * </p>
      */
     public void rotate() {
-        rotate(JwkAlgorithm.fromAlgorithm(defaultAlgorithm));
+        rotate(JwkAlgorithm.fromAlgorithm(jwkProperties.getDefaultAlgorithm()));
     }
 
     /**
@@ -143,7 +128,7 @@ public class JwkManager {
      */
     public void rotate(JwkAlgorithm algorithm) {
         // 轮换所有主用密钥位置
-        for (int i = 0; i < primaryCount; i++) {
+        for (int i = 0; i < jwkProperties.getPrimaryCount(); i++) {
             String newId = UUID.randomUUID().toString().replace("-", "");
             Object key = generateKey(algorithm);
 
@@ -273,6 +258,17 @@ public class JwkManager {
     public JWKSet jwkSet() {
         List<JWK> keys = store.entrySet().stream()
                 .map(e -> createJWK(e.getKey(), e.getValue(), algorithmStore.get(e.getKey())))
+                .toList();
+        return new JWKSet(keys);
+    }
+
+    public JWKSet primaryJwkSet() {
+        List<String> allPrimaryKids = allPrimaryKids();
+        if (CollUtil.isEmpty(allPrimaryKids)) {
+            return null;
+        }
+        List<JWK> keys = allPrimaryKids.stream()
+                .map(kid -> createJWK(kid, store.get(kid), algorithmStore.get(kid)))
                 .toList();
         return new JWKSet(keys);
     }
@@ -471,7 +467,7 @@ public class JwkManager {
      * @return 所有密钥ID的集合
      */
     public java.util.Set<String> getAllKeyIds() {
-        return new java.util.HashSet<>(store.keySet());
+        return new HashSet<>(store.keySet());
     }
 
     /**

@@ -18,8 +18,6 @@ spring:
         shared-configs:
           - data-id: shared-routes.yaml
             refresh: true
-          - data-id: shared-gateway-spingdoc-knife.yaml
-            refresh: true
           - data-id: shared-rabbitmq.yaml
             refresh: true
       discovery:
@@ -46,7 +44,21 @@ spring:
             allow-credentials: true
             max-age: 3600
       default-filters:
-        - StripPrefix=1
+        - StripPrefix=2
+
+# knife4j 网关聚合配置
+knife4j:
+  gateway:
+    enabled: true
+    strategy: discover
+    discover:
+      enabled: true
+      version: openapi3
+      excluded-services:
+        - gateway-service
+
+
+
 
 
 

@@ -3,8 +3,8 @@ package com.universe.life.auth.service.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.universe.life.api.client.UserClient;
+import com.universe.life.auth.resource.domain.dto.request.VerifyFormRequest;
 import com.universe.life.auth.service.constants.RedisConstants;
-import com.universe.life.auth.service.domain.dto.request.LoginFormRequest;
 import com.universe.life.auth.service.domain.dto.request.RegisterFormRequest;
 import com.universe.life.auth.service.domain.vo.UserLoginVO;
 import com.universe.life.auth.service.properties.AuthorizationServerProperties;
@@ -21,10 +21,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.OAuth2Token;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
@@ -35,7 +37,6 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.stereotype.Service;
 
-import java.security.Principal;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
@@ -61,17 +62,18 @@ public class AuthUserServiceImpl implements IAuthUserService {
     private final AuthorizationServerProperties authorizationServerProperties;
     private final UserClient userClient;
     private final StringRedisTemplate stringRedisTemplate;
+    private final PasswordEncoder bcryptPasswordEncoder;
 
     @Override
-    public Result<UserLoginVO> login(LoginFormRequest loginFormRequest) {
-        log.info("开始处理用户登录请求，用户标识: {}", loginFormRequest.getIdentification());
+    public Result<UserLoginVO> login(VerifyFormRequest verifyFormRequest) {
+        log.info("开始处理用户登录请求，用户标识: {}", verifyFormRequest.getIdentification());
 
         try {
             // 1. 创建认证令牌并进行用户认证
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(
-                            loginFormRequest.getIdentification(),
-                            loginFormRequest.getPassword()
+                            verifyFormRequest.getIdentification(),
+                            verifyFormRequest.getVerifyCode()
                     );
 
             AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
@@ -97,12 +99,11 @@ public class AuthUserServiceImpl implements IAuthUserService {
             Set<String> authorizedScopes = client.getScopes();
 
             OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(client)
-                    .id(UUID.randomUUID().toString())
+                    .id(UUID.randomUUID().toString().replace("-", ""))
                     .principalName(authentication.getName())
                     .authorizationGrantType(AuthorizationGrantType.PASSWORD) // 使用密码模式
                     .authorizedScopes(authorizedScopes)
-                    .attribute(Principal.class.getName(), authentication)
-                    // 🎯 添加用户信息到OAuth2Authorization，这些信息会被包含在JWT中
+                    // 添加用户信息到OAuth2Authorization，这些信息会被包含在JWT中
                     .attribute("user_id", userAuthInfo.getId())
                     .build();
 
@@ -116,10 +117,25 @@ public class AuthUserServiceImpl implements IAuthUserService {
                     .tokenType(OAuth2TokenType.ACCESS_TOKEN)
                     .build();
 
-            // 使用默认TokenGenerator生成access token（包含用户信息）
             OAuth2Token generatedAccessToken = tokenGenerator.generate(accessTokenContext);
-            if (!(generatedAccessToken instanceof OAuth2AccessToken accessToken)) {
-                log.error("访问令牌生成失败");
+
+            OAuth2AccessToken accessToken;
+            if (generatedAccessToken instanceof Jwt jwt) {
+                // 特殊情况：返回的是原始Jwt对象，需要手动包装
+                log.info("生成的是原始Jwt对象，手动包装为OAuth2AccessToken");
+
+                // 手动创建OAuth2AccessToken
+                Instant issuedAt = jwt.getIssuedAt();
+                accessToken = new OAuth2AccessToken(
+                        OAuth2AccessToken.TokenType.BEARER,
+                        jwt.getTokenValue(),
+                        issuedAt,
+                        Instant.now().plusSeconds(3600),
+                        authorizedScopes
+                );
+            } else {
+                log.error("访问令牌生成失败，返回类型: {}",
+                        generatedAccessToken != null ? generatedAccessToken.getClass().getName() : "null");
                 throw new AuthException.AuthenticationException("令牌生成失败");
             }
             log.info("成功生成访问令牌，包含用户信息: user_id={}, username={}",
@@ -153,18 +169,13 @@ public class AuthUserServiceImpl implements IAuthUserService {
 
             // 9. 持久化授权信息
             authorizationService.save(authorization);
-            log.info("OAuth2授权信息已保存，授权ID: {}", authorization.getId());
 
             // 10. 构建用户登录响应对象
             UserLoginVO userLoginVO = buildUserLoginVO(accessToken, refreshToken);
-
-            log.info("用户登录成功，用户ID: {}, 令牌类型: {}",
-                    userAuthInfo.getId(), accessToken.getTokenType().getValue());
-
             return Result.success(userLoginVO);
 
         } catch (Exception e) {
-            log.error("用户登录失败，用户标识: {}", loginFormRequest.getIdentification(), e);
+            log.error("用户登录失败，用户标识: {}", verifyFormRequest.getIdentification(), e);
             throw new AuthException.AuthenticationException(ExceptionMessage.AUTH_FAILED);
         }
     }
@@ -172,10 +183,12 @@ public class AuthUserServiceImpl implements IAuthUserService {
     @Override
     public void register(RegisterFormRequest request) {
         // 用户注册
-
         // 先在redis中查看当前验证的业务标识
+        String key = RedisConstants.AUTH_USER_CAPTCHA_KEY_PREFIX +
+                request.getCaptchaUsageType().getDisplayName() + ":" +
+                request.getIdentification();
         Object codeObj = stringRedisTemplate.opsForHash().get(
-                RedisConstants.AUTH_USER_CAPTCHA_KEY_PREFIX + request.getIdentification(),
+                key,
                 RedisConstants.AUTH_ISSUER
         );
         // 如果验证码已过期，则返回错误
@@ -186,8 +199,15 @@ public class AuthUserServiceImpl implements IAuthUserService {
         if (!String.valueOf(codeObj).equals(request.getIssuer())) {
             throw new AuthException.AuthenticationException(ExceptionMessage.AUTHORIZATION_CODE_INVALID);
         }
+        // 删除issuer标识
+        stringRedisTemplate.opsForHash().delete(
+                key,
+                RedisConstants.AUTH_ISSUER
+        );
         // 封装用户数据
         RegisterFormDTO registerFormDTO = BeanUtil.toBean(request, RegisterFormDTO.class);
+        // 对密码进行加密处理
+        registerFormDTO.setPassword(bcryptPasswordEncoder.encode(registerFormDTO.getPassword()));
         // 保存用户数据
         userClient.add(registerFormDTO);
     }
@@ -214,4 +234,5 @@ public class AuthUserServiceImpl implements IAuthUserService {
                 accessToken.getTokenType().getValue()
         );
     }
+
 }

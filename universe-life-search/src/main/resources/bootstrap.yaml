@@ -30,10 +30,31 @@ spring:
             refresh: true
           - data-id: shared-server-springdoc.yaml
             refresh: true
+          - data-id: shared-mail.yaml
+            refresh: true
       discovery:
         server-addr: localhost:6848          # Nacos 注册中心地址
         namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
         group: DEFAULT_GROUP
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
+
+# springdoc-openapi 项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan:
+        - com.universe.life.search.controller
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
 

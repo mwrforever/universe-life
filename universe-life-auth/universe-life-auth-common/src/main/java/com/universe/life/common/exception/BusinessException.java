@@ -83,4 +83,6 @@ public class BusinessException extends BaseServiceException {
             super(ErrorCode.OPERATION_NOT_ALLOWED, message, cause);
         }
     }
+
+
 }

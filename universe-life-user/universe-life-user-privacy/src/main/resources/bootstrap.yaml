@@ -28,6 +28,8 @@ spring:
             refresh: true
           - data-id: shared-rabbitmq.yaml
             refresh: true
+          - data-id: shared-mail.yaml
+            refresh: true
           - data-id: shared-server-springdoc.yaml
             refresh: true
       discovery:
@@ -36,5 +38,22 @@ spring:
         group: DEFAULT_GROUP
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
+# springdoc-openapi 项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan:
+        - com.universe.life.user.privacy.controller
 
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
 
