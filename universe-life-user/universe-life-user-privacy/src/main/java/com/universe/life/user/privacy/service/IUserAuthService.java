@@ -1,8 +1,8 @@
 package com.universe.life.user.privacy.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.universe.life.model.domain.dto.UserInfoDTO;
 import com.universe.life.user.privacy.domain.po.UserAuth;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
  * <p>

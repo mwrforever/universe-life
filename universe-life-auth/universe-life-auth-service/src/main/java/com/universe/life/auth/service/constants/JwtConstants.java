@@ -18,5 +18,7 @@ public interface JwtConstants {
 
     Duration REMEMBER_REFRESH_TOKEN_EXPIRE = Duration.ofDays(7);
 
+    String CLIENT_ID = "client_id";
 
+    String USER_ID = "user_id";
 }

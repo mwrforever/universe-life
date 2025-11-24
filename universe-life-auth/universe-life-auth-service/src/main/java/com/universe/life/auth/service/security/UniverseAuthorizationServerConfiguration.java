@@ -52,10 +52,8 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
-import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator;
-import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2RefreshTokenGenerator;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.oauth2.server.authorization.web.authentication.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -104,23 +102,11 @@ public class UniverseAuthorizationServerConfiguration {
         return new NimbusJwtEncoder(jwkSource);
     }
 
-    /**
-     * OAuth2令牌生成器Bean
-     * <p>配置JWT访问令牌和刷新令牌的生成器，支持自定义JWT声明。</p>
-     *
-     * @param jwtEncoder JWT编码器
-     * @return OAuth2令牌生成器
-     */
+
     @Bean
-    public OAuth2TokenGenerator<?> oAuth2TokenGenerator(JwtEncoder jwtEncoder) {
-        log.info("配置OAuth2令牌生成器 - 支持JWT访问令牌和刷新令牌");
-
-        JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
-        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
-
-        return new DelegatingOAuth2TokenGenerator(jwtGenerator, refreshTokenGenerator);
+    public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
+        return new TokenCustomizer();
     }
-
 
     /**
      * 授权服务器基本设置Bean

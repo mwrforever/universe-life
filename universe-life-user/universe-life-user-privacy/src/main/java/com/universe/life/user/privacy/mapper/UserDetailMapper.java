@@ -1,6 +1,5 @@
 package com.universe.life.user.privacy.mapper;
 
-import com.universe.life.user.privacy.domain.po.UserDetail;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

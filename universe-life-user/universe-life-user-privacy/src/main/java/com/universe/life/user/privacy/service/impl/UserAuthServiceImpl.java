@@ -5,7 +5,6 @@ import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.universe.life.model.domain.dto.UserInfoDTO;
 import com.universe.life.user.privacy.domain.dao.UserInfoDO;
-import com.universe.life.user.privacy.domain.po.UserAuth;
 import com.universe.life.user.privacy.mapper.UserAuthMapper;
 import com.universe.life.user.privacy.service.IUserAuthService;
 import lombok.RequiredArgsConstructor;

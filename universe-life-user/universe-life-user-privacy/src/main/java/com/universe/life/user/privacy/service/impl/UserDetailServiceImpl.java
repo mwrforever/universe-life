@@ -1,6 +1,5 @@
 package com.universe.life.user.privacy.service.impl;
 
-import com.universe.life.user.privacy.domain.po.UserDetail;
 import com.universe.life.user.privacy.mapper.UserDetailMapper;
 import com.universe.life.user.privacy.service.IUserDetailService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

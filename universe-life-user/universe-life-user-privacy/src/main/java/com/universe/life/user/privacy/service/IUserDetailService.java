@@ -1,7 +1,7 @@
 package com.universe.life.user.privacy.service;
 
-import com.universe.life.user.privacy.domain.po.UserDetail;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.universe.life.user.privacy.domain.po.UserDetail;
 
 /**
  * <p>
