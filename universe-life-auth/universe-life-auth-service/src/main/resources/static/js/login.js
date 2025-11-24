@@ -502,7 +502,7 @@ class LoginAuth {
                 body: JSON.stringify({
                     identification: emailInput.value.trim(),
                     verifyCode: verifyCodeInput.value.trim(),
-                    usageType: 1 // 登录类型：1=登录
+                    usageType: "1" // CaptchaUsageType.LOGIN 字符串格式
                 })
             });
 
@@ -544,7 +544,8 @@ class LoginAuth {
                 }),
                 body: JSON.stringify({
                     identification: emailInput.value.trim(),
-                    usageType: 1 // 登录类型：1=登录
+                    identificationType: 6, // UserAuthType.EMAIL
+                    captchaUsageType: 1   // CaptchaUsageType.LOGIN
                 })
             });
 

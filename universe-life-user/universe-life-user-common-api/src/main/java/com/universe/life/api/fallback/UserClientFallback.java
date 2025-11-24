@@ -3,6 +3,7 @@ package com.universe.life.api.fallback;
 import com.universe.life.api.client.UserClient;
 import com.universe.life.model.domain.dto.RegisterFormDTO;
 import com.universe.life.model.domain.dto.UserInfoDTO;
+import com.universe.life.model.domain.dto.UserStatusDTO;
 import org.springframework.cloud.openfeign.FallbackFactory;
 
 /**
@@ -22,6 +23,11 @@ public class UserClientFallback implements FallbackFactory<UserClient> {
 
             @Override
             public void add(RegisterFormDTO registerFormDTO) {
+            }
+
+            @Override
+            public UserStatusDTO getUserStatus(String username) {
+                return null;
             }
         };
     }

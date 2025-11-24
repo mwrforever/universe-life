@@ -2,4 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.universe.life.user.privacy.mapper.UserAuthMapper">
 
+    <select id="getUserInfo" resultType="com.universe.life.user.privacy.domain.dao.UserInfoDO"
+            parameterType="java.lang.String">
+        select u.id        as id,
+               u.username  as username,
+               ua.password as password
+        from universe_life_user.user_auth ua
+                 inner join universe_life_user.user u on ua.user_id = u.id
+        where ua.identification = #{username};
+    </select>
 </mapper>

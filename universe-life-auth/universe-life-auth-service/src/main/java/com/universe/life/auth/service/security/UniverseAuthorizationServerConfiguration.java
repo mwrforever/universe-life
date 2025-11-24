@@ -2,22 +2,27 @@ package com.universe.life.auth.service.security;
 
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.universe.life.api.client.UserClient;
 import com.universe.life.auth.service.manager.JwkManager;
 import com.universe.life.auth.service.properties.AuthorizationServerProperties;
 import com.universe.life.auth.service.properties.JwkProperties;
+import com.universe.life.auth.service.security.convert.DeviceAuthenticationConverter;
 import com.universe.life.auth.service.security.filter.MyUsernamePasswordAuthenticationFilter;
 import com.universe.life.auth.service.security.filter.SmsAuthenticationFilter;
+import com.universe.life.auth.service.security.provider.DeviceBindingRefreshTokenAuthenticationProvider;
 import com.universe.life.auth.service.security.provider.SmsAuthenticationProvider;
 import com.universe.life.auth.service.security.provider.UsernamePasswordAuthenticationProvider;
 import com.universe.life.auth.service.service.impl.AuthCommonServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,6 +43,7 @@ import org.springframework.security.oauth2.server.authorization.JdbcOAuth2Author
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2RefreshTokenAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -50,19 +56,17 @@ import org.springframework.security.oauth2.server.authorization.token.Delegating
 import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2RefreshTokenGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
-import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.authorization.web.authentication.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.*;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -83,9 +87,11 @@ public class UniverseAuthorizationServerConfiguration {
 
     private final AccessDeniedHandler jwtAccessDeniedHandler;
 
-    private final AuthenticationEntryPoint jwtAuthenticationExceptionHandler;
-
     private final JwkProperties jwkProperties;
+
+    private final StringRedisTemplate stringRedisTemplate;
+
+    private final UserClient userClient;
 
     @Bean
     public JwkManager jwkManager() {
@@ -227,7 +233,7 @@ public class UniverseAuthorizationServerConfiguration {
                         .requireProofKey(true)  // 启用PKCE，增强授权码模式安全性
                         .build())
                 .tokenSettings(TokenSettings.builder()  // 令牌设置
-                        .accessTokenTimeToLive(Duration.ofMinutes(30))  // 访问令牌有效期：30分钟
+                        .accessTokenTimeToLive(Duration.ofHours(2))  // 访问令牌有效期：30分钟
                         .refreshTokenTimeToLive(Duration.ofDays(30))  // 刷新令牌有效期：30天
                         .reuseRefreshTokens(false)  // 不重复使用刷新令牌，增强安全性
                         .authorizationCodeTimeToLive(Duration.ofMinutes(5))  // 授权码有效期：5分钟
@@ -330,7 +336,6 @@ public class UniverseAuthorizationServerConfiguration {
         SmsAuthenticationFilter smsFilter = new SmsAuthenticationFilter(authenticationManager);
         MyUsernamePasswordAuthenticationFilter usernamePasswordFilter =
                 new MyUsernamePasswordAuthenticationFilter(authenticationManager);
-
         // 登录成功后，重定向回之前的请求（例如 /oauth2/authorize）
         smsFilter.setAuthenticationSuccessHandler(new SavedRequestAwareAuthenticationSuccessHandler());
         // 登录失败去哪里
@@ -377,21 +382,22 @@ public class UniverseAuthorizationServerConfiguration {
     }
 
     /**
-     * 授权服务器安全过滤器链 - 优先级为1
+     * 授权服务器安全过滤器链 - 优先级为2
      * 处理所有OAuth2授权服务器端点请求
      */
     @Bean
     @Order(2)
     public SecurityFilterChain authorizationServerSecurityFilterChain(
             HttpSecurity http,
-            AuthorizationServerSettings authorizationServerSettings
+            AuthorizationServerSettings authorizationServerSettings,
+            OAuth2AuthorizationService oAuth2AuthorizationService
     ) throws Exception {
 
         log.info("配置授权服务器安全过滤器链");
         // 应用Spring Authorization Server默认安全配置
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
         // 创建授权服务器配置器，用于自定义OAuth2端点行为
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = getOAuth2AuthorizationServerConfigurer(oAuth2AuthorizationService);
         return http
                 // 设置安全匹配器，只处理授权服务器端点请求
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
@@ -410,7 +416,10 @@ public class UniverseAuthorizationServerConfiguration {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 配置异常处理 - 设置认证入口点和访问拒绝处理器
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(jwtAuthenticationExceptionHandler)
+                        .defaultAuthenticationEntryPointFor(
+                                new LoginUrlAuthenticationEntryPoint("/login"),
+                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+                        )
                         .accessDeniedHandler(jwtAccessDeniedHandler))
                 // 配置HTTP安全头 - 开发阶段简化配置，避免影响前后端分离开发
                 .headers((headers) -> {
@@ -450,6 +459,55 @@ public class UniverseAuthorizationServerConfiguration {
                         .policy("geolocation=(), microphone=(), camera=(), fullscreen=()"))
         )
         */
+    }
+
+    @NotNull
+    private OAuth2AuthorizationServerConfigurer getOAuth2AuthorizationServerConfigurer(OAuth2AuthorizationService oAuth2AuthorizationService) {
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
+        authorizationServerConfigurer
+                .tokenEndpoint(tokenEndpoint -> {
+
+                    // 1. 【解决找不到类的问题】手动组装标准的 Converter 列表
+                    // 这些是 Spring Authorization Server 提供的基础转换器
+                    DelegatingAuthenticationConverter standardConverters = getDelegatingAuthenticationConverter();
+
+                    // 3. 将标准转换器传递给你的自定义包装器 DeviceAuthenticationConverter
+                    // 这样先提取 device_id，再调用 standardConverters 提取核心 OAuth2 参数
+                    tokenEndpoint.accessTokenRequestConverter(
+                            new DeviceAuthenticationConverter(standardConverters)
+                    );
+                    // 2. 注入自定义 Provider，用于校验设备绑定
+                    tokenEndpoint.authenticationProviders(providers -> {
+                        // 找到默认的 RefreshToken Provider
+                        OAuth2RefreshTokenAuthenticationProvider defaultProvider = null;
+                        for (Object p : providers) {
+                            if (p instanceof OAuth2RefreshTokenAuthenticationProvider) {
+                                defaultProvider = (OAuth2RefreshTokenAuthenticationProvider) p;
+                                break;
+                            }
+                        }
+
+                        // 用我们的 Wrapper 替换掉它 (或者插在它前面)
+                        if (defaultProvider != null) {
+                            providers.remove(defaultProvider);
+                            providers.add(new DeviceBindingRefreshTokenAuthenticationProvider(defaultProvider, oAuth2AuthorizationService, userClient, stringRedisTemplate));
+                        }
+                    });
+                });
+        return authorizationServerConfigurer;
+    }
+
+    @NotNull
+    private DelegatingAuthenticationConverter getDelegatingAuthenticationConverter() {
+        List<AuthenticationConverter> converters = Arrays.asList(
+                new OAuth2AuthorizationCodeAuthenticationConverter(), // 授权码模式
+                new OAuth2RefreshTokenAuthenticationConverter(),      // 刷新 Token 模式
+                new OAuth2ClientCredentialsAuthenticationConverter(), // 客户端模式
+                new OAuth2DeviceCodeAuthenticationConverter()         // 设备码模式
+        );
+
+        // 2. 创建代理转换器，包含上述所有标准逻辑
+        return new DelegatingAuthenticationConverter(converters);
     }
 
 

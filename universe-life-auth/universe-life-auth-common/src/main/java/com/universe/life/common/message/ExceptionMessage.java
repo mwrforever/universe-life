@@ -107,6 +107,8 @@ public interface ExceptionMessage {
     String WECHAT_ERROR = "微信服务异常";
     String ALIYUN_ERROR = "阿里云服务异常";
     String TENCENT_ERROR = "腾讯云服务异常";
+    String DEVICE_MISMATCH = "设备不匹配，请重新登录";
+    String USER_NOT_EXIST = "账户不存在";
 
     /**
      * 消息格式化工具类

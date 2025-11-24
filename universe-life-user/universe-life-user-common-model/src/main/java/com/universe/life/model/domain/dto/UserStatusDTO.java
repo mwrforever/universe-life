@@ -1,23 +1,19 @@
 package com.universe.life.model.domain.dto;
 
+import com.universe.life.model.enums.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
  * @author 毛伟然
- * @since 2025/11/4 14:03
+ * @since 2025/11/23 20:34
  */
-@Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class UserInfoDTO {
+@NoArgsConstructor
+@Data
+public class UserStatusDTO {
 
-
-    private String password;
-
-    private Long id;
-
-    private String username;
+    private UserStatus status;
 
 }

@@ -4,9 +4,11 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.universe.life.model.domain.dto.UserInfoDTO;
+import com.universe.life.user.privacy.domain.dao.UserInfoDO;
 import com.universe.life.user.privacy.domain.po.UserAuth;
 import com.universe.life.user.privacy.mapper.UserAuthMapper;
 import com.universe.life.user.privacy.service.IUserAuthService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
@@ -18,21 +20,19 @@ import org.springframework.stereotype.Service;
  * @since 2025-11-13
  */
 @Service
+@RequiredArgsConstructor
 public class UserAuthServiceImpl extends ServiceImpl<UserAuthMapper, UserAuth> implements IUserAuthService {
+
+
+    private final UserAuthMapper userAuthMapper;
 
     @Override
     public UserInfoDTO getUserInfo(String username) {
-        UserAuth userAuth = lambdaQuery()
-                .select(
-                        UserAuth::getUserId,
-                        UserAuth::getPassword
-                )
-                .eq(UserAuth::getIdentification, username)
-                .one();
+        UserInfoDO userInfoDO = userAuthMapper.getUserInfo(username);
         // 判断账号是否存在
-        if (ObjectUtil.isNull(userAuth)) {
+        if (ObjectUtil.isNull(userInfoDO)) {
             return null;
         }
-        return BeanUtil.toBean(userAuth, UserInfoDTO.class);
+        return BeanUtil.toBean(userInfoDO, UserInfoDTO.class);
     }
 }

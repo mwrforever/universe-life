@@ -1,8 +1,13 @@
 package com.universe.life.user.privacy.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.universe.life.common.exception.DatabaseException;
+import com.universe.life.common.message.ExceptionMessage;
 import com.universe.life.model.domain.dto.RegisterFormDTO;
+import com.universe.life.model.domain.dto.UserStatusDTO;
 import com.universe.life.model.enums.UserAuthType;
+import com.universe.life.user.privacy.domain.dao.UserStatusDo;
 import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.po.UserAuth;
 import com.universe.life.user.privacy.mapper.UserMapper;
@@ -27,6 +32,17 @@ import java.util.List;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
 
     private final IUserAuthService userAuthService;
+    private final UserMapper userMapper;
+
+    @Override
+    public UserStatusDTO getStatusByUsername(String username) {
+        // 根据用户id查询用户状态信息
+        UserStatusDo one = userMapper.selectUserStatusByUsername(username);
+        if (ObjectUtil.isNull(one)) {
+            throw new DatabaseException.QueryException(ExceptionMessage.DATA_NOT_FOUND);
+        }
+        return new UserStatusDTO(one.getStatus());
+    }
 
     @Override
     @Transactional

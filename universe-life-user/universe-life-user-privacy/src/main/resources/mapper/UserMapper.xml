@@ -2,4 +2,11 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.universe.life.user.privacy.mapper.UserMapper">
 
+    <select id="selectUserStatusByUsername"
+            resultType="com.universe.life.user.privacy.domain.dao.UserStatusDo">
+        select u.status as status from universe_life_user.user  u
+        left join universe_life_user.user_auth ua
+        on u.id = ua.user_id
+        where u.deleted = 0 and ua.identification = #{username};
+    </select>
 </mapper>

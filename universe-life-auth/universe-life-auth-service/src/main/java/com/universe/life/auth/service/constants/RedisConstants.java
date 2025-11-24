@@ -18,5 +18,8 @@ public interface RedisConstants {
 
     String AUTH_IDENTIFICATION = "identification";
 
+    String USER_NORMAL_STATUS_KEY = "user:normal:status:key";
+
+    String REDISSON_USER_WHITELIST_LOCK = "redisson:user:whitelist:lock";
 
 }

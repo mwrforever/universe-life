@@ -2,14 +2,13 @@ package com.universe.life.user.privacy.controller;
 
 
 import com.universe.life.model.domain.dto.RegisterFormDTO;
+import com.universe.life.model.domain.dto.UserStatusDTO;
 import com.universe.life.user.privacy.service.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * <p>
@@ -32,5 +31,12 @@ public class UserController {
     public void add(@RequestBody RegisterFormDTO registerFormDTO) {
         userService.add(registerFormDTO);
     }
+
+    @GetMapping("/privacy/status")
+    @Operation(description = "获取用户状态")
+    public UserStatusDTO getStatusById(String username) {
+        return userService.getStatusByUsername(username);
+    }
+
 
 }

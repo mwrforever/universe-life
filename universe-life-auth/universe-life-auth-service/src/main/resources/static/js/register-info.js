@@ -120,8 +120,70 @@ class RegisterInfoAuth {
         });
     }
 
-  
-  
+    // 设置密码显示/隐藏功能
+    setupPasswordToggle() {
+        // 密码显示/隐藏按钮
+        const passwordToggleBtn = document.getElementById('password-toggle');
+        const passwordInput = document.getElementById('password');
+
+        if (passwordToggleBtn && passwordInput) {
+            passwordToggleBtn.addEventListener('click', () => {
+                this.togglePasswordVisibility(passwordInput, passwordToggleBtn);
+            });
+
+            // 根据输入框内容动态显示/隐藏按钮
+            passwordInput.addEventListener('input', () => {
+                if (passwordInput.value.trim()) {
+                    passwordToggleBtn.style.opacity = '1';
+                    passwordToggleBtn.style.pointerEvents = 'auto';
+                } else {
+                    passwordToggleBtn.style.opacity = '0.3';
+                    passwordToggleBtn.style.pointerEvents = 'none';
+                }
+            });
+        }
+
+        // 确认密码显示/隐藏按钮
+        const confirmPasswordToggleBtn = document.getElementById('confirm-password-toggle');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+
+        if (confirmPasswordToggleBtn && confirmPasswordInput) {
+            confirmPasswordToggleBtn.addEventListener('click', () => {
+                this.togglePasswordVisibility(confirmPasswordInput, confirmPasswordToggleBtn);
+            });
+
+            // 根据输入框内容动态显示/隐藏按钮
+            confirmPasswordInput.addEventListener('input', () => {
+                if (confirmPasswordInput.value.trim()) {
+                    confirmPasswordToggleBtn.style.opacity = '1';
+                    confirmPasswordToggleBtn.style.pointerEvents = 'auto';
+                } else {
+                    confirmPasswordToggleBtn.style.opacity = '0.3';
+                    confirmPasswordToggleBtn.style.pointerEvents = 'none';
+                }
+            });
+        }
+    }
+
+    // 切换密码显示/隐藏状态
+    togglePasswordVisibility(passwordInput, toggleBtn) {
+        const icon = toggleBtn.querySelector('.password-toggle-icon');
+
+        if (passwordInput.type === 'password') {
+            // 显示密码
+            passwordInput.type = 'text';
+            icon.classList.remove('far', 'fa-eye');
+            icon.classList.add('far', 'fa-eye-slash');
+            toggleBtn.title = '隐藏密码';
+        } else {
+            // 隐藏密码
+            passwordInput.type = 'password';
+            icon.classList.remove('far', 'fa-eye-slash');
+            icon.classList.add('far', 'fa-eye');
+            toggleBtn.title = '显示密码';
+        }
+    }
+
     // 处理完善注册信息
     handleRegisterInfo() {
         const formData = this.formValidator.getFormData();
@@ -134,17 +196,21 @@ class RegisterInfoAuth {
         // 显示加载状态
         this.showLoading('register-submit');
 
+        // 验证必填字段
+        if (!formData.issuer || formData.issuer.trim() === '') {
+            showToast('验证码请求标识不能为空', 'error');
+            return;
+        }
+
         // 发送注册请求
         const requestBody = {
             identification: formData.identification,
             identificationType: 6, // UserAuthType.EMAIL
             captchaUsageType: 2,   // CaptchaUsageType.REGISTER
             username: formData.username,
-            password: formData.password
+            password: formData.password,
+            issuer: formData.issuer.trim() // 验证码请求唯一标识（必填）
         };
-
-        // 添加issuer参数（必填字段）
-        requestBody.issuer = formData.issuer || '';
 
         console.log('注册请求数据:', requestBody);
         console.log('发送请求到: /register');
@@ -210,71 +276,6 @@ class RegisterInfoAuth {
             btn.disabled = false;
         }
     }
-}
-
-// 设置密码显示/隐藏功能
-  setupPasswordToggle() {
-    // 密码显示/隐藏按钮
-    const passwordToggleBtn = document.getElementById('password-toggle');
-    const passwordInput = document.getElementById('password');
-
-    if (passwordToggleBtn && passwordInput) {
-      passwordToggleBtn.addEventListener('click', () => {
-        this.togglePasswordVisibility(passwordInput, passwordToggleBtn);
-      });
-
-      // 根据输入框内容动态显示/隐藏按钮
-      passwordInput.addEventListener('input', () => {
-        if (passwordInput.value.trim()) {
-          passwordToggleBtn.style.opacity = '1';
-          passwordToggleBtn.style.pointerEvents = 'auto';
-        } else {
-          passwordToggleBtn.style.opacity = '0.3';
-          passwordToggleBtn.style.pointerEvents = 'none';
-        }
-      });
-    }
-
-    // 确认密码显示/隐藏按钮
-    const confirmPasswordToggleBtn = document.getElementById('confirm-password-toggle');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-
-    if (confirmPasswordToggleBtn && confirmPasswordInput) {
-      confirmPasswordToggleBtn.addEventListener('click', () => {
-        this.togglePasswordVisibility(confirmPasswordInput, confirmPasswordToggleBtn);
-      });
-
-      // 根据输入框内容动态显示/隐藏按钮
-      confirmPasswordInput.addEventListener('input', () => {
-        if (confirmPasswordInput.value.trim()) {
-          confirmPasswordToggleBtn.style.opacity = '1';
-          confirmPasswordToggleBtn.style.pointerEvents = 'auto';
-        } else {
-          confirmPasswordToggleBtn.style.opacity = '0.3';
-          confirmPasswordToggleBtn.style.pointerEvents = 'none';
-        }
-      });
-    }
-  }
-
-  // 切换密码显示/隐藏状态
-  togglePasswordVisibility(passwordInput, toggleBtn) {
-    const icon = toggleBtn.querySelector('.password-toggle-icon');
-
-    if (passwordInput.type === 'password') {
-      // 显示密码
-      passwordInput.type = 'text';
-      icon.classList.remove('far', 'fa-eye');
-      icon.classList.add('far', 'fa-eye-slash');
-      toggleBtn.title = '隐藏密码';
-    } else {
-      // 隐藏密码
-      passwordInput.type = 'password';
-      icon.classList.remove('far', 'fa-eye-slash');
-      icon.classList.add('far', 'fa-eye');
-      toggleBtn.title = '显示密码';
-    }
-  }
 }
 
 // 页面加载完成后初始化

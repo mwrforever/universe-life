@@ -1,5 +1,6 @@
 package com.universe.life.user.privacy.mapper;
 
+import com.universe.life.user.privacy.domain.dao.UserInfoDO;
 import com.universe.life.user.privacy.domain.po.UserAuth;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
@@ -13,4 +14,11 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface UserAuthMapper extends BaseMapper<UserAuth> {
 
+    /**
+     * 获取用户信息
+     *
+     * @param username 用户名
+     * @return 用户信息
+     */
+    UserInfoDO getUserInfo(String username);
 }

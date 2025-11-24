@@ -1,8 +1,9 @@
 package com.universe.life.user.privacy.service;
 
-import com.universe.life.model.domain.dto.RegisterFormDTO;
-import com.universe.life.user.privacy.domain.po.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.universe.life.model.domain.dto.RegisterFormDTO;
+import com.universe.life.model.domain.dto.UserStatusDTO;
+import com.universe.life.user.privacy.domain.po.User;
 
 /**
  * <p>
@@ -21,4 +22,11 @@ public interface IUserService extends IService<User> {
      */
     void add(RegisterFormDTO registerFormDTO);
 
+    /**
+     * 获取用户状态
+     *
+      * @param username 用户名
+     * @return 用户状态
+     */
+    UserStatusDTO getStatusByUsername(String username);
 }

@@ -3,6 +3,7 @@ package com.universe.life.user.privacy.domain.po;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.universe.life.model.enums.UserStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -51,7 +52,7 @@ public class User implements Serializable {
     /**
      * 0 正常 1 可接单 2 禁用
      */
-    private Integer status;
+    private UserStatus status;
 
     /**
      * 最后登录时间

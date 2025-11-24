@@ -3,6 +3,7 @@ package com.universe.life.api.client;
 import com.universe.life.api.fallback.UserClientFallback;
 import com.universe.life.model.domain.dto.RegisterFormDTO;
 import com.universe.life.model.domain.dto.UserInfoDTO;
+import com.universe.life.model.domain.dto.UserStatusDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,9 @@ public interface UserClient {
 
     @PostMapping("/add")
     void add(@RequestBody RegisterFormDTO registerFormDTO);
+
+    @GetMapping("/privacy/status")
+    UserStatusDTO getUserStatus(@RequestParam String username);
 
 
 }
