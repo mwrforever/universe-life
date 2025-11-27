@@ -1,5 +1,9 @@
 package com.universe.life.auth.service.security.token;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,10 +18,29 @@ import java.util.Collection;
  * @since 2025/11/21
  */
 @Getter
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 public class UsernamePasswordAuthenticationToken extends AbstractAuthenticationToken {
 
     private final Object principal;
     private final Object credentials;
+
+    /**
+     * 【新增】Jackson 反序列化专用构造函数
+     * 用于从数据库 JSON 还原对象，必须处理父类状态（authorities, details, authenticated）
+     */
+    @JsonCreator
+    public UsernamePasswordAuthenticationToken(
+            @JsonProperty("principal") Object principal,
+            @JsonProperty("credentials") Object credentials,
+            @JsonProperty("authorities") Collection<? extends GrantedAuthority> authorities,
+            @JsonProperty("details") Object details,
+            @JsonProperty("authenticated") boolean authenticated) {
+        super(authorities);
+        this.principal = principal;
+        this.credentials = credentials;
+        this.setDetails(details); // 还原 details
+        super.setAuthenticated(authenticated); // 还原认证状态
+    }
 
     /**
      * 未认证的构造函数
@@ -37,6 +60,12 @@ public class UsernamePasswordAuthenticationToken extends AbstractAuthenticationT
         this.principal = principal;
         this.credentials = null;
         super.setAuthenticated(true);
+    }
+
+    @Override
+    @JsonIgnore
+    public String getName() {
+        return super.getName();
     }
 
     @Override

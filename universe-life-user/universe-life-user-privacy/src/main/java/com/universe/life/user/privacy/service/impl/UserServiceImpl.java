@@ -8,6 +8,8 @@ import com.universe.life.model.domain.dto.RegisterFormDTO;
 import com.universe.life.model.domain.dto.UserStatusDTO;
 import com.universe.life.model.enums.UserAuthType;
 import com.universe.life.user.privacy.domain.dao.UserStatusDo;
+import com.universe.life.user.privacy.domain.po.User;
+import com.universe.life.user.privacy.domain.po.UserAuth;
 import com.universe.life.user.privacy.mapper.UserMapper;
 import com.universe.life.user.privacy.service.IUserAuthService;
 import com.universe.life.user.privacy.service.IUserService;

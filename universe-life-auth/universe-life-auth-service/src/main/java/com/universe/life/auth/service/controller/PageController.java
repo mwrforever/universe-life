@@ -8,6 +8,7 @@ import com.universe.life.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,6 +38,18 @@ public class PageController {
         model.addAttribute("title", "万象生活 - 登录注册");
         model.addAttribute("appName", "万象生活");
         model.addAttribute("appDescription", "连接您的生活，创造无限可能");
+
+        // 记录请求参数，便于调试OAuth2重定向问题
+        String clientId = request.getParameter("client_id");
+        String redirectUri = request.getParameter("redirect_uri");
+        String responseType = request.getParameter("response_type");
+        String scope = request.getParameter("scope");
+        String state = request.getParameter("state");
+
+        if (clientId != null || redirectUri != null) {
+            System.out.println("OAuth2登录请求参数 - client_id: " + clientId + ", redirect_uri: " + redirectUri +
+                ", response_type: " + responseType + ", scope: " + scope + ", state: " + state);
+        }
 
         return "login"; // 恢复到正常的登录模板
     }

@@ -1,6 +1,7 @@
 package com.universe.life.common.config;
 
 import com.universe.life.common.util.AntRequestMatchUtil;
+import com.universe.life.common.util.PermissionMatcher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,4 +23,8 @@ public class AntRequestMatchUtilConfiguration {
         return new AntRequestMatchUtil();
     }
 
+    @Bean("pm")
+    public PermissionMatcher permissionMatcher() {
+        return new PermissionMatcher(antRequestMatchUtil());
+    }
 }

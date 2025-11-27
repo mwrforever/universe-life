@@ -1,5 +1,8 @@
 package com.universe.life.auth.service.security;
 
+import cn.hutool.core.util.ObjectUtil;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.universe.life.api.client.UserClient;
@@ -12,7 +15,10 @@ import com.universe.life.auth.service.security.filter.SmsAuthenticationFilter;
 import com.universe.life.auth.service.security.provider.DeviceBindingRefreshTokenAuthenticationProvider;
 import com.universe.life.auth.service.security.provider.SmsAuthenticationProvider;
 import com.universe.life.auth.service.security.provider.UsernamePasswordAuthenticationProvider;
+import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
+import com.universe.life.auth.service.security.token.UsernamePasswordAuthenticationToken;
 import com.universe.life.auth.service.service.impl.AuthCommonServiceImpl;
+import com.universe.life.common.domain.dto.UserAuthInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -31,9 +37,9 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -47,8 +53,8 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
@@ -58,7 +64,10 @@ import org.springframework.security.oauth2.server.authorization.web.authenticati
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.*;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
@@ -108,6 +117,11 @@ public class UniverseAuthorizationServerConfiguration {
         return new TokenCustomizer();
     }
 
+    @Bean
+    public SecurityContextRepository securityContextRepository() {
+        return new HttpSessionSecurityContextRepository();
+    }
+
     /**
      * 授权服务器基本设置Bean
      * <p>配置OAuth2授权服务器的核心参数，主要是issuer URI。
@@ -128,13 +142,6 @@ public class UniverseAuthorizationServerConfiguration {
                 .build();  // 构建最终的配置对象
     }
 
-    @Bean
-    public OAuth2AuthorizationService oAuth2AuthorizationService(
-            JdbcTemplate jdbcTemplate,
-            RegisteredClientRepository registeredClientRepository
-    ) {
-        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
-    }
 
     @Bean
     public OAuth2AuthorizationConsentService oAuth2AuthorizationConsentService(
@@ -142,6 +149,47 @@ public class UniverseAuthorizationServerConfiguration {
             RegisteredClientRepository registeredClientRepository
     ) {
         return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
+    }
+
+    @Bean
+    public OAuth2AuthorizationService oAuth2AuthorizationService(
+            JdbcTemplate jdbcTemplate,
+            RegisteredClientRepository registeredClientRepository) {
+
+        // 1. 创建 Service 实例
+        JdbcOAuth2AuthorizationService service =
+                new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+
+        // 2. 创建并配置 RowMapper
+        JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper rowMapper =
+                new JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper(registeredClientRepository);
+
+        // 3. 配置 Jackson ObjectMapper
+        ObjectMapper objectMapper = new ObjectMapper();
+        ClassLoader classLoader = JdbcOAuth2AuthorizationService.class.getClassLoader();
+
+        // 3.1 注册 Spring Security 默认模块 (核心安全类)
+        List<Module> modules = SecurityJackson2Modules.getModules(classLoader);
+        objectMapper.registerModules(modules);
+
+        // 3.2 注册 OAuth2 Authorization Server 模块
+        objectMapper.registerModule(new OAuth2AuthorizationServerJackson2Module());
+
+        // 3.3 注册你的自定义类
+        // 注册自定义的 Token 类
+        objectMapper.addMixIn(UsernamePasswordAuthenticationToken.class, CustomSecurityMixin.class);
+        objectMapper.addMixIn(SmsAuthenticationToken.class, CustomSecurityMixin.class);
+
+        // 注册自定义的 User/Principal 类 (日志里显示是 UserAuthInfo，这个也必须加，否则修好了Token就会报这个错)
+        objectMapper.addMixIn(UserAuthInfo.class, CustomSecurityMixin.class);
+
+        // 4. 将配置好的 ObjectMapper 设置给 RowMapper
+        rowMapper.setObjectMapper(objectMapper);
+
+        // 5. 将 RowMapper 设置给 Service
+        service.setAuthorizationRowMapper(rowMapper);
+
+        return service;
     }
 
 
@@ -288,9 +336,9 @@ public class UniverseAuthorizationServerConfiguration {
     private boolean isClientExists(JdbcRegisteredClientRepository repository, String clientId) {
         try {
             // 尝试通过客户端ID查找客户端
-            repository.findByClientId(clientId);
+            RegisteredClient client = repository.findByClientId(clientId);
             // 如果没有抛出异常，说明客户端存在
-            return true;
+            return ObjectUtil.isNotNull(client);
         } catch (Exception e) {
             // 如果抛出异常（如EmptyResultDataAccessException），说明客户端不存在
             return false;
@@ -322,16 +370,28 @@ public class UniverseAuthorizationServerConfiguration {
         SmsAuthenticationFilter smsFilter = new SmsAuthenticationFilter(authenticationManager);
         MyUsernamePasswordAuthenticationFilter usernamePasswordFilter =
                 new MyUsernamePasswordAuthenticationFilter(authenticationManager);
-        // 登录成功后，重定向回之前的请求（例如 /oauth2/authorize）
-        smsFilter.setAuthenticationSuccessHandler(new SavedRequestAwareAuthenticationSuccessHandler());
-        // 登录失败去哪里
-        smsFilter.setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler("/login"));
 
-        // 配置用户名密码过滤器
-        usernamePasswordFilter.setAuthenticationSuccessHandler(new SavedRequestAwareAuthenticationSuccessHandler());
-        usernamePasswordFilter.setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler("/login"));
+        // 登录成功后，重定向回之前的请求（例如 /oauth2/authorize）
+        SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
+        successHandler.setRequestCache(getHttpSessionRequestCache());
+        // 设置默认登录成功后的重定向URL
+        successHandler.setDefaultTargetUrl("/dashboard");
+        // 设置总是使用保存的请求URL（如果有）
+        successHandler.setAlwaysUseDefaultTargetUrl(false);
+
+        // 配置短信认证过滤器
+        smsFilter.setAuthenticationSuccessHandler(successHandler);
+        smsFilter.setSecurityContextRepository(securityContextRepository());
+        SimpleUrlAuthenticationFailureHandler failureHandler = new SimpleUrlAuthenticationFailureHandler("/login");
+        smsFilter.setAuthenticationFailureHandler(failureHandler);
+
+        // 配置用户名密码过滤器（现在同时支持表单和JSON提交）
+        usernamePasswordFilter.setAuthenticationSuccessHandler(successHandler);
+        usernamePasswordFilter.setSecurityContextRepository(securityContextRepository());
+        usernamePasswordFilter.setAuthenticationFailureHandler(failureHandler);
         http
                 .securityMatcher(
+                        "/",
                         "/user-agreement",
                         "/privacy-policy",
                         "/disclaimer",
@@ -346,6 +406,8 @@ public class UniverseAuthorizationServerConfiguration {
                         "/favicon.ico",
                         "/static/**"
                 )
+                .securityContext(securityContext ->
+                        securityContext.securityContextRepository(securityContextRepository()))
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().permitAll()
                 )
@@ -358,13 +420,48 @@ public class UniverseAuthorizationServerConfiguration {
                 .authenticationManager(authenticationManager)
                 // ★ 把短信 Filter 加在用户名密码 Filter 之前
                 .addFilterBefore(smsFilter, UsernamePasswordAuthenticationFilter.class)
-                // 添加我们自定义的用户名密码过滤器
+                // 添加我们自定义的用户名密码过滤器（同时支持表单和JSON提交）
                 .addFilterBefore(usernamePasswordFilter, UsernamePasswordAuthenticationFilter.class)
-                // 启用CSRF保护，Thymeleaf会自动处理CSRF token，登录注册页面无需CSRF
+                // 启用CSRF保护，Thymeleaf会自动处理CSRF token
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 );
         return http.build();
+    }
+
+    @Bean
+    public HttpSessionRequestCache getHttpSessionRequestCache() {
+        HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+        // 可选：关闭 ?continue 参数
+        requestCache.setMatchingRequestParameterName(null);
+        // 关键：配置它只保存 OAuth2 请求，忽略静态资源和登录页
+        requestCache.setRequestMatcher(request -> {
+            String uri = request.getRequestURI();
+            String queryString = request.getQueryString();
+
+            log.debug("RequestCache检查请求 - URI: {}, QueryString: {}", uri, queryString);
+
+            // 如果是静态资源或登录相关，都不保存
+            if (uri.matches(".*\\.(css|js|jpg|png|gif|ico|woff|woff2|ttf|map)$")) return false;
+
+            // 保存OAuth2授权请求和重要的业务页面
+            if (uri.startsWith("/oauth2/authorize")) {
+                log.info("保存OAuth2授权请求: {}?{}", uri, queryString);
+                return true;
+            }
+
+            // 排除登录注册相关的请求
+            if (uri.startsWith("/login") || uri.startsWith("/register")) return false;
+
+            // 保存其他可能包含OAuth2参数的请求
+            if (queryString != null && (queryString.contains("client_id") || queryString.contains("redirect_uri"))) {
+                log.info("保存包含OAuth2参数的请求: {}?{}", uri, queryString);
+                return true;
+            }
+
+            return false;
+        });
+        return requestCache;
     }
 
     /**
@@ -380,13 +477,12 @@ public class UniverseAuthorizationServerConfiguration {
     ) throws Exception {
 
         log.info("配置授权服务器安全过滤器链");
-        // 应用Spring Authorization Server默认安全配置
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
         // 创建授权服务器配置器，用于自定义OAuth2端点行为
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = getOAuth2AuthorizationServerConfigurer(oAuth2AuthorizationService);
         return http
                 // 设置安全匹配器，只处理授权服务器端点请求
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+                .authorizeHttpRequests(requests -> requests.anyRequest().authenticated())
                 //                 应用授权服务器配置
                 .with(authorizationServerConfigurer, configurer ->
                         configurer.authorizationServerSettings(authorizationServerSettings)
@@ -394,18 +490,13 @@ public class UniverseAuthorizationServerConfiguration {
                                 .authorizationEndpoint(authorizationEndpoint ->
                                         authorizationEndpoint.consentPage(authorizationServerProperties.getConsentPage()))
                 )
+                .requestCache(c -> c.requestCache(getHttpSessionRequestCache()))
                 // 配置CSRF保护 - 对授权服务器端点禁用CSRF（符合OAuth2标准）
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(authorizationServerConfigurer.getEndpointsMatcher()))
-                // 配置会话管理 - 使用无状态会话（STATELESS）
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 配置异常处理 - 设置认证入口点和访问拒绝处理器
                 .exceptionHandling(exceptions -> exceptions
-                        .defaultAuthenticationEntryPointFor(
-                                new LoginUrlAuthenticationEntryPoint("/login"),
-                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-                        )
+                        .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
                         .accessDeniedHandler(jwtAccessDeniedHandler))
                 // 配置HTTP安全头 - 开发阶段简化配置，避免影响前后端分离开发
                 .headers((headers) -> {

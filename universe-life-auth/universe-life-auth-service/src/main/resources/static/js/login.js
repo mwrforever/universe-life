@@ -316,21 +316,38 @@ class LoginAuth {
         });
     }
 
-    // 验证用户名
+    // 验证用户名（支持用户名或邮箱）
     validateUsername(input) {
         const value = input.value.trim();
         if (!value) {
-            this.showError(input, '请输入用户名');
+            this.showError(input, '请输入用户名或邮箱');
             return false;
         }
-        if (value.length < 3 || value.length > 20) {
-            this.showError(input, '用户名长度应在3-20个字符之间');
-            return false;
+
+        // 检查是否为邮箱格式
+        if (value.includes('@')) {
+            // 邮箱格式验证
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(value)) {
+                this.showError(input, '请输入有效的邮箱地址');
+                return false;
+            }
+            if (value.length > 50) {
+                this.showError(input, '邮箱地址长度不能超过50个字符');
+                return false;
+            }
+        } else {
+            // 用户名格式验证
+            if (value.length < 3 || value.length > 20) {
+                this.showError(input, '用户名长度应在3-20个字符之间');
+                return false;
+            }
+            if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(value)) {
+                this.showError(input, '用户名只能包含中文、英文、数字、下划线');
+                return false;
+            }
         }
-        if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(value)) {
-            this.showError(input, '用户名只能包含中文、英文、数字、下划线');
-            return false;
-        }
+
         this.clearError(input);
         return true;
     }
@@ -408,12 +425,19 @@ class LoginAuth {
 
     // 设置表单提交
     setupFormSubmit() {
-        // 密码登录表单
+        // 密码登录表单 - 改为表单提交
         const passwordForm = document.getElementById('password-form');
         if (passwordForm) {
             passwordForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handlePasswordLogin();
+                // 先进行客户端验证
+                if (!this.validatePasswordLoginForm()) {
+                    e.preventDefault();
+                    return;
+                }
+
+                // 验证通过，让表单正常提交
+                this.showLoading('password-submit');
+                // 不需要preventDefault，让浏览器处理表单提交和重定向
             });
         }
 
@@ -421,14 +445,55 @@ class LoginAuth {
         const emailForm = document.getElementById('email-form');
         if (emailForm) {
             emailForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleEmailLogin();
+                // 先进行客户端验证
+                if (!this.validateEmailLoginForm()) {
+                    e.preventDefault();
+                    return;
+                }
+
+                // 验证通过，让表单正常提交
+                this.showLoading('email-submit');
+                // 不需要preventDefault，让浏览器处理表单提交和重定向
             });
         }
     }
 
+    // 验证密码登录表单
+    validatePasswordLoginForm() {
+        const username = document.getElementById('username');
+        const password = document.getElementById('password');
+        const agreement = document.getElementById('agreement');
+
+        // 验证表单
+        if (!this.validateUsername(username)) return false;
+        if (!this.validatePassword(password)) return false;
+        if (!agreement.checked) {
+            this.showToast('请同意用户协议、隐私政策和免责声明', 'warning');
+            return false;
+        }
+
+        return true;
+    }
+
+    // 验证邮箱登录表单
+    validateEmailLoginForm() {
+        const emailInput = document.getElementById('identification');
+        const verifyCodeInput = document.getElementById('verifyCode');
+        const agreement = document.getElementById('email-agreement');
+
+        // 验证表单
+        if (!this.validateEmail(emailInput)) return false;
+        if (!this.validateVerificationCode(verifyCodeInput)) return false;
+        if (!agreement.checked) {
+            this.showToast('请同意用户协议、隐私政策和免责声明', 'warning');
+            return false;
+        }
+
+        return true;
+    }
+
     // 处理密码登录
-    async handlePasswordLogin() {
+    handlePasswordLogin() {
         const username = document.getElementById('username');
         const password = document.getElementById('password');
         const agreement = document.getElementById('agreement');
@@ -444,36 +509,13 @@ class LoginAuth {
         // 显示加载状态
         this.showLoading('password-submit');
 
-        try {
-            const response = await fetch('/login/password', {
-                method: 'POST',
-                headers: this.addCsrfHeaders({
-                    'Content-Type': 'application/json',
-                }),
-                body: JSON.stringify({
-                    username: username.value.trim(),
-                    password: password.value
-                })
-            });
-
-            const result = await response.json();
-
-            if (response.ok && result.code === 0) {
-                this.hideLoading('password-submit');
-                this.showToast('登录成功！', 'success');
-                // 登录成功后跳转到主页或其他页面
-                setTimeout(() => {
-                    window.location.href = '/dashboard';
-                }, 1500);
-            } else {
-                this.hideLoading('password-submit');
-                this.showToast(result.message || '登录失败，请检查用户名和密码', 'error');
-            }
-        } catch (error) {
+        // 不再使用AJAX提交，改为表单提交
+        // 将用户名和密码验证信息存储，让后端过滤器处理
+        setTimeout(() => {
+            // 表单提交成功后，浏览器会自动处理重定向
+            // 这里我们只需要清理UI状态
             this.hideLoading('password-submit');
-            console.error('登录请求失败:', error);
-            this.showToast('网络错误，请稍后重试', 'error');
-        }
+        }, 1000);
     }
 
     // 处理邮箱登录

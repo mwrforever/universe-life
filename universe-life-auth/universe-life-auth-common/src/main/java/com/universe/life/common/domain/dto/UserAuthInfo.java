@@ -1,6 +1,9 @@
 package com.universe.life.common.domain.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,6 +17,7 @@ import java.util.List;
  * @since 2025/11/4 10:03
  */
 @Data
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 public class UserAuthInfo implements UserDetails {
 
     private Long id;
@@ -24,8 +28,13 @@ public class UserAuthInfo implements UserDetails {
 
     private String password;
 
-
-    public UserAuthInfo(Long id, String username, String password, List<String> prePermissions) {
+    @JsonCreator
+    public UserAuthInfo(
+            @JsonProperty("id") Long id,
+            @JsonProperty("username") String username,
+            @JsonProperty("password") String password,
+            @JsonProperty("prePermissions") List<String> prePermissions
+    ) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -37,6 +46,7 @@ public class UserAuthInfo implements UserDetails {
 
 
     @Override
+    @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if (permissions != null) {
             return permissions;
@@ -55,21 +65,25 @@ public class UserAuthInfo implements UserDetails {
     }
 
     @Override
+    @JsonIgnore
     public boolean isAccountNonExpired() {
         return true;
     }
 
     @Override
+    @JsonIgnore
     public boolean isAccountNonLocked() {
         return true;
     }
 
     @Override
+    @JsonIgnore
     public boolean isCredentialsNonExpired() {
         return true;
     }
 
     @Override
+    @JsonIgnore
     public boolean isEnabled() {
         return true;
     }

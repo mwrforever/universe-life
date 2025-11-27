@@ -59,10 +59,6 @@ class UsernamePasswordAuthenticationTest {
                 .username(username)
                 .password(encodedPassword)
                 .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
-                .accountNonLocked(true)
-                .isEnabled(true)
-                .accountNonExpired(true)
-                .credentialsNonExpired(true)
                 .build();
 
         // Mock依赖
@@ -99,10 +95,6 @@ class UsernamePasswordAuthenticationTest {
                 .username(username)
                 .password(encodedPassword)
                 .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
-                .accountNonLocked(true)
-                .isEnabled(true)
-                .accountNonExpired(true)
-                .credentialsNonExpired(true)
                 .build();
 
         // Mock依赖

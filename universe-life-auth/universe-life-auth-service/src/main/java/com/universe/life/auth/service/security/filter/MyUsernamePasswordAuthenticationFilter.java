@@ -1,8 +1,6 @@
 package com.universe.life.auth.service.security.filter;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import com.universe.life.auth.service.security.token.UsernamePasswordAuthenticationToken;
 import com.universe.life.common.exception.AuthException;
 import com.universe.life.common.message.ExceptionMessage;
@@ -20,7 +18,7 @@ import java.io.IOException;
 
 /**
  * 用户名密码认证过滤器
- * 支持JSON格式的用户名密码登录
+ * 支持表单提交和邮箱登录
  *
  * @author 毛伟然
  * @since 2025/11/21
@@ -28,7 +26,6 @@ import java.io.IOException;
 @Slf4j
 public class MyUsernamePasswordAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 
-    private static final String method = "POST";
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
 
@@ -38,31 +35,46 @@ public class MyUsernamePasswordAuthenticationFilter extends AbstractAuthenticati
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
-        // 验证请求方式
-        if (!request.getMethod().equals(method)) {
-            throw new AuthException.AuthenticationException(String.format("%s: %S", ExceptionMessage.REQUEST_METHOD_NOT_ALLOWED, request.getMethod()));
-        }
-        // 从请求体中获取JSON数据
-        String requestBody = request.getReader().lines().reduce("", String::concat);
-        if (StrUtil.isBlank(requestBody)) {
-            throw new AuthException.AuthenticationException(ExceptionMessage.AUTH_FAILED);
-        }
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+            throws AuthenticationException, IOException, ServletException {
 
-        // 解析JSON
-        JSONObject jsonObject = JSONUtil.parseObj(requestBody);
-        String username = jsonObject.getStr(USERNAME);
-        String password = jsonObject.getStr(PASSWORD);
+        String username = obtainUsername(request);
+        String password = obtainPassword(request);
 
         // 校验数据是否存在
         if (StrUtil.isBlank(username) || StrUtil.isBlank(password)) {
             throw new AuthException.AuthenticationException(ExceptionMessage.AUTH_FAILED);
         }
 
-        log.debug("用户名密码认证 - 用户名: {}", username);
+        // 去除用户名首尾空格
+        username = username.trim();
 
-        // 封装返回accessToken
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(username, password);
-        return this.getAuthenticationManager().authenticate(usernamePasswordAuthenticationToken);
+        // 如果用户名包含@符号，认为是邮箱登录，转换为小写
+        if (username.contains("@")) {
+            username = username.toLowerCase();
+        }
+
+        // 封装认证Token
+        UsernamePasswordAuthenticationToken authenticationToken =
+            new UsernamePasswordAuthenticationToken(username, password);
+
+        // 设置详细信息
+        authenticationToken.setDetails(this.authenticationDetailsSource.buildDetails(request));
+
+        return this.getAuthenticationManager().authenticate(authenticationToken);
+    }
+
+    /**
+     * 从请求中获取用户名
+     */
+    protected String obtainUsername(HttpServletRequest request) {
+        return request.getParameter(USERNAME);
+    }
+
+    /**
+     * 从请求中获取密码
+     */
+    protected String obtainPassword(HttpServletRequest request) {
+        return request.getParameter(PASSWORD);
     }
 }

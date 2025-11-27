@@ -1,5 +1,9 @@
 package com.universe.life.auth.service.security.token;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,6 +16,7 @@ import java.util.Collection;
  * @since 2025/11/20 12:03
  */
 @Getter
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 public class SmsAuthenticationToken extends AbstractAuthenticationToken {
 
 
@@ -19,6 +24,26 @@ public class SmsAuthenticationToken extends AbstractAuthenticationToken {
     private final Object credentials;
     private final Object usageType;
 
+
+    @JsonCreator
+    public SmsAuthenticationToken(
+            @JsonProperty("principal") Object principal,
+            @JsonProperty("credentials") Object credentials,
+            @JsonProperty("usageType") Object usageType,
+            @JsonProperty("authorities") Collection<? extends GrantedAuthority> authorities,
+            @JsonProperty("details") Object details,
+            @JsonProperty("authenticated") boolean authenticated) {
+        super(authorities);
+        this.principal = principal;
+        this.credentials = credentials;
+        this.usageType = usageType;
+        this.setDetails(details); // 还原 details 信息
+        super.setAuthenticated(authenticated); // 还原认证状态
+    }
+
+    /**
+     * 短信验证码登录构造函数
+     */
     public SmsAuthenticationToken(Object principal, Object credentials, Object usageType) {
         super(null);
         this.principal = principal;
@@ -33,6 +58,12 @@ public class SmsAuthenticationToken extends AbstractAuthenticationToken {
         this.credentials = null;
         this.usageType = null;
         super.setAuthenticated(true);
+    }
+
+    @Override
+    @JsonIgnore
+    public String getName() {
+        return super.getName();
     }
 
     @Override
