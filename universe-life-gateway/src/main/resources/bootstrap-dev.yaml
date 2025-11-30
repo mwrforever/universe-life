@@ -18,7 +18,7 @@ universe-life:
   security:
     resource:
       server:
-        issuer-uri: http://localhost:8099
+        issuer-uri: http://127.0.0.1:8099
 
 logging:
   level:

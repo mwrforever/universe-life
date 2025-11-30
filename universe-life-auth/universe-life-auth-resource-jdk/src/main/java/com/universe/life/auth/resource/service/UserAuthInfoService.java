@@ -33,7 +33,7 @@ public class UserAuthInfoService implements UserDetailsService {
         }
         // TODO 查询用户权限信息
         // 封装用户信息
-        UserAuthInfo userAuthInfo = new UserAuthInfo(userInfo.getId(), userInfo.getUsername(), userInfo.getPassword(), null);
+        UserAuthInfo userAuthInfo = new UserAuthInfo(userInfo.getId(), userInfo.getUsername(), userInfo.getPassword(), null, userInfo.getAvatar());
         // 写入缓存
         String userInfoKey = RedisConstants.USER_AUTH_UID_KEY + userInfo.getId();
         stringRedisTemplate.opsForValue().set(

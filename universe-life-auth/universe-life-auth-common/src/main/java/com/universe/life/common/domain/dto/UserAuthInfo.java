@@ -24,6 +24,8 @@ public class UserAuthInfo implements UserDetails {
 
     private List<String> prePermissions;
 
+    private String avatar;
+
     private String username;
 
     private String password;
@@ -33,14 +35,15 @@ public class UserAuthInfo implements UserDetails {
             @JsonProperty("id") Long id,
             @JsonProperty("username") String username,
             @JsonProperty("password") String password,
-            @JsonProperty("prePermissions") List<String> prePermissions
+            @JsonProperty("prePermissions") List<String> prePermissions,
+            @JsonProperty("avatar") String avatar
     ) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.prePermissions = prePermissions;
+        this.avatar = avatar;
     }
-
     @JsonIgnore
     private List<GrantedAuthority> permissions;
 

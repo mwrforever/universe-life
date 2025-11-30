@@ -21,4 +21,6 @@ public interface JwtConstants {
     String CLIENT_ID = "client_id";
 
     String USER_ID = "user_id";
+    String USER_NAME = "username";
+    String USER_AVATAR = "avatar";
 }

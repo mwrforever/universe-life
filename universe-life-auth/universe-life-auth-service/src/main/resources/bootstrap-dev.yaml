@@ -1,7 +1,7 @@
 universe-life:
   datasource:
-    host: localhost
-    port: 13306
+    host: 43.142.103.248
+    port: 3306
     username: root
     password: 1010520mao
     database: oauth2_authorization
@@ -9,8 +9,8 @@ universe-life:
   data:
     redis:
       database: 0
-      host: localhost
-      port: 16379
+      host: 43.142.103.248
+      port: 6379
       password: 1010520mao
       timeout: 10000
   auth:
@@ -32,7 +32,7 @@ universe-life:
     authorization:
       server:
         consent-page: http://localhost:3000/auth/consent
-        issuer: http://localhost:8099
+        issuer: http://127.0.0.1:8099
         client-id: fCSYj5XOia6J4O9shfka
         client-secret: m&#H:YN&@[Ijhn3s&ehV
         redirect-uri: http://localhost:3000/auth/callback
@@ -51,14 +51,14 @@ universe-life:
     # 单机模式配置（测试环境推荐）
     single:
       enabled: true
-      address: redis://localhost:16379
+      address: redis://43.142.103.248:6379
       database: 0
   mybatis-plus:
     type-aliases-package: com.universe.life.auth.service.domain
   mail:
     app-name: 万象生活
     from: 18229923842@163.com
-    app-url: http://127.0.0.1:3000
+    app-url: http://43.142.103.248:3000
 
 
 logging:
@@ -66,5 +66,5 @@ logging:
     org.springframework.amqp: INFO
     com.rabbitmq.client: INFO
     com.universe.life.auth.service: DEBUG
-    com.github.xiaoymin.knife4j: DEBUG
+    com.github.xiaoymin.knife4j: INFO
     org.springframework.security: DEBUG

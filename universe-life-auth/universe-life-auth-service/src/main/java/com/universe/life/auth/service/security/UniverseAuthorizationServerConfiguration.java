@@ -1,27 +1,33 @@
 package com.universe.life.auth.service.security;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.universe.life.api.client.UserClient;
 import com.universe.life.auth.service.manager.JwkManager;
 import com.universe.life.auth.service.properties.AuthorizationServerProperties;
 import com.universe.life.auth.service.properties.JwkProperties;
-import com.universe.life.auth.service.security.convert.DeviceAuthenticationConverter;
+import com.universe.life.auth.service.security.convert.PublicClientRefreshTokenAuthenticationConverter;
 import com.universe.life.auth.service.security.filter.MyUsernamePasswordAuthenticationFilter;
 import com.universe.life.auth.service.security.filter.SmsAuthenticationFilter;
-import com.universe.life.auth.service.security.provider.DeviceBindingRefreshTokenAuthenticationProvider;
+import com.universe.life.auth.service.security.provider.PublicClientRefreshTokenAuthenticationProvider;
 import com.universe.life.auth.service.security.provider.SmsAuthenticationProvider;
 import com.universe.life.auth.service.security.provider.UsernamePasswordAuthenticationProvider;
+import com.universe.life.auth.service.security.token.CustomRefreshTokenGenerator;
 import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
 import com.universe.life.auth.service.security.token.UsernamePasswordAuthenticationToken;
 import com.universe.life.auth.service.service.impl.AuthCommonServiceImpl;
 import com.universe.life.common.domain.dto.UserAuthInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -37,6 +43,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.jackson2.SecurityJackson2Modules;
@@ -49,7 +56,6 @@ import org.springframework.security.oauth2.server.authorization.JdbcOAuth2Author
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2RefreshTokenAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -58,12 +64,13 @@ import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2A
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
-import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
-import org.springframework.security.oauth2.server.authorization.web.authentication.*;
+import org.springframework.security.oauth2.server.authorization.token.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.*;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -71,6 +78,7 @@ import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -144,6 +152,30 @@ public class UniverseAuthorizationServerConfiguration {
 
 
     @Bean
+    public OAuth2TokenGenerator<?> tokenGenerator(
+            JWKSource<SecurityContext> jwkSource,
+            OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer) {
+
+        // 1. 构建 Access Token 生成器 (JWT)
+        JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource));
+        // 注入你之前写的 Customizer，保证 Access Token 里的 user_id 正常
+        jwtGenerator.setJwtCustomizer(tokenCustomizer);
+
+        // 2. 构建 Access Token 生成器
+        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
+
+        // 3. 构建我们自定义的 Refresh Token 生成器
+        CustomRefreshTokenGenerator refreshTokenGenerator = new CustomRefreshTokenGenerator();
+
+        // 4. 组合起来
+        return new DelegatingOAuth2TokenGenerator(
+                jwtGenerator,
+                accessTokenGenerator,
+                refreshTokenGenerator
+        );
+    }
+
+    @Bean
     public OAuth2AuthorizationConsentService oAuth2AuthorizationConsentService(
             JdbcTemplate jdbcTemplate,
             RegisteredClientRepository registeredClientRepository
@@ -168,6 +200,21 @@ public class UniverseAuthorizationServerConfiguration {
         ObjectMapper objectMapper = new ObjectMapper();
         ClassLoader classLoader = JdbcOAuth2AuthorizationService.class.getClassLoader();
 
+        // 3.0 配置安全的类型处理 - 解决Long类型白名单问题的关键步骤
+        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+                .allowIfBaseType(Object.class)
+                .allowIfSubType("java.lang.Long")  // 明确允许Long类型
+                .allowIfSubType("java.lang.Integer")
+                .allowIfSubType("java.lang.String")
+                .allowIfSubType("com.universe.life.")  // 允许项目包下的所有类
+                .allowIfSubType("org.springframework.security.")  // 允许Spring Security类
+                .allowIfSubType("java.time.")  // 允许时间相关类
+                .allowIfSubType("java.util.")  // 允许工具类
+                .build();
+
+        // 启用默认类型处理，使用PROPERTY格式以兼容现有数据
+        objectMapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL, com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY);
+
         // 3.1 注册 Spring Security 默认模块 (核心安全类)
         List<Module> modules = SecurityJackson2Modules.getModules(classLoader);
         objectMapper.registerModules(modules);
@@ -175,7 +222,34 @@ public class UniverseAuthorizationServerConfiguration {
         // 3.2 注册 OAuth2 Authorization Server 模块
         objectMapper.registerModule(new OAuth2AuthorizationServerJackson2Module());
 
-        // 3.3 注册你的自定义类
+        // 3.3 注册Java时间模块
+        objectMapper.registerModule(new JavaTimeModule());
+
+        // 3.4 创建自定义模块处理Long类型
+        SimpleModule longModule = new SimpleModule();
+        longModule.addSerializer(Long.class, new JsonSerializer<>() {
+            @Override
+            public void serialize(Long value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+                if (value != null) {
+                    gen.writeString(value.toString());
+                }
+            }
+        });
+
+        longModule.addDeserializer(Long.class, new JsonDeserializer<>() {
+            @Override
+            public Long deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                String text = p.getValueAsString();
+                if (text == null || text.trim().isEmpty()) {
+                    return null;
+                }
+                return Long.valueOf(text);
+            }
+        });
+
+        objectMapper.registerModule(longModule);
+
+        // 3.5 注册你的自定义类
         // 注册自定义的 Token 类
         objectMapper.addMixIn(UsernamePasswordAuthenticationToken.class, CustomSecurityMixin.class);
         objectMapper.addMixIn(SmsAuthenticationToken.class, CustomSecurityMixin.class);
@@ -183,9 +257,19 @@ public class UniverseAuthorizationServerConfiguration {
         // 注册自定义的 User/Principal 类 (日志里显示是 UserAuthInfo，这个也必须加，否则修好了Token就会报这个错)
         objectMapper.addMixIn(UserAuthInfo.class, CustomSecurityMixin.class);
 
+        // 3.6 配置额外的反序列化选项以处理类型格式兼容性问题
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
+        objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+
+        // 3.7 为Map类型配置特殊的Mixin以解决类型信息格式问题
+        // 使用接口和公共基类替代不可访问的内部类
+        objectMapper.addMixIn(java.util.Map.class, CollectionMixins.MapMixin.class);
+        objectMapper.addMixIn(java.util.List.class, CollectionMixins.ListMixin.class);
+        objectMapper.addMixIn(java.util.Collection.class, CollectionMixins.ListMixin.class);
         // 4. 将配置好的 ObjectMapper 设置给 RowMapper
         rowMapper.setObjectMapper(objectMapper);
-
         // 5. 将 RowMapper 设置给 Service
         service.setAuthorizationRowMapper(rowMapper);
 
@@ -216,7 +300,6 @@ public class UniverseAuthorizationServerConfiguration {
             // 创建网关客户端配置
             RegisteredClient gatewayClient = createGatewayClient(
                     authorizationServerProperties.getClientId(),
-                    authorizationServerProperties.getClientSecret(),
                     authorizationServerProperties.getRedirectUri()
             );
             // 保存客户端到数据库
@@ -234,18 +317,14 @@ public class UniverseAuthorizationServerConfiguration {
      * <p>构建一个完整的OAuth2客户端配置，包括认证方式、授权类型、权限范围等。
      * 此客户端主要用于网关服务的OAuth2集成。</p>
      *
-     * @param clientId     客户端标识符
-     * @param clientSecret 客户端密钥，可为空时使用默认密钥
-     * @param redirectUri  授权回调URI
+     * @param clientId    客户端标识符
+     * @param redirectUri 授权回调URI
      * @return 配置完成的RegisteredClient对象
      */
-    private RegisteredClient createGatewayClient(String clientId, String clientSecret, String redirectUri) {
-        // 使用BCrypt算法加密客户端密钥，强度12，提供强密码保护
-        String encodedSecret = bCryptPasswordEncoder.encode(clientSecret);
+    private RegisteredClient createGatewayClient(String clientId, String redirectUri) {
         // 使用建造者模式创建RegisteredClient对象
         return RegisteredClient.withId(UUID.randomUUID().toString().replace("-", ""))  // 生成唯一客户端ID
                 .clientId(clientId)  // 设置客户端标识符
-                .clientSecret(encodedSecret)  // 设置加密后的客户端密钥                                                                                      jdbcTemplate
                 .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)  // 客户端认证方式：HTTP Basic认证
                 .authorizationGrantTypes(grants -> grants.addAll(Arrays.asList(  // 支持的授权类型
                         AuthorizationGrantType.AUTHORIZATION_CODE,  // 授权码模式，最安全的OAuth2流程
@@ -257,17 +336,19 @@ public class UniverseAuthorizationServerConfiguration {
                         OidcScopes.PROFILE,  // 用户基本信息范围
                         OidcScopes.EMAIL,  // 用户邮箱范围
                         OidcScopes.PHONE,  // 用户电话范围
+                        "offline_access",
                         "read",  // 读权限，自定义业务权限
                         "write",  // 写权限，自定义业务权限
                         "admin",  // 管理员权限
-                        "trust"  // 信任权限，用于特殊操作
+                        "trust",
+                        "user_info"// 信任权限，用于特殊操作
                 )))
                 .clientSettings(ClientSettings.builder()  // 客户端设置
                         .requireAuthorizationConsent(false)  // 不要求用户授权同意，适用于可信客户端
                         .requireProofKey(true)  // 启用PKCE，增强授权码模式安全性
                         .build())
                 .tokenSettings(TokenSettings.builder()  // 令牌设置
-                        .accessTokenTimeToLive(Duration.ofHours(2))  // 访问令牌有效期：30分钟
+                        .accessTokenTimeToLive(Duration.ofHours(2))  // 访问令牌有效期：2 小时
                         .refreshTokenTimeToLive(Duration.ofDays(30))  // 刷新令牌有效期：30天
                         .reuseRefreshTokens(false)  // 不重复使用刷新令牌，增强安全性
                         .authorizationCodeTimeToLive(Duration.ofMinutes(5))  // 授权码有效期：5分钟
@@ -473,12 +554,12 @@ public class UniverseAuthorizationServerConfiguration {
     public SecurityFilterChain authorizationServerSecurityFilterChain(
             HttpSecurity http,
             AuthorizationServerSettings authorizationServerSettings,
-            OAuth2AuthorizationService oAuth2AuthorizationService
+            RegisteredClientRepository registeredClientRepository
     ) throws Exception {
 
         log.info("配置授权服务器安全过滤器链");
         // 创建授权服务器配置器，用于自定义OAuth2端点行为
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = getOAuth2AuthorizationServerConfigurer(oAuth2AuthorizationService);
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
         return http
                 // 设置安全匹配器，只处理授权服务器端点请求
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
@@ -486,6 +567,9 @@ public class UniverseAuthorizationServerConfiguration {
                 //                 应用授权服务器配置
                 .with(authorizationServerConfigurer, configurer ->
                         configurer.authorizationServerSettings(authorizationServerSettings)
+                                .clientAuthentication(clientAuth ->
+                                        clientAuth.authenticationConverter(new PublicClientRefreshTokenAuthenticationConverter())
+                                                .authenticationProvider(new PublicClientRefreshTokenAuthenticationProvider(registeredClientRepository)))
                                 .oidc(Customizer.withDefaults())
                                 .authorizationEndpoint(authorizationEndpoint ->
                                         authorizationEndpoint.consentPage(authorizationServerProperties.getConsentPage()))
@@ -494,6 +578,7 @@ public class UniverseAuthorizationServerConfiguration {
                 // 配置CSRF保护 - 对授权服务器端点禁用CSRF（符合OAuth2标准）
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(authorizationServerConfigurer.getEndpointsMatcher()))
+                .cors(AbstractHttpConfigurer::disable)
                 // 配置异常处理 - 设置认证入口点和访问拒绝处理器
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
@@ -536,55 +621,6 @@ public class UniverseAuthorizationServerConfiguration {
                         .policy("geolocation=(), microphone=(), camera=(), fullscreen=()"))
         )
         */
-    }
-
-    @NotNull
-    private OAuth2AuthorizationServerConfigurer getOAuth2AuthorizationServerConfigurer(OAuth2AuthorizationService oAuth2AuthorizationService) {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
-        authorizationServerConfigurer
-                .tokenEndpoint(tokenEndpoint -> {
-
-                    // 1. 【解决找不到类的问题】手动组装标准的 Converter 列表
-                    // 这些是 Spring Authorization Server 提供的基础转换器
-                    DelegatingAuthenticationConverter standardConverters = getDelegatingAuthenticationConverter();
-
-                    // 3. 将标准转换器传递给你的自定义包装器 DeviceAuthenticationConverter
-                    // 这样先提取 device_id，再调用 standardConverters 提取核心 OAuth2 参数
-                    tokenEndpoint.accessTokenRequestConverter(
-                            new DeviceAuthenticationConverter(standardConverters)
-                    );
-                    // 2. 注入自定义 Provider，用于校验设备绑定
-                    tokenEndpoint.authenticationProviders(providers -> {
-                        // 找到默认的 RefreshToken Provider
-                        OAuth2RefreshTokenAuthenticationProvider defaultProvider = null;
-                        for (Object p : providers) {
-                            if (p instanceof OAuth2RefreshTokenAuthenticationProvider) {
-                                defaultProvider = (OAuth2RefreshTokenAuthenticationProvider) p;
-                                break;
-                            }
-                        }
-
-                        // 用我们的 Wrapper 替换掉它 (或者插在它前面)
-                        if (defaultProvider != null) {
-                            providers.remove(defaultProvider);
-                            providers.add(new DeviceBindingRefreshTokenAuthenticationProvider(defaultProvider, oAuth2AuthorizationService, userClient, stringRedisTemplate));
-                        }
-                    });
-                });
-        return authorizationServerConfigurer;
-    }
-
-    @NotNull
-    private DelegatingAuthenticationConverter getDelegatingAuthenticationConverter() {
-        List<AuthenticationConverter> converters = Arrays.asList(
-                new OAuth2AuthorizationCodeAuthenticationConverter(), // 授权码模式
-                new OAuth2RefreshTokenAuthenticationConverter(),      // 刷新 Token 模式
-                new OAuth2ClientCredentialsAuthenticationConverter(), // 客户端模式
-                new OAuth2DeviceCodeAuthenticationConverter()         // 设备码模式
-        );
-
-        // 2. 创建代理转换器，包含上述所有标准逻辑
-        return new DelegatingAuthenticationConverter(converters);
     }
 
 

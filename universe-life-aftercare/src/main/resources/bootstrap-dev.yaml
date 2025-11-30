@@ -1,7 +1,7 @@
 universe-life:
   datasource:
-    host: localhost
-    port: 13306
+    host: 43.142.103.248
+    port: 3306
     username: root
     password: 1010520mao
     database: universe_life_aftercare
@@ -9,8 +9,8 @@ universe-life:
   data:
     redis:
       database: 11
-      host: localhost
-      port: 16379
+      host: 43.142.103.248
+      port: 6379
       password: 1010520mao
       timeout: 10000
   auth:
@@ -39,7 +39,7 @@ universe-life:
     # 单机模式配置（测试环境推荐）
     single:
       enabled: true
-      address: redis://localhost:16379
+      address: redis://43.142.103.248:6379
       database: 11
   mybatis-plus:
     type-aliases-package: com.universe.life.aftercare.domain
