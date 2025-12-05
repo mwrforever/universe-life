@@ -13,6 +13,8 @@
       <excludeFolder url="file://$MODULE_DIR$/logs" />
       <excludeFolder url="file://$MODULE_DIR$/oap/logs" />
       <excludeFolder url="file://$MODULE_DIR$/prometheus/data" />
+      <excludeFolder url="file://$MODULE_DIR$/scripts" />
+      <excludeFolder url="file://$MODULE_DIR$/sql" />
     </content>
   </component>
 </module>

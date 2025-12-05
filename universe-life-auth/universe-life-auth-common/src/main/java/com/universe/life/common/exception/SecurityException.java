@@ -27,6 +27,18 @@ public class SecurityException extends RuntimeException {
         }
     }
 
+    public static class CaptchaVerificationFailedException extends SecurityException {
+        public CaptchaVerificationFailedException(String message) {
+            super(message);
+        }
+    }
+
+    public static class InvalidCredentialsException extends SecurityException {
+        public InvalidCredentialsException(String message) {
+            super(message);
+        }
+    }
+
     public SecurityException(String message) {
         super(message);
     }

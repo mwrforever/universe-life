@@ -58,6 +58,16 @@ public class BusinessException extends BaseServiceException {
         }
     }
 
+    public static class OperationFailedException extends BusinessException {
+        public OperationFailedException(String message) {
+            super(message);
+        }
+
+        public OperationFailedException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     /**
      * 数据已存在异常
      */

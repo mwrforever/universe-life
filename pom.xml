@@ -32,7 +32,8 @@
         <knife4j.openapi3.web.flux.version>4.4.0</knife4j.openapi3.web.flux.version>
         <powerjob.version>5.1.2</powerjob.version>
         <redisson.version>3.34.1</redisson.version>
-
+        <mapstruct.version>1.6.0</mapstruct.version>
+        <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
 
         <!-- 项目模块统一版本管理 -->
         <universe.life.version>1.0.0-SNAPSHOT</universe.life.version>
@@ -52,6 +53,12 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.redisson</groupId>
@@ -102,6 +109,12 @@
                 <groupId>com.universe.life</groupId>
                 <artifactId>universe-life-auth-gateway-jdk</artifactId>
                 <version>${universe.life.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser</artifactId>
+                <version>${mybatis.plus.version}</version>
             </dependency>
 
             <!--            外部依赖管理-->
@@ -206,5 +219,70 @@
         <module>universe-life-notify</module>
         <module>universe-life-comment</module>
     </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- 统一管理 compiler 插件版本 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                        <parameters>true</parameters> <!-- 关键：保留方法参数名，这对 Spring Boot 3 很重要 -->
+                        <annotationProcessorPaths>
+                            <!-- 1. Lombok 处理器 (必须在第一位) -->
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                            <!-- 2. Lombok-MapStruct 绑定器 (解决兼容性) -->
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok-mapstruct-binding</artifactId>
+                                <version>${lombok-mapstruct-binding.version}</version>
+                            </path>
+                            <!-- 3. MapStruct 处理器 (必须在 Lombok 之后) -->
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${mapstruct.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+
+                <!-- Spring Boot 打包插件 -->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <!--
+             注意：这里将 maven-compiler-plugin 放在 plugins 中，
+             意味着所有子模块都会默认应用这个编译配置（包含 MapStruct 处理）。
+             这通常是没问题的，也是最省事的做法。
+        -->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

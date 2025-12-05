@@ -4,9 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.universe.life.user.privacy.domain.po.UserDetail;
 
 /**
- * <p>
- * 用户详情表 服务类
- * </p>
+ * 用户详情服务接口
  *
  * @author 毛伟然
  * @since 2025-11-13

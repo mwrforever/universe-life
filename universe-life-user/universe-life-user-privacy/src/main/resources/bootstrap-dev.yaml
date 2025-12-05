@@ -22,7 +22,6 @@ universe-life:
       - /swagger-ui.html
       - /auth/getUserInfo
       - /add
-      - /privacy/status
   # Redisson 分布式锁配置（测试环境）
   redisson:
     # 基础配置

@@ -1,17 +1,16 @@
 package com.universe.life.auth.service.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.universe.life.auth.resource.domain.dto.request.CaptchaRequest;
 import com.universe.life.auth.resource.domain.dto.request.VerifyCodeFormRequest;
 import com.universe.life.auth.resource.domain.vo.CaptchaVO;
-import com.universe.life.auth.service.constants.RedisConstants;
+import com.universe.life.auth.resource.constants.RedisConstants;
+import com.universe.life.auth.resource.util.VerifyCaptchaUtil;
 import com.universe.life.auth.service.domain.vo.DisclaimerVO;
 import com.universe.life.auth.service.domain.vo.PrivacyPolicyVO;
 import com.universe.life.auth.service.domain.vo.UserAgreementVO;
 import com.universe.life.auth.service.service.IAuthCommonService;
 import com.universe.life.common.enums.CaptchaUsageType;
-import com.universe.life.common.exception.AuthException;
 import com.universe.life.common.exception.BusinessException;
 import com.universe.life.common.message.ExceptionMessage;
 import com.universe.life.common.strategy.CaptchaSenderStrategy;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -41,29 +39,30 @@ public class AuthCommonServiceImpl implements IAuthCommonService {
 
     private final List<CaptchaSenderStrategy> captchaSenderStrategies;
 
+    private final VerifyCaptchaUtil verifyCaptchaUtil;
+
     @Override
     public CaptchaVO verifyCaptcha(VerifyCodeFormRequest request) {
-        // 从redis中获取验证码
-        String key = RedisConstants.AUTH_USER_CAPTCHA_KEY_PREFIX +
-                request.getCaptchaUsageType().getDisplayName() + ":" +
-                request.getIdentification();
-        Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries(key);
-        if (CollUtil.isEmpty(entries)) {
-            throw new BusinessException.DataNotFoundException(ExceptionMessage.AUTHORIZATION_CODE_EXPIRED);
+        boolean verified = verifyCaptchaUtil.verifyCaptcha(request.getCaptchaUsageType(), request.getIdentification(), request.getVerifyCode());
+        if (!verified) {
+            throw new BusinessException.ParamException(ExceptionMessage.CAPTCHA_ERROR);
         }
-        // 校验验证码
-        String captcha = String.valueOf(entries.get(RedisConstants.AUTH_IDENTIFICATION));
-        if (!request.getVerifyCode().equals(captcha)) {
-            throw new AuthException.AuthenticationException(ExceptionMessage.CAPTCHA_ERROR);
-        }
-        // 验证成功，删除验证码
-        stringRedisTemplate.opsForHash().delete(key, RedisConstants.AUTH_IDENTIFICATION);
         // 返货验证标识VO
-        if (request.getCaptchaUsageType().equals(CaptchaUsageType.REGISTER)) {
-            String issuer = String.valueOf(entries.get(RedisConstants.AUTH_ISSUER));
+        if (hasCheckIssuer(request.getCaptchaUsageType())) {
+            String issuer = UUID.randomUUID().toString().replace("-", "");
+            String key =
+                    RedisConstants.AUTH_USER_CAPTCHA_KEY_PREFIX +
+                            request.getCaptchaUsageType().getDisplayName() + ":" +
+                            request.getIdentification() + ":" +
+                            RedisConstants.AUTH_ISSUER;
+            stringRedisTemplate.opsForValue().set(key, issuer, 15, TimeUnit.MINUTES);
             return new CaptchaVO(issuer);
         }
         return null;
+    }
+
+    private boolean hasCheckIssuer(CaptchaUsageType usageType) {
+        return !usageType.equals(CaptchaUsageType.LOGIN);
     }
 
     @Override
@@ -88,30 +87,14 @@ public class AuthCommonServiceImpl implements IAuthCommonService {
                             throw new BusinessException.ParamException(ExceptionMessage.PHONE_EMAIL_FORMAT_ERROR);
                         }
                 );
+        // 缓存验证码
         String key =
                 RedisConstants.AUTH_USER_CAPTCHA_KEY_PREFIX +
                         request.getCaptchaUsageType().getDisplayName() + ":" +
-                        request.getIdentification();
+                        request.getIdentification() + ":" +
+                        RedisConstants.AUTH_IDENTIFICATION;
 
-        // 缓存到redis并设置5分钟有效期
-        stringRedisTemplate.opsForHash().put(
-                key,
-                RedisConstants.AUTH_IDENTIFICATION,
-                captcha
-        );
-        // 只有注册时才进行唯一标识验证
-        if (request.getCaptchaUsageType().equals(CaptchaUsageType.REGISTER)) {
-            // 生成验证唯一标识
-            String issuer = UUID.randomUUID().toString().replace("-", "");
-            // 缓存这个验证唯一标识
-            stringRedisTemplate.opsForHash().put(
-                    key,
-                    RedisConstants.AUTH_ISSUER,
-                    issuer
-            );
-        }
-        // 设置过期时间
-        stringRedisTemplate.expire(key, 5, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(key, captcha, 15, TimeUnit.MINUTES);
         // 缓存验证码防刷时间
         stringRedisTemplate.opsForValue().setIfAbsent(
                 defendKey,

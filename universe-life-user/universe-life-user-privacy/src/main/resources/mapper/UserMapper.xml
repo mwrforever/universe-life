@@ -3,7 +3,7 @@
 <mapper namespace="com.universe.life.user.privacy.mapper.UserMapper">
 
     <select id="selectUserStatusByUsername"
-            resultType="com.universe.life.user.privacy.domain.dao.UserStatusDo">
+            resultType="com.universe.life.user.privacy.domain.dto.UserStatusDTO">
         select u.status as status from universe_life_user.user  u
         left join universe_life_user.user_auth ua
         on u.id = ua.user_id

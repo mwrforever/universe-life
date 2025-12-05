@@ -70,5 +70,66 @@ public enum UserAuthType {
         return null;
     }
 
+    /**
+     * 判断是否为微信认证
+     */
+    public boolean isWechat() {
+        return this.equals(WECHAT);
+    }
 
+    /**
+     * 判断是否为QQ认证
+     */
+    public boolean isQq() {
+        return this.equals(QQ);
+    }
+
+    /**
+     * 判断是否为支付宝认证
+     */
+    public boolean isAlipay() {
+        return this.equals(ALIPAY);
+    }
+
+    /**
+     * 判断是否为微博认证
+     */
+    public boolean isWeibo() {
+        return this.equals(WEIBO);
+    }
+
+    /**
+     * 判断是否为用户名认证
+     */
+    public boolean isUsername() {
+        return this.equals(USERNAME);
+    }
+
+    /**
+     * 判断是否为手机号认证
+     */
+    public boolean isPhone() {
+        return this.equals(PHONE);
+    }
+
+    /**
+     * 判断是否为邮箱认证
+     */
+    public boolean isEmail() {
+        return this.equals(EMAIL);
+    }
+
+    /**
+     * 判断是否为第三方认证（微信、QQ、支付宝、微博）
+     */
+    public boolean isThirdParty() {
+        return this.equals(WECHAT) || this.equals(QQ) || this.equals(ALIPAY) || this.equals(WEIBO);
+    }
+
+    /**
+     * 判断是否为传统认证（用户名、手机号、邮箱）
+     */
+    public boolean isTraditional() {
+        return this.equals(USERNAME) || this.equals(PHONE) || this.equals(EMAIL);
+    }
 }

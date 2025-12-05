@@ -56,6 +56,7 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+*.env
 
 # Runtime data
 pids
@@ -136,6 +137,7 @@ docs/build/
 # Local development
 .local
 .dev.env
+.env.skywalking
 
 # Build artifacts
 *.tsbuildinfo
@@ -206,7 +208,6 @@ specs/*/contracts/generated/
 .memory/
 .agent/
 
-*.env
 
 .claude
 **/*.md

@@ -1,4 +1,4 @@
-package com.universe.life.auth.service.constants;
+package com.universe.life.auth.resource.constants;
 
 /**
  * @author 毛伟然

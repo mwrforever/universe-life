@@ -25,6 +25,6 @@ public class AntRequestMatchUtilConfiguration {
 
     @Bean("pm")
     public PermissionMatcher permissionMatcher() {
-        return new PermissionMatcher(antRequestMatchUtil());
+        return new PermissionMatcher();
     }
 }

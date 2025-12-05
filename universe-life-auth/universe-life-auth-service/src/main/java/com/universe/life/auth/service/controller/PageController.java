@@ -8,7 +8,6 @@ import com.universe.life.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -74,17 +73,6 @@ public class PageController {
         model.addAttribute("appName", "万象生活");
         model.addAttribute("appDescription", "连接您的生活，创造无限可能");
         return "register-info"; // 需要创建register-info.html模板
-    }
-
-    /**
-     * 忘记密码页面
-     */
-    @GetMapping("/forgot-password")
-    public String forgotPassword(Model model) {
-        model.addAttribute("title", "万象生活 - 找回密码");
-        model.addAttribute("appName", "万象生活");
-        model.addAttribute("appDescription", "连接您的生活，创造无限可能");
-        return "forgot-password"; // 需要创建forgot-password.html模板
     }
 
     /**

@@ -1,6 +1,6 @@
 package com.universe.life.user.privacy.controller;
 
-
+import com.universe.life.common.result.Result;
 import com.universe.life.model.domain.dto.RegisterFormDTO;
 import com.universe.life.model.domain.dto.UserStatusDTO;
 import com.universe.life.user.privacy.service.IUserService;
@@ -26,16 +26,26 @@ public class UserController {
 
     private final IUserService userService;
 
+    /**
+     * 添加用户
+     * 服务间调用添加用户信息
+     */
     @PostMapping("/add")
     @Operation(description = "添加用户")
-    public void add(@RequestBody RegisterFormDTO registerFormDTO) {
+    public Result<Void> add(@RequestBody RegisterFormDTO registerFormDTO) {
         userService.add(registerFormDTO);
+        return Result.success();
     }
 
+    /**
+     * 服务间调用
+     * 获取用户状态
+     */
     @GetMapping("/privacy/status")
     @Operation(description = "获取用户状态")
-    public UserStatusDTO getStatusById(String username) {
-        return userService.getStatusByUsername(username);
+    public Result<UserStatusDTO> getStatusById(String username) {
+        UserStatusDTO userStatusDTO = userService.getStatusByUsername(username);
+        return Result.success(userStatusDTO);
     }
 
 
