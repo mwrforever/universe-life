@@ -57,17 +57,4 @@ public interface IUserAuthService extends IService<UserAuth> {
      */
     void deleteUserAuth(Long id, DeleteUserAuthRequest request);
 
-    /**
-     * 根据用户ID删除认证信息
-     *
-     * @param userId 用户ID
-     */
-    void deleteByUserId(Long userId);
-
-    /**
-     * 根据用户ID列表批量删除认证信息
-     *
-     * @param userIds 用户ID列表
-     */
-    void batchDeleteByUserIds(List<Long> userIds);
 }

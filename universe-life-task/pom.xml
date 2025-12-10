@@ -8,7 +8,6 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>universe-life-task</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <name>universe-life-task</name>
     <description>任务服务模块 - 包含任务发布、接受、审核等功能</description>
     <url/>

@@ -21,7 +21,6 @@ import com.universe.life.user.privacy.service.IUserAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -148,36 +147,6 @@ public class UserAuthServiceImpl extends ServiceImpl<UserAuthMapper, UserAuth> i
         boolean removed = removeById(id);
         if (!removed) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.OPERATION_FAILED);
-        }
-    }
-
-    @Override
-    public void deleteByUserId(Long userId) {
-        // TODO
-        List<UserAuth> list = lambdaQuery()
-                .select(UserAuth::getId)
-                .eq(UserAuth::getUserId, userId)
-                .list();
-
-        if (CollUtil.isNotEmpty(list)) {
-            List<Long> ids = list.stream().map(UserAuth::getId).toList();
-            this.removeByIds(ids);
-        }
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void batchDeleteByUserIds(List<Long> userIds) {
-        if (ObjectUtil.isNotEmpty(userIds)) {
-            List<UserAuth> list = lambdaQuery()
-                    .select(UserAuth::getId)
-                    .in(UserAuth::getUserId, userIds)
-                    .list();
-
-            if (CollUtil.isNotEmpty(list)) {
-                List<Long> ids = list.stream().map(UserAuth::getId).toList();
-                this.removeByIds(ids);
-            }
         }
     }
 }
