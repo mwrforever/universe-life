@@ -1,7 +1,8 @@
-package com.universe.life.user.privacy.service.impl.admin;
+package com.universe.life.user.privacy.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -12,7 +13,6 @@ import com.universe.life.common.exception.SecurityException;
 import com.universe.life.common.message.ExceptionMessage;
 import com.universe.life.common.result.PageResult;
 import com.universe.life.user.privacy.domain.dao.query.AdminUserListQuery;
-import com.universe.life.user.privacy.domain.dto.AdminUserDTO;
 import com.universe.life.user.privacy.domain.dto.AdminUserDetailDTO;
 import com.universe.life.user.privacy.domain.dto.AdminUserDetailRoleDTO;
 import com.universe.life.user.privacy.domain.dto.AdminUserRoleListDTO;
@@ -22,13 +22,13 @@ import com.universe.life.user.privacy.domain.po.UserAuth;
 import com.universe.life.user.privacy.domain.po.UserRole;
 import com.universe.life.user.privacy.domain.vo.*;
 import com.universe.life.user.privacy.mapper.UserAuthMapper;
-import com.universe.life.user.privacy.mapper.admin.AdminUserMapper;
-import com.universe.life.user.privacy.mapper.admin.AdminUserRoleMapper;
+import com.universe.life.user.privacy.mapper.AdminUserMapper;
+import com.universe.life.user.privacy.mapper.AdminUserRoleMapper;
 import com.universe.life.user.privacy.mapstruct.UserAuthMapstruct;
 import com.universe.life.user.privacy.mapstruct.UserMapstruct;
 import com.universe.life.user.privacy.service.IUserAuthService;
-import com.universe.life.user.privacy.service.admin.IAdminUserRoleService;
-import com.universe.life.user.privacy.service.admin.IAdminUserService;
+import com.universe.life.user.privacy.service.IAdminUserRoleService;
+import com.universe.life.user.privacy.service.IAdminUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -54,14 +54,12 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     private final IAdminUserRoleService adminUserRoleService;
     private final UserAuthMapstruct userAuthMapstruct;
     private final AdminUserRoleMapper adminUserRoleMapper;
-    private final AdminUserMapper adminUserMapper;
-    private final SecurityUtil securityUtil;
     private final UserAuthMapper userAuthMapper;
     private final PasswordEncoder bcryptPasswordEncoder;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public UserCreateVO createUser(UserCreateRequest request) {
+    public AdminUserListVO createUser(UserCreateRequest request) {
         log.info("创建用户开始，用户名：{}", request.getUsername());
         // 直接保存用户数据
         User po = userMapstruct.toPO(request);
@@ -88,7 +86,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
         // 保存用户认证信息
         userAuthService.saveBatch(userAuths);
         // 构建返回结果
-        return userMapstruct.toUserCreateVO(po);
+        return userMapstruct.toAdminUserListVO(po);
     }
 
     @Override
@@ -113,16 +111,23 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     @Override
     public PageResult<AdminUserListVO> pageUsers(AdminUserListQuery query) {
         // 复杂查询使用DTO，连表查询用户列表和角色信息
-        IPage<AdminUserDTO> page = new Page<>(query.getPage(), query.getSize());
+        IPage<User> page = new Page<>(query.getPage(), query.getSize());
         // 查询用户列表
-        IPage<AdminUserDTO> result = adminUserMapper.getAdminUserList(page, query);
+        IPage<User> result = lambdaQuery()
+                .like(StrUtil.isNotBlank(query.getUsername()), User::getUsername, query.getUsername())
+                .gt(ObjectUtil.isNotNull(query.getStartTime()), User::getCreatedAt, query.getStartTime())
+                .lt(ObjectUtil.isNotNull(query.getEndTime()), User::getCreatedAt, query.getEndTime())
+                .eq(ObjectUtil.isNotNull(query.getGender()), User::getGender, query.getGender())
+                .eq(ObjectUtil.isNotNull(query.getStatus()), User::getStatus, query.getStatus())
+                .orderByDesc(User::getCreatedAt)
+                .page(page);
         // 获取用户列表
-        List<AdminUserDTO> records = result.getRecords();
+        List<User> records = result.getRecords();
         if (CollUtil.isEmpty(records)) {
             return PageResult.empty(page);
         }
         // 查询用户角色信息
-        Set<Long> ids = records.stream().map(AdminUserDTO::getId).collect(Collectors.toSet());
+        Set<Long> ids = records.stream().map(User::getId).collect(Collectors.toSet());
         // 根据用户ID查询用户角色信息
         List<AdminUserRoleListDTO> roleVOS = adminUserRoleMapper.getUserRoleByUserIds(ids);
         List<AdminUserListVO> list = new ArrayList<>(ids.size());
@@ -137,7 +142,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
             }));
         }
         // 封装成VO对象
-        for (AdminUserDTO record : records) {
+        for (User record : records) {
             AdminUserListVO vo = userMapstruct.toAdminUserListVO(record);
             vo.setRoles(roleMap.getOrDefault(record.getId(), Collections.emptyList()));
             list.add(vo);
@@ -222,7 +227,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     }
 
     private void checkUserByPassword(PasswordUserRequest request) {
-        Long userId = securityUtil.getUserId();
+        Long userId = SecurityUtil.getUserId();
         PasswordUserRequest passwordByUserId = userAuthMapper.getPasswordByUserId(userId);
         if (ObjectUtil.isNull(passwordByUserId)) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);

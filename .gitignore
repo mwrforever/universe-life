@@ -130,7 +130,7 @@ test-results/
 playwright-report/
 
 # Documentation
-docs/api/
+# docs/api/
 docs/build/
 
 
@@ -203,18 +203,18 @@ $RECYCLE.BIN/
 
 
 # Project specific
-docs/generated/
+# docs/generated/
 specs/*/contracts/generated/
 .memory/
 .agent/
 
 
 .claude
-**/*.md
+# **/*.md
 .bmad-core
 
 doc
-docs
+ docs
 
 prometheus
 nginx

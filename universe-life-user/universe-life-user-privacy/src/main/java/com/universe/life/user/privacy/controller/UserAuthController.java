@@ -44,8 +44,8 @@ public class UserAuthController {
      */
     @GetMapping("/getUserInfo")
     @Operation(description = "获取用户信息")
-    public Result<UserInfoDTO> getUserInfo(String username) {
-        return Result.success(userAuthService.getUserInfo(username));
+    public UserInfoDTO getUserInfo(String username) {
+        return userAuthService.getUserInfo(username);
     }
 
     // 新增认证管理接口

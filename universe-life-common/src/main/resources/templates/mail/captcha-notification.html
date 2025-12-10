@@ -1,367 +1,304 @@
 <!DOCTYPE html>
 <html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universe Life</title>
+    <title>Universe Life Verification</title>
     <style>
-        * {
+        /* CSS Reset & Base Styles */
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.8;
-            color: #2c3e50;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .email-container {
-            max-width: 650px;
-            width: 100%;
-            background: #ffffff;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .header {
-            background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
-            padding: 50px 40px;
-            text-align: center;
-            border-bottom: 1px solid #e8ecff;
-        }
-
-        .logo {
-            font-size: 36px;
-            font-weight: 300;
-            color: #667eea;
-            margin-bottom: 10px;
-            letter-spacing: 1px;
-        }
-
-        .tagline {
-            font-size: 14px;
-            color: #8892b0;
-            font-weight: 300;
-            letter-spacing: 0.5px;
-        }
-
-        .content {
-            padding: 50px 40px;
-            background: #ffffff;
-        }
-
-        .welcome-text {
-            font-size: 20px;
-            color: #2c3e50;
-            margin-bottom: 25px;
-            font-weight: 300;
+            background-color: #f4f4f7;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: #4a5568;
             line-height: 1.6;
         }
 
-        .platform-intro {
-            background: linear-gradient(135deg, #f8f9ff 0%, #fff9f0 100%);
-            border-left: 4px solid #667eea;
-            padding: 25px;
-            margin: 30px 0;
-            border-radius: 0 12px 12px 0;
-            font-size: 15px;
-            line-height: 1.8;
-            color: #4a5568;
+        /* Layout */
+        .wrapper {
+            width: 100%;
+            background-color: #f4f4f7;
+            padding: 40px 0;
         }
 
-        .platform-intro p {
-            margin-bottom: 15px;
-        }
-
-        .platform-intro p:last-child {
-            margin-bottom: 0;
-        }
-
-        .verification-section {
-            background: #ffffff;
-            border: 1px solid #e8ecff;
+        .container {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+            background-color: #ffffff;
             border-radius: 16px;
-            padding: 30px;
-            margin: 30px 0;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.08);
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
         }
 
-        .verification-title {
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .logo {
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tagline {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+
+        /* Content */
+        .content {
+            padding: 40px;
+        }
+
+        .greeting {
+            font-size: 20px;
+            color: #1a202c;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .message {
             font-size: 16px;
+            color: #4a5568;
+            margin-bottom: 30px;
+        }
+
+        .highlight {
             color: #667eea;
-            margin-bottom: 15px;
-            font-weight: 500;
+            font-weight: 600;
+        }
+
+        /* Captcha Box */
+        .captcha-box {
+            background-color: #f8fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin: 32px 0;
+        }
+
+        .captcha-label {
+            font-size: 13px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .captcha-code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 36px;
+            font-weight: 700;
+            color: #2d3748;
+            letter-spacing: 8px;
+            margin: 10px 0;
+            display: block;
+        }
+
+        .expiry {
+            font-size: 13px;
+            color: #e53e3e;
             display: flex;
             align-items: center;
+            justify-content: center;
+            font-weight: 500;
         }
 
-        .verification-title::before {
-            content: "✨";
-            margin-right: 8px;
-        }
-
-        .verification-text {
-            font-size: 15px;
-            color: #4a5568;
-            margin-bottom: 20px;
-            line-height: 1.7;
-        }
-
-        .captcha-container {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
-            padding: 12px 24px;
+        /* Security Box */
+        .security-box {
+            background-color: #fffbf0;
+            border: 1px solid #feebc8;
             border-radius: 8px;
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-            margin: 15px 0;
-        }
-
-        .expiration-info {
-            font-size: 13px;
-            color: #8892b0;
-            margin-top: 15px;
-            font-style: italic;
-        }
-
-        .security-tips {
-            background: #fffbf0;
-            border: 1px solid #ffe4b5;
-            border-radius: 12px;
             padding: 20px;
-            margin: 30px 0;
+            margin-top: 32px;
         }
 
-        .security-tips h4 {
-            color: #ff9500;
-            font-size: 15px;
+        .security-title {
+            color: #d69e2e;
+            font-weight: 600;
+            font-size: 14px;
             margin-bottom: 12px;
             display: flex;
             align-items: center;
         }
 
-        .security-tips h4::before {
-            content: "🔒";
-            margin-right: 8px;
-        }
-
-        .security-tips ul {
+        .security-list {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
 
-        .security-tips li {
-            font-size: 14px;
-            color: #8b7355;
-            margin-bottom: 8px;
-            padding-left: 20px;
+        .security-list li {
             position: relative;
+            padding-left: 18px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #744210;
         }
 
-        .security-tips li::before {
+        .security-list li::before {
             content: "•";
             position: absolute;
-            left: 8px;
-            color: #ff9500;
+            left: 0;
+            color: #d69e2e;
         }
 
-        .cta-button {
+        /* Button */
+        .btn-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .btn {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: #ffffff;
             text-decoration: none;
-            padding: 16px 32px;
+            padding: 14px 36px;
             border-radius: 50px;
-            font-size: 15px;
-            font-weight: 500;
-            text-align: center;
-            margin: 30px 0;
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
-        }
-
-        .footer {
-            background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
-            padding: 40px;
-            text-align: center;
-            border-top: 1px solid #e8ecff;
-        }
-
-        .footer-text {
-            font-size: 13px;
-            color: #8892b0;
-            margin-bottom: 10px;
-        }
-
-        .footer-brand {
-            font-size: 16px;
-            color: #667eea;
             font-weight: 600;
-            margin-top: 15px;
+            font-size: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .footer-link {
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+        }
+
+        /* Footer */
+        .footer {
+            background-color: #f8fafc;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid #edf2f7;
             font-size: 12px;
-            color: #8892b0;
-            margin-top: 10px;
+            color: #a0aec0;
         }
 
-        .footer-link a {
+        .footer-links {
+            margin-top: 12px;
+        }
+
+        .footer a {
             color: #667eea;
             text-decoration: none;
-        }
-
-        .usage-badge {
-            display: inline-block;
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
             font-weight: 500;
-            margin-bottom: 20px;
         }
 
-        @media (max-width: 600px) {
-            body {
+        /* Mobile Adaptations */
+        @media screen and (max-width: 600px) {
+            .wrapper {
                 padding: 10px;
             }
 
-            .email-container {
-                border-radius: 12px;
-            }
-
-            .header, .content, .footer {
+            .content {
                 padding: 30px 20px;
             }
 
             .logo {
-                font-size: 28px;
+                font-size: 24px;
             }
 
-            .welcome-text {
+            .captcha-code {
+                font-size: 28px;
+                letter-spacing: 4px;
+            }
+
+            .greeting {
                 font-size: 18px;
             }
 
-            .platform-intro {
-                padding: 20px;
-            }
-
-            .verification-section {
-                padding: 25px 20px;
-            }
-
-            .captcha-container {
-                font-size: 16px;
-                padding: 10px 20px;
+            .btn {
+                width: 100%;
+                box-sizing: border-box;
             }
         }
     </style>
 </head>
+
 <body>
-    <div class="email-container">
-        <div class="header">
-            <div class="logo">🌌 Universe Life</div>
-            <div class="tagline">探索无限可能，连接美好生活</div>
-        </div>
-
-        <div class="content">
-            <div class="usage-badge" th:text="${usageType != null ? usageType.description : '安全验证'}">安全验证</div>
-
-            <div class="welcome-text">
-                亲爱的用户，欢迎来到 Universe Life！我们很高兴您选择我们的平台来探索数字世界的无限可能。
+    <div class="wrapper">
+        <div class="container">
+            <!-- Header Section -->
+            <div class="header">
+                <div class="logo">Universe Life</div>
+                <div class="tagline">探索无限可能 · 连接美好生活</div>
             </div>
 
-            <div class="platform-intro">
-                <p>
-                    <strong>Universe Life</strong> 是一个创新的数字化生活平台，致力于为用户提供最优质的服务体验。
-                    无论您是想连接志同道合的朋友，还是发现精彩的内容，这里都将是您理想的数字家园。
-                </p>
-                <p>
-                    为了保障您的账户安全，我们采用了多重验证机制。现在，请使用下面的验证码完成
-                    <span th:text="${usageType != null ? usageType.description : '安全验证'}">安全验证</span>，
-                    继续您的精彩旅程。
-                </p>
-            </div>
-
-            <div class="verification-section">
-                <div class="verification-title">安全验证码</div>
-                <div class="verification-text">
-                    为了保护您的账户安全，请输入以下验证码来完成当前操作：
+            <!-- Main Content -->
+            <div class="content">
+                <div class="greeting">
+                    亲爱的用户，您好！
                 </div>
 
-                <div style="text-align: center; margin: 25px 0;">
-                    <div class="captcha-container" th:text="${captcha}">123456</div>
+                <div class="message">
+                    您正在进行 <span class="highlight"
+                        th:text="${usageType != null ? usageType.description : '安全验证'}">安全验证</span> 操作。
+                    为了确保是您本人在操作，请使用下方的验证码完成身份校验。
                 </div>
 
-                <div class="expiration-info">
-                    此验证码将在 <span th:text="${expirationMinutes != null ? expirationMinutes : 5}">5</span> 分钟后失效，请及时使用。
+                <div class="captcha-box">
+                    <div class="captcha-label">您的安全验证码</div>
+                    <span class="captcha-code" th:text="${captcha}">123456</span>
+                    <div class="expiry">
+                        <span>⏰ 有效期：<span th:text="${expirationMinutes != null ? expirationMinutes : 5}">5</span>
+                            分钟</span>
+                    </div>
+                </div>
+
+                <div class="security-box">
+                    <div class="security-title">
+                        🛡️ 安全提示
+                    </div>
+                    <ul class="security-list">
+                        <li>此验证码仅用于<span
+                                th:text="${usageType != null ? usageType.description : '安全验证'}">安全验证</span>，请勿泄露给他人。
+                        </li>
+                        <li>Universe Life 官方工作人员不会向您索要密码或验证码。</li>
+                        <li>如非本人操作，请忽略此邮件并注意账号安全。</li>
+                    </ul>
+                </div>
+
+                <div class="btn-container">
+                    <a th:href="${platformUrl != null ? platformUrl : 'http://127.0.0.1:3000'}" class="btn"
+                        target="_blank">
+                        前往 Universe Life
+                    </a>
                 </div>
             </div>
 
-            <div class="security-tips">
-                <h4>安全提示</h4>
-                <ul>
-                    <li>此验证码仅用于您的<span th:text="${usageType != null ? usageType.description : '安全验证'}">安全验证</span>，请勿泄露给他人</li>
-                    <li>Universe Life 官方不会主动向您索要验证码</li>
-                    <li>如非本人操作，请忽略此邮件并及时联系客服</li>
-                    <li>请在安全的网络环境中完成验证操作</li>
-                </ul>
-            </div>
-
-            <div style="text-align: center;">
-                <a th:href="${platformUrl != null ? platformUrl : 'http://127.0.0.1:3000'}"
-                   class="cta-button" target="_blank">
-                    立即访问 Universe Life
-                </a>
-            </div>
-        </div>
-
-        <div class="footer">
-            <div class="footer-text">
-                此邮件由 Universe Life 系统自动发送，请勿直接回复
-            </div>
-            <div class="footer-text">
-                如有任何疑问，欢迎联系我们的客服团队
-            </div>
-            <div class="footer-brand">
-                Universe Life - 探索无限可能
-            </div>
-            <div class="footer-link">
-                访问官网：<a th:href="${platformUrl != null ? platformUrl : 'http://127.0.0.1:3000'}" target="_blank">
-                    <span th:text="${platformUrl != null ? platformUrl : 'http://127.0.0.1:3000'}">http://127.0.0.1:3000</span>
-                </a>
+            <!-- Footer -->
+            <div class="footer">
+                <div>此邮件由系统自动发送，请勿直接回复</div>
+                <div class="footer-links">
+                    <a th:href="${platformUrl != null ? platformUrl : 'http://127.0.0.1:3000'}" target="_blank">
+                        访问官网
+                    </a>
+                    <span style="margin: 0 6px;">•</span>
+                    <a href="#">联系客服</a>
+                </div>
+                <div style="margin-top: 15px;">
+                    © Universe Life. All Rights Reserved.
+                </div>
             </div>
         </div>
     </div>
 </body>
+
 </html>

@@ -1,4 +1,4 @@
-package com.universe.life.user.privacy.mapper.admin;
+package com.universe.life.user.privacy.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;

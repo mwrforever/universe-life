@@ -40,7 +40,6 @@ public class UserAuthServiceImpl extends ServiceImpl<UserAuthMapper, UserAuth> i
     private final UserAuthMapper userAuthMapper;
     private final UserAuthMapstruct userAuthMapstruct;
     private final VerifyCaptchaUtil verifyCaptchaUtil;
-    private final SecurityUtil securityUtil;
     private final PasswordEncoder bcryptPasswordEncoder;
 
     @Override
@@ -93,7 +92,7 @@ public class UserAuthServiceImpl extends ServiceImpl<UserAuthMapper, UserAuth> i
             throw new SecurityException.CaptchaVerificationFailedException(ExceptionMessage.AUTHORIZATION_CODE_INVALID);
         }
         // 获取用户id
-        Long userId = securityUtil.getUserId();
+        Long userId = SecurityUtil.getUserId();
         // 查询用户信息
         UserAuth userAuth = lambdaQuery()
                 .select(
@@ -137,7 +136,7 @@ public class UserAuthServiceImpl extends ServiceImpl<UserAuthMapper, UserAuth> i
             throw new SecurityException.InvalidCredentialsException(ExceptionMessage.PASSWORD_INCORRECT);
         }
         // 获取用户id
-        Long userId = securityUtil.getUserId();
+        Long userId = SecurityUtil.getUserId();
         // 统计用户认证方式数量
         Long count = lambdaQuery()
                 .eq(UserAuth::getUserId, userId)

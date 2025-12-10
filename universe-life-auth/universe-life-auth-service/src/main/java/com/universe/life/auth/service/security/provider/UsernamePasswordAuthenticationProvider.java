@@ -25,7 +25,7 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
     private final PasswordEncoder passwordEncoder;
 
     public UsernamePasswordAuthenticationProvider(UserDetailsService userDetailsService,
-                                                 PasswordEncoder passwordEncoder) {
+                                                  PasswordEncoder passwordEncoder) {
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
     }
@@ -82,7 +82,7 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
 
             // 创建认证成功的Authentication
             UsernamePasswordAuthenticationToken authenticatedToken =
-                new UsernamePasswordAuthenticationToken(userDetails, userDetails.getAuthorities());
+                    new UsernamePasswordAuthenticationToken(userDetails, userDetails.getAuthorities());
             authenticatedToken.setDetails(authToken.getDetails());
 
             return authenticatedToken;

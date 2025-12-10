@@ -108,6 +108,11 @@ public interface ExceptionMessage {
     String TENCENT_ERROR = "腾讯云服务异常";
     String DEVICE_MISMATCH = "设备不匹配，请重新登录";
     String USER_NOT_EXIST = "账户不存在";
+    String PARENT_RESOURCE_NOT_FOUND = "父资源不能为空";
+    String PARENT_RESOURCE_NOT_BE_SELF = "父资源不能为自身";
+    String ROLE_NOT_FOUND = "角色不存在";
+    String RESOURCE_NOT_FOUND = "部分资源不存在";
+    String PART_OF_ROLE_NOT_FOUND = "部分角色不存在";
 
     /**
      * 消息格式化工具类

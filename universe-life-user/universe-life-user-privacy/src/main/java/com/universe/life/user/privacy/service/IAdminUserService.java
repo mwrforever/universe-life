@@ -1,15 +1,14 @@
-package com.universe.life.user.privacy.service.admin;
+package com.universe.life.user.privacy.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.universe.life.common.result.PageResult;
-import com.universe.life.user.privacy.domain.dto.request.*;
 import com.universe.life.user.privacy.domain.dao.query.AdminUserListQuery;
-import com.universe.life.user.privacy.domain.vo.UserStatusVO;
+import com.universe.life.user.privacy.domain.dto.request.*;
+import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.vo.AdminUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.AdminUserListVO;
 import com.universe.life.user.privacy.domain.vo.AdminUserUpdateVO;
-import com.universe.life.user.privacy.domain.po.User;
-import com.universe.life.user.privacy.domain.vo.UserCreateVO;
+import com.universe.life.user.privacy.domain.vo.UserStatusVO;
 
 import java.util.List;
 
@@ -29,7 +28,7 @@ public interface IAdminUserService extends IService<User> {
      * @param request 创建用户请求
      * @return 用户创建响应VO
      */
-    UserCreateVO createUser(UserCreateRequest request);
+    AdminUserListVO createUser(UserCreateRequest request);
 
     /**
      * 根据ID获取用户详情

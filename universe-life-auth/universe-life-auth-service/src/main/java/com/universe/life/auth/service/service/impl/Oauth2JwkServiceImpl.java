@@ -166,7 +166,7 @@ public class Oauth2JwkServiceImpl extends ServiceImpl<Oauth2JwkMapper, Oauth2Jwk
             throw new DatabaseException.QueryException(ExceptionMessage.USER_NOT_FOUND);
         }
         if (!bCryptPasswordEncoder.matches(password, userAuthInfo.getPassword())) {
-            throw new DatabaseException.QueryException(ExceptionMessage.ACCOUNT_PASSWORD_ERROR);
+            throw new DatabaseException.QueryException(ExceptionMessage.PASSWORD_INCORRECT);
         }
         // 先将数据库中的密钥失效
         // 实现将现有密钥状态设为INACTIVE的逻辑

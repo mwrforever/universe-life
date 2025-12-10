@@ -9,7 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 public class SecurityUtil {
 
-    public Long getUserId() {
+    public static Long getUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!(principal instanceof UserAuthInfo userAuthInfo)) {
             return null;
@@ -18,7 +18,7 @@ public class SecurityUtil {
     }
 
 
-    public String getUsername() {
+    public static String getUsername() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!(principal instanceof UserAuthInfo userAuthInfo)) {
             return null;

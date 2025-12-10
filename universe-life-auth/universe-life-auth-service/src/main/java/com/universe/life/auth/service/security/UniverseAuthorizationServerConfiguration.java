@@ -11,11 +11,12 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.universe.life.api.client.UserClient;
+import com.universe.life.auth.resource.util.CommonSecurityConfigUtil;
 import com.universe.life.auth.service.manager.JwkManager;
 import com.universe.life.auth.service.properties.AuthorizationServerProperties;
 import com.universe.life.auth.service.properties.JwkProperties;
 import com.universe.life.auth.service.security.convert.PublicClientRefreshTokenAuthenticationConverter;
+import com.universe.life.auth.service.security.convert.PublicClientRevocationAuthenticationConverter;
 import com.universe.life.auth.service.security.filter.MyUsernamePasswordAuthenticationFilter;
 import com.universe.life.auth.service.security.filter.SmsAuthenticationFilter;
 import com.universe.life.auth.service.security.provider.PublicClientRefreshTokenAuthenticationProvider;
@@ -28,13 +29,13 @@ import com.universe.life.auth.service.service.impl.AuthCommonServiceImpl;
 import com.universe.life.common.domain.dto.UserAuthInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -56,6 +57,8 @@ import org.springframework.security.oauth2.server.authorization.JdbcOAuth2Author
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.authentication.ClientSecretAuthenticationProvider;
+import org.springframework.security.oauth2.server.authorization.authentication.PublicClientAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -65,12 +68,13 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.oauth2.server.authorization.token.*;
+import org.springframework.security.oauth2.server.authorization.web.authentication.ClientSecretBasicAuthenticationConverter;
+import org.springframework.security.oauth2.server.authorization.web.authentication.ClientSecretPostAuthenticationConverter;
+import org.springframework.security.oauth2.server.authorization.web.authentication.DelegatingAuthenticationConverter;
+import org.springframework.security.oauth2.server.authorization.web.authentication.PublicClientAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.*;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -81,6 +85,7 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -103,10 +108,6 @@ public class UniverseAuthorizationServerConfiguration {
     private final AccessDeniedHandler jwtAccessDeniedHandler;
 
     private final JwkProperties jwkProperties;
-
-    private final StringRedisTemplate stringRedisTemplate;
-
-    private final UserClient userClient;
 
     @Bean
     public JwkManager jwkManager() {
@@ -300,13 +301,13 @@ public class UniverseAuthorizationServerConfiguration {
             // 创建网关客户端配置
             RegisteredClient gatewayClient = createGatewayClient(
                     authorizationServerProperties.getClientId(),
-                    authorizationServerProperties.getRedirectUri()
+                    authorizationServerProperties.getRedirectUri(),
+                    authorizationServerProperties.getPostLogoutRedirectUri()
             );
             // 保存客户端到数据库
             repository.save(gatewayClient);
             log.info("已创建网关客户端: {}", authorizationServerProperties.getClientId());
         }
-
         // 返回配置好的客户端仓库
         return repository;
     }
@@ -321,7 +322,11 @@ public class UniverseAuthorizationServerConfiguration {
      * @param redirectUri 授权回调URI
      * @return 配置完成的RegisteredClient对象
      */
-    private RegisteredClient createGatewayClient(String clientId, String redirectUri) {
+    private RegisteredClient createGatewayClient(
+            String clientId,
+            Collection<String> redirectUri,
+            String postLogoutRedirectUri
+    ) {
         // 使用建造者模式创建RegisteredClient对象
         return RegisteredClient.withId(UUID.randomUUID().toString().replace("-", ""))  // 生成唯一客户端ID
                 .clientId(clientId)  // 设置客户端标识符
@@ -330,7 +335,8 @@ public class UniverseAuthorizationServerConfiguration {
                         AuthorizationGrantType.AUTHORIZATION_CODE,  // 授权码模式，最安全的OAuth2流程
                         AuthorizationGrantType.REFRESH_TOKEN  // 刷新令牌模式，支持令牌续期
                 )))
-                .redirectUris(uris -> uris.add(redirectUri))
+                .redirectUris(uris -> uris.addAll(redirectUri))
+                .postLogoutRedirectUri(postLogoutRedirectUri)
                 .scopes(scopes -> scopes.addAll(Arrays.asList(  // 支持的权限范围
                         OidcScopes.OPENID,  // OpenID Connect标准范围，获取用户标识
                         OidcScopes.PROFILE,  // 用户基本信息范围
@@ -349,60 +355,12 @@ public class UniverseAuthorizationServerConfiguration {
                         .build())
                 .tokenSettings(TokenSettings.builder()  // 令牌设置
                         .accessTokenTimeToLive(Duration.ofHours(2))  // 访问令牌有效期：2 小时
-                        .refreshTokenTimeToLive(Duration.ofDays(30))  // 刷新令牌有效期：30天
+                        .refreshTokenTimeToLive(Duration.ofDays(7))  // 刷新令牌有效期：30天
                         .reuseRefreshTokens(false)  // 不重复使用刷新令牌，增强安全性
                         .authorizationCodeTimeToLive(Duration.ofMinutes(5))  // 授权码有效期：5分钟
                         .build())
                 .build();  // 构建最终的客户端配置
     }
-
-    // ================================================================================
-    // 生产环境客户端配置 - 注释状态，需要时启用
-    // ================================================================================
-    /*
-    private RegisteredClient createProductionGatewayClient(String clientId, String clientSecret, String redirectUri) {
-        // 使用BCrypt算法加密客户端密钥，强度12，提供强密码保护
-        String encodedSecret = clientSecret != null ?
-            passwordEncoder().encode(clientSecret) :
-            "{bcrypt}$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iKVjzieMwkOmANgNOgKQNNBDvAGK";  // 默认开发环境密钥
-
-        // 使用建造者模式创建生产环境安全客户端配置
-        return RegisteredClient.withId(UUID.randomUUID().toString())  // 生成唯一客户端ID
-                .clientId(clientId)  // 设置客户端标识符
-                .clientSecret(encodedSecret)  // 设置加密后的客户端密钥
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)  // 客户端认证方式：HTTP Basic认证
-                .authorizationGrantTypes(grants -> grants.addAll(Arrays.asList(  // 生产环境支持的授权类型
-                    AuthorizationGrantType.AUTHORIZATION_CODE,  // 授权码模式，最安全的OAuth2流程
-                    AuthorizationGrantType.REFRESH_TOKEN,  // 刷新令牌模式，支持令牌续期
-                    AuthorizationGrantType.CLIENT_CREDENTIALS  // 客户端凭证模式，用于服务间调用
-                    // 生产环境注释：暂时不启用JWT_BEARER模式，增强安全性
-                )))
-                .redirectUris(uris -> uris.addAll(Arrays.asList(  // 生产环境严格的回调URI列表
-                    redirectUri,  // 主要回调URI，从配置获取
-                    "https://gateway.yourdomain.com/login/oauth2/code/gateway"  // 生产环境地址（HTTPS）
-                    // 注释：开发环境地址已移除，生产环境只允许HTTPS
-                )))
-                .scopes(scopes -> scopes.addAll(Arrays.asList(  // 生产环境最小权限原则
-                    OidcScopes.OPENID,  // OpenID Connect标准范围，获取用户标识
-                    OidcScopes.PROFILE,  // 用户基本信息范围
-                    OidcScopes.EMAIL,  // 用户邮箱范围
-                    "read",  // 读权限，自定义业务权限
-                    "write"  // 写权限，自定义业务权限
-                    // 注释：生产环境不直接授予admin和trust权限，需要特殊申请
-                )))
-                .clientSettings(ClientSettings.builder()  // 生产环境严格客户端设置
-                        .requireAuthorizationConsent(true)  // 要求用户授权同意，增强用户体验和安全性
-                        .requireProofKey(true)  // 启用PKCE，增强授权码模式安全性
-                        .build())
-                .tokenSettings(TokenSettings.builder()  // 生产环境严格令牌设置
-                        .accessTokenTimeToLive(Duration.ofMinutes(15))  // 访问令牌有效期：15分钟（缩短）
-                        .refreshTokenTimeToLive(Duration.ofDays(7))  // 刷新令牌有效期：7天（缩短）
-                        .reuseRefreshTokens(false)  // 不重复使用刷新令牌，增强安全性
-                        .authorizationCodeTimeToLive(Duration.ofMinutes(3))  // 授权码有效期：3分钟（缩短）
-                        .build())
-                .build();  // 构建最终的生产环境客户端配置
-    }
-    */
 
     /**
      * 检查指定客户端是否已在数据库中存在
@@ -455,8 +413,6 @@ public class UniverseAuthorizationServerConfiguration {
         // 登录成功后，重定向回之前的请求（例如 /oauth2/authorize）
         SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
         successHandler.setRequestCache(getHttpSessionRequestCache());
-        // 设置默认登录成功后的重定向URL
-        successHandler.setDefaultTargetUrl("/dashboard");
         // 设置总是使用保存的请求URL（如果有）
         successHandler.setAlwaysUseDefaultTargetUrl(false);
 
@@ -506,7 +462,10 @@ public class UniverseAuthorizationServerConfiguration {
                 // 启用CSRF保护，Thymeleaf会自动处理CSRF token
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                );
+                )
+                .cors(AbstractHttpConfigurer::disable)
+                .headers(CommonSecurityConfigUtil::getPermissionsPolicyConfig);
+
         return http.build();
     }
 
@@ -554,12 +513,14 @@ public class UniverseAuthorizationServerConfiguration {
     public SecurityFilterChain authorizationServerSecurityFilterChain(
             HttpSecurity http,
             AuthorizationServerSettings authorizationServerSettings,
-            RegisteredClientRepository registeredClientRepository
+            RegisteredClientRepository registeredClientRepository,
+            OAuth2AuthorizationService oAuth2AuthorizationService
     ) throws Exception {
 
         log.info("配置授权服务器安全过滤器链");
         // 创建授权服务器配置器，用于自定义OAuth2端点行为
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
+        authorizationServerConfigurer.oidc(Customizer.withDefaults());
         return http
                 // 设置安全匹配器，只处理授权服务器端点请求
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
@@ -567,60 +528,49 @@ public class UniverseAuthorizationServerConfiguration {
                 //                 应用授权服务器配置
                 .with(authorizationServerConfigurer, configurer ->
                         configurer.authorizationServerSettings(authorizationServerSettings)
-                                .clientAuthentication(clientAuth ->
-                                        clientAuth.authenticationConverter(new PublicClientRefreshTokenAuthenticationConverter())
-                                                .authenticationProvider(new PublicClientRefreshTokenAuthenticationProvider(registeredClientRepository)))
-                                .oidc(Customizer.withDefaults())
+                                .clientAuthentication(clientAuth -> {
+                                            // 1. 设置转换器
+                                            DelegatingAuthenticationConverter delegatingConverter = getDelegatingAuthenticationConverter();
+                                            clientAuth.authenticationConverter(delegatingConverter);
+
+                                            // 2. 添加 Provider
+                                            // 必须把处理公共客户端的标准 Provider 加回来！
+                                            clientAuth.authenticationProvider(new PublicClientAuthenticationProvider(registeredClientRepository, oAuth2AuthorizationService));
+
+                                            // 为了保证带 Secret 的客户端也能正常工作，把这个也加回来
+                                            clientAuth.authenticationProvider(new ClientSecretAuthenticationProvider(registeredClientRepository, oAuth2AuthorizationService));
+
+                                            // 3. 最后加上你自定义的 Provider
+                                            clientAuth.authenticationProvider(new PublicClientRefreshTokenAuthenticationProvider(registeredClientRepository));
+                                        }
+                                )
                                 .authorizationEndpoint(authorizationEndpoint ->
                                         authorizationEndpoint.consentPage(authorizationServerProperties.getConsentPage()))
                 )
                 .requestCache(c -> c.requestCache(getHttpSessionRequestCache()))
                 // 配置CSRF保护 - 对授权服务器端点禁用CSRF（符合OAuth2标准）
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers(authorizationServerConfigurer.getEndpointsMatcher()))
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
                 // 配置异常处理 - 设置认证入口点和访问拒绝处理器
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
                         .accessDeniedHandler(jwtAccessDeniedHandler))
                 // 配置HTTP安全头 - 开发阶段简化配置，避免影响前后端分离开发
-                .headers((headers) -> {
-                })
+                .headers(CommonSecurityConfigUtil::getPermissionsPolicyConfig)
                 .build();  // 构建并返回安全过滤器链对象
+    }
 
-        // ================================================================================
-        // 生产环境安全头配置 - 注释状态，需要时启用
-        // ================================================================================
-        /*
-        // 完整的HTTP安全头配置 - 生产环境启用
-        .headers(headers -> headers
-                // 内容安全策略 - 防止XSS攻击
-                .contentSecurityPolicy(csp -> csp
-                        .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'"))
-
-                // 跨域嵌入保护 - 防止点击劫持
-                .frameOptions(frame -> frame.deny())
-
-                // 传输安全 - 强制HTTPS
-                .hsts(hsts -> hsts
-                        .maxAgeInSeconds(31536000)  // 1年
-                        .includeSubDomains(true)
-                        .preload(true))
-
-                // 内容类型选项 - 防止MIME类型嗅探
-                .contentTypeOptions(contentType -> {})
-
-                // XSS保护 - 启用浏览器XSS过滤器
-                .xssProtection(xss -> xss.headerValue(HeaderWriterFilter.XXSSProtectionMode.ENABLED_MODE_BLOCK))
-
-                // 引用策略 - 防止敏感信息泄露
-                .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-
-                // 权限策略 - 控制浏览器特性访问
-                .permissionsPolicy(permissions -> permissions
-                        .policy("geolocation=(), microphone=(), camera=(), fullscreen=()"))
-        )
-        */
+    @NotNull
+    private static DelegatingAuthenticationConverter getDelegatingAuthenticationConverter() {
+        List<AuthenticationConverter> converters = Arrays.asList(
+                new ClientSecretBasicAuthenticationConverter(),
+                new ClientSecretPostAuthenticationConverter(),
+                new PublicClientAuthenticationConverter(), // 这个用于处理 /revoke 的公共客户端请求
+                new PublicClientRefreshTokenAuthenticationConverter(), // 你自定义的，用于处理 Refresh Token
+                new PublicClientRevocationAuthenticationConverter() // 你自定义的，用于处理 Revoke Token
+        );
+        // 2. 组合成一个代理转换器
+        return new DelegatingAuthenticationConverter(converters);
     }
 
 

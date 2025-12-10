@@ -1,4 +1,4 @@
-package com.universe.life.auth.resource.config;
+package com.universe.life.auth.service.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;

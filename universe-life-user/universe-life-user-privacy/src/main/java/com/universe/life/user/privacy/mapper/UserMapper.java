@@ -1,6 +1,7 @@
 package com.universe.life.user.privacy.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.universe.life.model.domain.dto.UserStatusDTO;
 import com.universe.life.user.privacy.domain.po.User;
 import org.apache.ibatis.annotations.Mapper;
 

@@ -1,4 +1,4 @@
-package com.universe.life.user.privacy.controller.admin;
+package com.universe.life.user.privacy.controller;
 
 import com.universe.life.common.result.PageResult;
 import com.universe.life.common.result.Result;
@@ -6,7 +6,7 @@ import com.universe.life.user.privacy.domain.dao.query.AdminUserListQuery;
 import com.universe.life.user.privacy.domain.dao.query.UserStatusQuery;
 import com.universe.life.user.privacy.domain.dto.request.*;
 import com.universe.life.user.privacy.domain.vo.*;
-import com.universe.life.user.privacy.service.admin.IAdminUserService;
+import com.universe.life.user.privacy.service.IAdminUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,7 +46,7 @@ public class AdminUserController {
 
     @PostMapping
     @Operation(summary = "创建用户", description = "管理员创建新用户")
-    public Result<UserCreateVO> createUser(@Valid @RequestBody UserCreateRequest request) {
+    public Result<AdminUserListVO> createUser(@Valid @RequestBody UserCreateRequest request) {
         log.info("管理员创建用户，用户名：{}", request.getUsername());
         return Result.success(adminUserService.createUser(request));
     }

@@ -1,6 +1,6 @@
 package com.universe.life.user.privacy.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.universe.life.common.exception.DatabaseException;
 import com.universe.life.common.message.ExceptionMessage;
@@ -32,17 +32,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Override
     public UserStatusDTO getStatusByUsername(String username) {
-        // 保留原有的用户状态获取逻辑
-        List<User> list = this.lambdaQuery()
-                .select(User::getStatus)
+        User user = lambdaQuery()
                 .eq(User::getUsername, username)
-                .eq(User::getDeleted, false)
-                .list();
+                .select(User::getStatus)
+                .one();
 
-        if (CollUtil.isEmpty(list)) {
+        if (ObjectUtil.isNull(user)) {
             throw new DatabaseException.QueryException(ExceptionMessage.DATA_NOT_FOUND);
         }
-        return new UserStatusDTO(list.get(0).getStatus());
+        return new UserStatusDTO(user.getStatus());
     }
 
     @Override

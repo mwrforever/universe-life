@@ -1,4 +1,3 @@
 com.universe.life.auth.resource.config.SecurityConfiguration
 com.universe.life.auth.resource.config.FeignClientConfiguration
 com.universe.life.auth.resource.config.AuthUtilConfiguration
-com.universe.life.auth.resource.config.OpenApiConfig
