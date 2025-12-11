@@ -4,7 +4,7 @@ import com.universe.life.auth.resource.domain.dto.request.CaptchaRequest;
 import com.universe.life.auth.resource.domain.dto.request.VerifyCodeFormRequest;
 import com.universe.life.auth.resource.domain.vo.CaptchaVO;
 import com.universe.life.auth.service.service.IAuthCommonService;
-import com.universe.life.common.domain.Result;
+import com.universe.life.auth.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

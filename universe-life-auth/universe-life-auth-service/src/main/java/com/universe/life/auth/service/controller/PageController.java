@@ -4,7 +4,7 @@ import com.universe.life.auth.service.domain.vo.DisclaimerVO;
 import com.universe.life.auth.service.domain.vo.PrivacyPolicyVO;
 import com.universe.life.auth.service.domain.vo.UserAgreementVO;
 import com.universe.life.auth.service.service.IAuthCommonService;
-import com.universe.life.common.domain.Result;
+import com.universe.life.auth.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

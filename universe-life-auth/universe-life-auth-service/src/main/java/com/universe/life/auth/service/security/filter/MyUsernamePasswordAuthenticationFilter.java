@@ -2,8 +2,8 @@ package com.universe.life.auth.service.security.filter;
 
 import cn.hutool.core.util.StrUtil;
 import com.universe.life.auth.service.security.token.UsernamePasswordAuthenticationToken;
-import com.universe.life.common.exception.AuthException;
-import com.universe.life.common.message.ExceptionMessage;
+import com.universe.life.auth.common.exception.AuthException;
+import com.universe.life.auth.common.message.ExceptionMessage;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

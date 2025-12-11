@@ -26,7 +26,7 @@ import com.universe.life.auth.service.security.token.CustomRefreshTokenGenerator
 import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
 import com.universe.life.auth.service.security.token.UsernamePasswordAuthenticationToken;
 import com.universe.life.auth.service.service.impl.AuthCommonServiceImpl;
-import com.universe.life.common.domain.dto.UserAuthInfo;
+import com.universe.life.auth.common.domain.dto.UserAuthInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -355,7 +355,7 @@ public class UniverseAuthorizationServerConfiguration {
                         .build())
                 .tokenSettings(TokenSettings.builder()  // 令牌设置
                         .accessTokenTimeToLive(Duration.ofHours(2))  // 访问令牌有效期：2 小时
-                        .refreshTokenTimeToLive(Duration.ofDays(7))  // 刷新令牌有效期：30天
+                        .refreshTokenTimeToLive(Duration.ofDays(7))  // 刷新令牌有效期：7天
                         .reuseRefreshTokens(false)  // 不重复使用刷新令牌，增强安全性
                         .authorizationCodeTimeToLive(Duration.ofMinutes(5))  // 授权码有效期：5分钟
                         .build())

@@ -1,11 +1,14 @@
 package com.universe.life.user.privacy.controller;
 
+import com.universe.life.auth.common.domain.Result;
 import com.universe.life.common.result.PageResult;
-import com.universe.life.common.result.Result;
 import com.universe.life.user.privacy.domain.dao.query.AdminUserListQuery;
 import com.universe.life.user.privacy.domain.dao.query.UserStatusQuery;
 import com.universe.life.user.privacy.domain.dto.request.*;
-import com.universe.life.user.privacy.domain.vo.*;
+import com.universe.life.user.privacy.domain.vo.AdminUserDetailVO;
+import com.universe.life.user.privacy.domain.vo.AdminUserListVO;
+import com.universe.life.user.privacy.domain.vo.AdminUserUpdateVO;
+import com.universe.life.user.privacy.domain.vo.UserStatusVO;
 import com.universe.life.user.privacy.service.IAdminUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -1,10 +1,10 @@
 package com.universe.life.gateway.filter;
 
-import com.universe.life.common.constants.JwtConstants;
-import com.universe.life.common.exception.AuthException;
-import com.universe.life.common.message.ExceptionMessage;
-import com.universe.life.common.properties.AuthPathProperties;
-import com.universe.life.common.util.AntRequestMatchUtil;
+import com.universe.life.auth.common.constants.JwtConstants;
+import com.universe.life.auth.common.exception.AuthException;
+import com.universe.life.auth.common.message.ExceptionMessage;
+import com.universe.life.auth.common.properties.AuthPathProperties;
+import com.universe.life.auth.common.util.AntRequestMatchUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;

@@ -1,6 +1,6 @@
 package com.universe.life.user.privacy.controller;
 
-import com.universe.life.common.result.Result;
+import com.universe.life.auth.common.domain.Result;
 import com.universe.life.model.domain.dto.UserInfoDTO;
 import com.universe.life.user.privacy.domain.dto.request.DeleteUserAuthRequest;
 import com.universe.life.user.privacy.domain.dto.request.UserAuthCreateRequest;

@@ -5,7 +5,7 @@ import com.universe.life.auth.gateway.AuthorizationProperties;
 import com.universe.life.auth.gateway.handler.JwtAccessDeniedHandler;
 import com.universe.life.auth.gateway.handler.JwtAuthenticationExceptionHandler;
 import com.universe.life.auth.gateway.manager.JwtDecoderManager;
-import com.universe.life.common.properties.AuthPathProperties;
+import com.universe.life.auth.common.properties.AuthPathProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

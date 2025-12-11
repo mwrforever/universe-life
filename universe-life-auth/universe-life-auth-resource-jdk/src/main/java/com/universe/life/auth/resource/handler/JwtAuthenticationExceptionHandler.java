@@ -1,7 +1,7 @@
 package com.universe.life.auth.resource.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.universe.life.common.domain.Result;
+import com.universe.life.auth.common.domain.Result;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

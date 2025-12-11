@@ -1,18 +1,24 @@
 package com.universe.life.user.privacy.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.universe.life.common.exception.DatabaseException;
-import com.universe.life.common.message.ExceptionMessage;
+import com.universe.life.auth.common.exception.BusinessException;
+import com.universe.life.auth.common.exception.DatabaseException;
+import com.universe.life.auth.common.message.ExceptionMessage;
 import com.universe.life.model.domain.dto.RegisterFormDTO;
 import com.universe.life.model.domain.dto.UserStatusDTO;
 import com.universe.life.model.enums.UserAuthType;
+import com.universe.life.user.privacy.domain.dto.request.UserProfileUpdateRequest;
 import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.po.UserAuth;
+import com.universe.life.user.privacy.domain.vo.UserInfoVO;
 import com.universe.life.user.privacy.mapper.UserMapper;
+import com.universe.life.user.privacy.mapstruct.UserMapstruct;
 import com.universe.life.user.privacy.service.IUserAuthService;
 import com.universe.life.user.privacy.service.IUserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,11 +30,13 @@ import java.util.List;
  * @author 毛伟然
  * @since 2025-11-13
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
 
     private final IUserAuthService userAuthService;
+    private final UserMapstruct userMapstruct;
 
     @Override
     public UserStatusDTO getStatusByUsername(String username) {
@@ -64,5 +72,52 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         userAuthDefault.setPassword(registerFormDTO.getPassword());
 
         userAuthService.saveBatch(List.of(userAuth, userAuthDefault));
+    }
+
+    @Override
+    public UserInfoVO getUserById(Long userId) {
+        User user = getById(userId);
+        if (ObjectUtil.isNull(user)) {
+            throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
+        }
+        return userMapstruct.toUserInfoVO(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public UserInfoVO updateUserProfile(Long userId, UserProfileUpdateRequest request) {
+        log.info("更新用户个人信息，用户ID：{}", userId);
+
+        User existingUser = getById(userId);
+        if (ObjectUtil.isNull(existingUser)) {
+            throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
+        }
+
+        // 如果要更新用户名，检查是否已存在
+        if (StrUtil.isNotBlank(request.getUsername())
+                && !request.getUsername().equals(existingUser.getUsername())) {
+            boolean existsUsername = lambdaQuery()
+                    .eq(User::getUsername, request.getUsername())
+                    .ne(User::getId, userId)
+                    .exists();
+            if (existsUsername) {
+                throw new BusinessException.DataAlreadyExistsException(ExceptionMessage.Formatter.dataAlreadyExist("用户名"));
+            }
+        }
+
+        // 更新用户信息
+        User updateUser = new User();
+        updateUser.setId(userId);
+        updateUser.setUsername(request.getUsername());
+        updateUser.setAvatarUrl(request.getAvatarUrl());
+        updateUser.setGender(request.getGender());
+
+        boolean updated = updateById(updateUser);
+        if (!updated) {
+            throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("用户信息更新"));
+        }
+
+        log.info("更新用户个人信息成功，用户ID：{}", userId);
+        return getUserById(userId);
     }
 }

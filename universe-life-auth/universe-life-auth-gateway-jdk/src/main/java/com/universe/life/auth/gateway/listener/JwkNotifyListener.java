@@ -1,7 +1,7 @@
 package com.universe.life.auth.gateway.listener;
 
 import com.universe.life.auth.gateway.manager.JwtDecoderManager;
-import com.universe.life.common.constants.RabbitMqConstants;
+import com.universe.life.auth.common.constants.RabbitMqConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;

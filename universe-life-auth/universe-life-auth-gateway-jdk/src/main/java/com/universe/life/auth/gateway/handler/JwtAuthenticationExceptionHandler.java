@@ -1,7 +1,7 @@
 package com.universe.life.auth.gateway.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.universe.life.common.domain.Result;
+import com.universe.life.auth.common.domain.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;

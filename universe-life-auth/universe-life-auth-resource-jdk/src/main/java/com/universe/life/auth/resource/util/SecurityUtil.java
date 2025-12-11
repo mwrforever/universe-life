@@ -1,6 +1,6 @@
 package com.universe.life.auth.resource.util;
 
-import com.universe.life.common.domain.dto.UserAuthInfo;
+import com.universe.life.auth.common.domain.dto.UserAuthInfo;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**

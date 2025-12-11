@@ -1,7 +1,7 @@
 package com.universe.life.auth.resource.handler;
 
-import com.universe.life.common.domain.Result;
-import com.universe.life.common.exception.*;
+import com.universe.life.auth.common.domain.Result;
+import com.universe.life.auth.common.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

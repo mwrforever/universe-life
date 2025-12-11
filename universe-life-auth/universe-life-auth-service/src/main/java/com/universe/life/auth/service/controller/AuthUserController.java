@@ -2,7 +2,7 @@ package com.universe.life.auth.service.controller;
 
 import com.universe.life.auth.service.domain.dto.request.RegisterFormRequest;
 import com.universe.life.auth.service.service.IAuthUserService;
-import com.universe.life.common.domain.Result;
+import com.universe.life.auth.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

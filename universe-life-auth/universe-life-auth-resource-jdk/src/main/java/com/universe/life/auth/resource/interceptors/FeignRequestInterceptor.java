@@ -1,7 +1,7 @@
 package com.universe.life.auth.resource.interceptors;
 
-import com.universe.life.common.constants.JwtConstants;
-import com.universe.life.common.domain.dto.UserAuthInfo;
+import com.universe.life.auth.common.constants.JwtConstants;
+import com.universe.life.auth.common.domain.dto.UserAuthInfo;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;

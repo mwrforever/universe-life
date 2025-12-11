@@ -8,7 +8,6 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>universe-life-gateway</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <name>universe-life-gateway</name>
     <description>universe-life-gateway</description>
     <url/>
