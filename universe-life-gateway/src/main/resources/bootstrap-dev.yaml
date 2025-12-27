@@ -2,7 +2,8 @@ universe-life:
   auth:
     enable: true
     exclude-path:
-      - /api/auth/common/captcha/send
+      - /api/common/captcha/send
+      - /api/common/captcha/verify
       - /api/auth/oauth2-jwk/update
       - /api/auth/v3/api-docs
       - /api/user/v3/api-docs
@@ -16,7 +17,7 @@ universe-life:
   security:
     resource:
       server:
-        issuer-uri: http://127.0.0.1:8099
+        issuer-uri: http://localhost:8099
 
 logging:
   level:

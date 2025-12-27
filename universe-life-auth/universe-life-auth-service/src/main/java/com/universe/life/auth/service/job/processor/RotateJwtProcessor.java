@@ -1,6 +1,6 @@
 package com.universe.life.auth.service.job.processor;
 
-import com.universe.life.auth.resource.constants.RedisConstants;
+import com.universe.life.auth.common.constants.RedisConstants;
 import com.universe.life.auth.service.domain.po.Oauth2Jwk;
 import com.universe.life.auth.service.enums.JwkState;
 import com.universe.life.auth.service.manager.JwkManager;

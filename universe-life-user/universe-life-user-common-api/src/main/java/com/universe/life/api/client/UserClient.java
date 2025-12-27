@@ -26,5 +26,7 @@ public interface UserClient {
     @GetMapping("/privacy/status")
     UserStatusDTO getUserStatus(@RequestParam String username);
 
+    @GetMapping("/admin/sys-user/login")
+    UserInfoDTO login(@RequestParam String username);
 
 }

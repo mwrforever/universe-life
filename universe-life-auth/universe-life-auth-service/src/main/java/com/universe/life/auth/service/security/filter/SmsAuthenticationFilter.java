@@ -1,10 +1,10 @@
 package com.universe.life.auth.service.security.filter;
 
 import cn.hutool.core.util.StrUtil;
-import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
-import com.universe.life.common.enums.CaptchaUsageType;
 import com.universe.life.auth.common.exception.AuthException;
 import com.universe.life.auth.common.message.ExceptionMessage;
+import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
+import com.universe.life.common.server.model.domain.domain.enums.CaptchaUsageType;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

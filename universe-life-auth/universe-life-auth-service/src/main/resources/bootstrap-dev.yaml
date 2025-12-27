@@ -16,8 +16,6 @@ universe-life:
   auth:
     enable: true
     exclude-path:
-      - /common/captcha/send
-      - /common/captcha/verify
       - /actuator/health
       - /actuator/info
       - /v3/api-docs
@@ -31,13 +29,19 @@ universe-life:
   security:
     authorization:
       server:
-        consent-page: http://localhost:3000/auth/consent
-        issuer: http://127.0.0.1:8099
-        client-id: fCSYj5XOia6J4O9shfka
-        client-secret: m&#H:YN&@[Ijhn3s&ehV
-        redirect-uri:
-        - http://localhost:3000/auth/callback
-        post-logout-redirect-uri: http://localhost:3000
+        issuer: http://localhost:8099
+        consent-page: http://localhost:8099/auth/consent
+        configs:
+          - client-id: fCSYj5XOia6J4O9shfka
+            client-secret: m&#H:YN&@[Ijhn3s&ehV
+            redirect-uri:
+              - http://localhost:3000/auth/callback
+            post-logout-redirect-uri: http://localhost:3000
+          - client-id: Kp7vR9mNxq2L8tQwYzba
+            client-secret: P@5s!vB9#zK$mQ2x&Lw8
+            redirect-uri:
+              - http://localhost:5000/auth/callback
+            post-logout-redirect-uri: http://localhost:5000/auth/logout?status=true
   # Redisson 分布式锁配置（测试环境）
   redisson:
     # 基础配置

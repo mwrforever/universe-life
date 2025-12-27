@@ -1,10 +1,10 @@
 package com.universe.life.auth.service.controller;
 
+import com.universe.life.auth.common.domain.Result;
 import com.universe.life.auth.service.domain.vo.DisclaimerVO;
 import com.universe.life.auth.service.domain.vo.PrivacyPolicyVO;
 import com.universe.life.auth.service.domain.vo.UserAgreementVO;
-import com.universe.life.auth.service.service.IAuthCommonService;
-import com.universe.life.auth.common.domain.Result;
+import com.universe.life.auth.service.service.IPageService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequiredArgsConstructor
 public class PageController {
 
-    private final IAuthCommonService authCommonService;
+    private final IPageService pageService;
 
     /**
      * 登录页面
@@ -85,7 +86,7 @@ public class PageController {
             description = "获取用户服务协议内容"
     )
     public Result<UserAgreementVO> getUserAgreement() {
-        return Result.success(authCommonService.getUserAgreement());
+        return Result.success(pageService.getUserAgreement());
     }
 
     /**
@@ -98,7 +99,7 @@ public class PageController {
             description = "获取隐私政策内容"
     )
     public Result<PrivacyPolicyVO> getPrivacyPolicy() {
-        return Result.success(authCommonService.getPrivacyPolicy());
+        return Result.success(pageService.getPrivacyPolicy());
     }
 
     /**
@@ -111,7 +112,7 @@ public class PageController {
             description = "获取平台免责声明内容"
     )
     public Result<DisclaimerVO> getDisclaimer() {
-        return Result.success(authCommonService.getDisclaimer());
+        return Result.success(pageService.getDisclaimer());
     }
 
 }

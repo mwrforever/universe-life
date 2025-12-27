@@ -41,6 +41,8 @@
         <user.common.model.version>${universe.life.version}</user.common.model.version>
         <user.common.api.version>${universe.life.version}</user.common.api.version>
         <auth.common.version>${universe.life.version}</auth.common.version>
+        <common.model.version>${universe.life.version}</common.model.version>
+        <common.api.version>${universe.life.version}</common.api.version>
     </properties>
 
     <dependencies>
@@ -53,6 +55,18 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>com.universe.life</groupId>
+                <artifactId>universe-life-common-server-model</artifactId>
+                <version>${common.model.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.universe.life</groupId>
+                <artifactId>universe-life-common-server-api</artifactId>
+                <version>${common.api.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.mapstruct</groupId>
@@ -218,6 +232,7 @@
         <module>universe-life-message</module>
         <module>universe-life-notify</module>
         <module>universe-life-comment</module>
+        <module>universe-life-common-server</module>
     </modules>
 
     <build>

@@ -1,4 +1,8 @@
 // 万象生活注册页面逻辑
+
+// API 基础地址配置 - 公共服务接口必须通过网关访问
+const GATEWAY_BASE_URL = 'http://localhost:8101';
+
 class RegisterAuth {
     constructor() {
         this.formValidator = null;
@@ -141,7 +145,7 @@ class RegisterAuth {
     // 发送验证码函数
     sendVerificationCode(identification, usageType) {
         console.log('sendVerificationCode被调用:', identification, usageType);
-        makeRequest('/common/captcha/send', {
+        makeRequest(`${GATEWAY_BASE_URL}/api/common/captcha/send`, {
             method: 'POST',
             body: {
                 identification: identification,
@@ -172,8 +176,8 @@ class RegisterAuth {
             return;
         }
 
-        // 发送请求
-        makeRequest('/common/captcha/verify', {
+        // 发送请求到网关
+        makeRequest(`${GATEWAY_BASE_URL}/api/common/captcha/verify`, {
             method: 'POST',
             body: {
                 identification: formData.identification,

@@ -6,11 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * @author 毛伟然
@@ -22,7 +20,6 @@ public class UserAuthInfo implements UserDetails {
 
     private Long id;
 
-    private List<String> prePermissions;
 
     private String avatar;
 
@@ -35,26 +32,19 @@ public class UserAuthInfo implements UserDetails {
             @JsonProperty("id") Long id,
             @JsonProperty("username") String username,
             @JsonProperty("password") String password,
-            @JsonProperty("prePermissions") List<String> prePermissions,
             @JsonProperty("avatar") String avatar
     ) {
         this.id = id;
         this.username = username;
         this.password = password;
-        this.prePermissions = prePermissions;
         this.avatar = avatar;
     }
-    @JsonIgnore
-    private List<GrantedAuthority> permissions;
 
 
     @Override
     @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (permissions != null) {
-            return permissions;
-        }
-        return prePermissions == null ? List.of() : prePermissions.stream().map(SimpleGrantedAuthority::new).toList();
+        return null;
     }
 
     @Override

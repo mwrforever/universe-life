@@ -94,7 +94,7 @@ public class GlobalGatewayFilter implements GlobalFilter, Ordered {
                         log.warn("GlobalGatewayFilter: JWT Token属性为空");
                         return;
                     }
-                    Object userId = tokenAttributes.get("user_id");
+                    Object userId = tokenAttributes.get(JwtConstants.USER_ID);
                     if (Objects.isNull(userId)) {
                         throw new AuthException.AuthenticationException(ExceptionMessage.AUTH_FAILED);
                     }

@@ -443,13 +443,17 @@ function handleApiResponse(response, options = {}) {
     const { showSuccessToast = false, successMessage = '操作成功' } = options;
 
     return response.json().then(data => {
-        if (data.code === 0) {
+        // code = 1 表示成功，code = 0 或其他值表示失败
+        if (data.code === 1) {
             if (showSuccessToast) {
                 showToast(successMessage || data.message || '操作成功', 'success');
             }
             return { success: true, data };
         } else {
-            // 业务错误
+            // 业务错误 - 显示错误消息
+            if (data.message) {
+                showToast(data.message, 'error');
+            }
             return { success: false, data };
         }
     }).catch(error => {

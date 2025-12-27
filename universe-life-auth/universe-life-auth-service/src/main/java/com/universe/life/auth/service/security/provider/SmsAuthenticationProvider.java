@@ -1,9 +1,9 @@
 package com.universe.life.auth.service.security.provider;
 
-import com.universe.life.auth.resource.domain.dto.request.VerifyCodeFormRequest;
+import com.universe.life.auth.common.exception.AuthException;
+import com.universe.life.auth.resource.util.VerifyCaptchaUtil;
 import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
-import com.universe.life.auth.service.service.IAuthCommonService;
-import com.universe.life.common.enums.CaptchaUsageType;
+import com.universe.life.common.server.model.domain.domain.enums.CaptchaUsageType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 public class SmsAuthenticationProvider implements AuthenticationProvider {
 
     private final UserDetailsService userDetailsService;
-    private final IAuthCommonService authCommonService;
+    private final VerifyCaptchaUtil verifyCaptchaUtil;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -34,7 +34,11 @@ public class SmsAuthenticationProvider implements AuthenticationProvider {
         CaptchaUsageType usageType = (CaptchaUsageType) smsAuthenticationToken.getUsageType();
         // 校验验证码
         log.debug("短信验证码认证 - 邮箱: {}", email);
-        authCommonService.verifyCaptcha(new VerifyCodeFormRequest(email, captcha, usageType));
+        boolean verified = verifyCaptchaUtil.verifyCaptcha(usageType, email, captcha);
+        if (!verified) {
+            log.debug("短信验证码认证 - 邮箱: {}, 验证码错误", email);
+            throw new AuthException.AuthenticationException("验证码错误");
+        }
         // 通过手机号加载用户信息
         UserDetails details = userDetailsService.loadUserByUsername(email);
         // 创建认证成功的authentication

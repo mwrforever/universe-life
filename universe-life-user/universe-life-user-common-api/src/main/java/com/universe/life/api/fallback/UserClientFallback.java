@@ -29,6 +29,11 @@ public class UserClientFallback implements FallbackFactory<UserClient> {
             public UserStatusDTO getUserStatus(String username) {
                 return null;
             }
+
+            @Override
+            public UserInfoDTO login(String username) {
+                return null;
+            }
         };
     }
 }

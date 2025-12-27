@@ -1,6 +1,6 @@
 package com.universe.life.auth.common.util;
 
-import com.universe.life.auth.common.domain.dto.UserAuthInfo;
+import com.universe.life.auth.common.domain.dto.AdminAuthInfo;
 import com.universe.life.auth.common.message.ExceptionMessage;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.AntPathMatcher;
@@ -22,10 +22,10 @@ public class PermissionMatcher {
 
     public boolean match(String permission) {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (!(principal instanceof UserAuthInfo userAuthInfo)) {
+        if (!(principal instanceof AdminAuthInfo info)) {
             throw new ClassCastException(ExceptionMessage.COMMON_ERROR);
         }
-        return matchAnyPermission(userAuthInfo.getPrePermissions(), permission);
+        return matchAnyPermission(info.getPrePermissions(), permission);
     }
 
 

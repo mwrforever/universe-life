@@ -1,4 +1,8 @@
 // 万象生活登录页面逻辑
+
+// API 基础地址配置 - 公共服务接口必须通过网关访问
+const GATEWAY_BASE_URL = 'http://localhost:8101';
+
 class LoginAuth {
     constructor() {
         this.currentLoginTab = 'password';
@@ -550,7 +554,8 @@ class LoginAuth {
 
             const result = await response.json();
 
-            if (response.ok && result.code === 0) {
+            // code = 1 表示成功
+            if (response.ok && result.code === 1) {
                 this.hideLoading('email-submit');
                 this.showToast('登录成功！', 'success');
                 // 登录成功后跳转到主页或其他页面
@@ -579,7 +584,7 @@ class LoginAuth {
         }
 
         try {
-            const response = await fetch('/common/captcha/send', {
+            const response = await fetch(`${GATEWAY_BASE_URL}/api/common/captcha/send`, {
                 method: 'POST',
                 headers: this.addCsrfHeaders({
                     'Content-Type': 'application/json',
@@ -593,7 +598,8 @@ class LoginAuth {
 
             const result = await response.json();
 
-            if (response.ok && result.code === 0) {
+            // code = 1 表示成功
+            if (response.ok && result.code === 1) {
                 // 开始倒计时
                 this.startCountdown(btn);
                 // 发送验证码成功提示

@@ -1,0 +1,13 @@
+# 生产环境配置
+
+# Cookie 配置（HTTPS 环境）
+server:
+  servlet:
+    session:
+      cookie:
+        domain: .universe.life    # 设置父域，实现跨子域 Cookie 共享
+        same-site: none            # 生产环境（HTTPS）使用 none
+        secure: true               # HTTPS 环境必须为 true
+        http-only: true            # 防止 XSS 攻击
+        path: /                    # 全站可用
+

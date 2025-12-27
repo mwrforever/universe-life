@@ -135,9 +135,6 @@ docs/build/
 
 
 # Local development
-.local
-.dev.env
-.env.skywalking
 
 # Build artifacts
 *.tsbuildinfo
@@ -209,21 +206,6 @@ specs/*/contracts/generated/
 .agent/
 
 
-.claude
-# **/*.md
-.bmad-core
 
-doc
- docs
-
-prometheus
-nginx
-oap
-scripts
-sql
-ssl
-ui
-elasticsearch
-grafana
 
 

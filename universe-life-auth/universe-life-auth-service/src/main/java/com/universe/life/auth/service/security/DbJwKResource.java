@@ -8,7 +8,7 @@ import com.nimbusds.jose.jwk.JWKSelector;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.universe.life.auth.resource.constants.RedisConstants;
+import com.universe.life.auth.common.constants.RedisConstants;
 import com.universe.life.auth.service.domain.po.Oauth2Jwk;
 import com.universe.life.auth.service.enums.JwkState;
 import com.universe.life.auth.service.manager.JwkManager;

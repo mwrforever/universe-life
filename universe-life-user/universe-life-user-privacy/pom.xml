@@ -8,7 +8,6 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>universe-life-user-privacy</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <name>universe-life-user-privacy</name>
     <description>universe-life-user-privacy</description>
     <url/>
@@ -72,6 +71,8 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
+
+
 
         <!-- Nacos 配置中心 -->
         <dependency>

@@ -15,14 +15,19 @@ public class AuthorizationServerProperties {
 
     private String issuer;
 
-    private String clientId;
-
-    private String clientSecret;
-
-    private List<String> redirectUri;
-
-    private String postLogoutRedirectUri;
-
     private String consentPage;
+
+    private List<AuthorizationServerPropertiesConfig> configs;
+
+    @Data
+    public static class AuthorizationServerPropertiesConfig {
+        private String clientId;
+
+        private String clientSecret;
+
+        private List<String> redirectUri;
+
+        private String postLogoutRedirectUri;
+    }
 
 }

@@ -1,8 +1,8 @@
 package com.universe.life.auth.resource.util;
 
 import cn.hutool.core.util.StrUtil;
-import com.universe.life.auth.resource.constants.RedisConstants;
-import com.universe.life.common.enums.CaptchaUsageType;
+import com.universe.life.auth.common.constants.RedisConstants;
+import com.universe.life.common.server.model.domain.domain.enums.CaptchaUsageType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 

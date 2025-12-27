@@ -15,6 +15,11 @@
 
         <dependency>
             <groupId>com.universe.life</groupId>
+            <artifactId>universe-life-common-server-model</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.universe.life</groupId>
             <artifactId>universe-life-auth-common</artifactId>
         </dependency>
 

@@ -28,8 +28,6 @@ spring:
             refresh: true
           - data-id: shared-rabbitmq.yaml
             refresh: true
-          - data-id: shared-mail.yaml
-            refresh: true
       discovery:
         server-addr: 43.142.103.248:8848          # Nacos 注册中心地址
         namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
@@ -41,6 +39,9 @@ spring:
     redis:
       namespace: "spring:session" # Redis Key 的前缀，防止冲突
     timeout: 30m
+    hazelcast:
+      flush-mode: immediate
+
   # Thymeleaf模板引擎配置
   thymeleaf:
     # 模板文件路径

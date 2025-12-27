@@ -8,7 +8,6 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>universe-life-auth-service</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <name>universe-life-auth-service</name>
     <description>universe-life-auth-service</description>
     <url/>
@@ -28,6 +27,8 @@
         <java.version>17</java.version>
     </properties>
     <dependencies>
+
+
 
         <dependency>
             <groupId>com.universe.life</groupId>
@@ -62,6 +63,12 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-oauth2-authorization-server</artifactId>
+        </dependency>
+
+        <!-- 模板引擎 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
 
         <dependency>

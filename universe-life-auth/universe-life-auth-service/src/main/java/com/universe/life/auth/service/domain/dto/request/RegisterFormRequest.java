@@ -1,6 +1,6 @@
 package com.universe.life.auth.service.domain.dto.request;
 
-import com.universe.life.common.enums.CaptchaUsageType;
+import com.universe.life.common.server.model.domain.domain.enums.CaptchaUsageType;
 import com.universe.life.model.enums.UserAuthType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
