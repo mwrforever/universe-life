@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.universe.life.task.privacy.mapper.TaskAcceptanceMapper">
+
+    <resultMap id="TaskAcceptanceDTOResultMap" type="com.universe.life.task.privacy.domain.dto.TaskAcceptanceDTO">
+        <id column="id" property="id"/>
+        <result column="task_id" property="taskId"/>
+        <result column="task_title" property="taskTitle"/>
+        <result column="publisher_id" property="publisherId"/>
+        <result column="publisher_name" property="publisherName"/>
+        <result column="acceptor_id" property="acceptorId"/>
+        <result column="acceptor_name" property="acceptorName"/>
+        <result column="reward_amount" property="rewardAmount"/>
+        <result column="status" property="status" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result column="submit_content" property="submitContent"/>
+        <result column="submit_images_json" property="submitImagesJson"/>
+        <result column="accepted_at" property="acceptedAt"/>
+        <result column="submitted_at" property="submittedAt"/>
+        <result column="completed_at" property="completedAt"/>
+        <result column="deadline" property="deadline"/>
+        <result column="reject_reason" property="rejectReason"/>
+    </resultMap>
+
+    <!-- 分页查询我的接受记录 -->
+    <select id="selectMyAcceptancePage" resultMap="TaskAcceptanceDTOResultMap">
+        SELECT 
+            a.id, a.task_id, t.title AS task_title,
+            t.publisher_id, t.reward_amount,
+            a.acceptor_id, a.status,
+            a.submit_content, a.submit_images AS submit_images_json,
+            a.accepted_at, a.submitted_at, a.completed_at,
+            t.deadline, a.reject_reason
+        FROM task_acceptance a
+        INNER JOIN task t ON a.task_id = t.id
+        WHERE a.deleted = 0 AND a.acceptor_id = #{userId}
+        <if test="query.status != null">
+            AND a.status = #{query.status}
+        </if>
+        ORDER BY a.created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计我的接受记录总数 -->
+    <select id="countMyAcceptance" resultType="long">
+        SELECT COUNT(*)
+        FROM task_acceptance a
+        WHERE a.deleted = 0 AND a.acceptor_id = #{userId}
+        <if test="query.status != null">
+            AND a.status = #{query.status}
+        </if>
+    </select>
+
+    <!-- 分页查询任务的接受记录（发布者查看） -->
+    <select id="selectTaskAcceptancePage" resultMap="TaskAcceptanceDTOResultMap">
+        SELECT 
+            a.id, a.task_id, t.title AS task_title,
+            t.publisher_id, t.reward_amount,
+            a.acceptor_id, a.status,
+            a.submit_content, a.submit_images AS submit_images_json,
+            a.accepted_at, a.submitted_at, a.completed_at,
+            t.deadline, a.reject_reason
+        FROM task_acceptance a
+        INNER JOIN task t ON a.task_id = t.id
+        WHERE a.deleted = 0 AND a.task_id = #{taskId}
+        <if test="query.status != null">
+            AND a.status = #{query.status}
+        </if>
+        ORDER BY a.created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计任务的接受记录总数 -->
+    <select id="countTaskAcceptance" resultType="long">
+        SELECT COUNT(*)
+        FROM task_acceptance a
+        WHERE a.deleted = 0 AND a.task_id = #{taskId}
+        <if test="query.status != null">
+            AND a.status = #{query.status}
+        </if>
+    </select>
+
+    <!-- 查询接受记录详情 -->
+    <select id="selectAcceptanceDetail" resultMap="TaskAcceptanceDTOResultMap">
+        SELECT 
+            a.id, a.task_id, t.title AS task_title,
+            t.publisher_id, t.reward_amount,
+            a.acceptor_id, a.status,
+            a.submit_content, a.submit_images AS submit_images_json,
+            a.accepted_at, a.submitted_at, a.completed_at,
+            t.deadline, a.reject_reason
+        FROM task_acceptance a
+        INNER JOIN task t ON a.task_id = t.id
+        WHERE a.id = #{id} AND a.deleted = 0
+    </select>
+
+    <!-- 检查用户是否已接受任务 -->
+    <select id="checkUserAccepted" resultType="int">
+        SELECT COUNT(*)
+        FROM task_acceptance
+        WHERE task_id = #{taskId} 
+          AND acceptor_id = #{userId} 
+          AND status NOT IN (3, 5)
+          AND deleted = 0
+    </select>
+
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.universe.life.user.privacy.mapper.SysDepartmentMapper">
+
+    <select id="selectDepartmentList" resultType="com.universe.life.user.privacy.domain.vo.SysDepartmentListVO">
+        SELECT
+            sd.id,
+            sd.parent_id,
+            sd.dept_code,
+            sd.dept_name,
+            sd.sort_order,
+            sd.status,
+            sd.created_at,
+            su.real_name AS leader_name
+        FROM sys_department sd
+        LEFT JOIN sys_user su ON sd.leader_id = su.id AND su.deleted = 0
+        WHERE sd.deleted = 0
+        <if test="query.parentId != null">
+            AND sd.parent_id = #{query.parentId}
+        </if>
+        <if test="query.status != null">
+            AND sd.status = #{query.status}
+        </if>
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (
+                sd.dept_code LIKE CONCAT('%', #{query.keyword}, '%')
+                OR sd.dept_name LIKE CONCAT('%', #{query.keyword}, '%')
+            )
+        </if>
+        ORDER BY sd.sort_order ASC, sd.created_at DESC
+    </select>
+
+</mapper>

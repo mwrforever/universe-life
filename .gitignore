@@ -205,6 +205,40 @@ specs/*/contracts/generated/
 .memory/
 .agent/
 
+# AI Assistant Configuration
+.bmad-core/
+.claude/
+.windsurf/
+CLAUDE.md
+
+# Project Documentation
+api-documentation/
+doc/
+docs/
+*.md
+!README.md
+
+# Scripts
+scripts/
+*.bat
+*.sh
+*.ps1
+
+# SQL (例外：保留sql目录下的文件)
+# sql/
+
+# IDE specific
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# System files
+nul
+
+# Test code (排除测试代码)
+**/src/test/
+
 
 
 

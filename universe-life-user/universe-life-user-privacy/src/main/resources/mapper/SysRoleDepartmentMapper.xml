@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.universe.life.user.privacy.mapper.SysRoleDepartmentMapper">
+
+    <select id="selectDepartmentsByRoleId" resultType="com.universe.life.user.privacy.domain.vo.SysDepartmentSimpleVO">
+        SELECT
+            sd.id,
+            sd.dept_code,
+            sd.dept_name
+        FROM sys_role_department srd
+        INNER JOIN sys_department sd ON srd.department_id = sd.id AND sd.deleted = 0
+        WHERE srd.role_id = #{roleId}
+    </select>
+
+    <select id="selectRoleIdsByDepartmentId" resultType="java.lang.Long">
+        SELECT role_id
+        FROM sys_role_department
+        WHERE department_id = #{departmentId}
+    </select>
+
+</mapper>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+  <title>验证码 - 万象生活</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f7;
+      color: #1d1d1f;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+    }
+    .wrapper {
+      width: 100%;
+      padding: 24px 16px;
+      background-color: #f5f5f7;
+    }
+    .container {
+      max-width: 440px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .header {
+      padding: 32px 24px 24px;
+      text-align: center;
+      border-bottom: 1px solid #f5f5f7;
+    }
+    .logo {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      background-color: #1d1d1f;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      line-height: 48px;
+      text-align: center;
+    }
+    .logo-text {
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .brand {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1d1d1f;
+      letter-spacing: -0.2px;
+    }
+    .content {
+      padding: 32px 24px;
+    }
+    .title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #1d1d1f;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+    .desc {
+      font-size: 15px;
+      color: #86868b;
+      margin-bottom: 28px;
+    }
+    .desc-highlight {
+      color: #1d1d1f;
+      font-weight: 500;
+    }
+    .code-section {
+      background-color: #f5f5f7;
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .code-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #86868b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .code {
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 32px;
+      font-weight: 700;
+      color: #1d1d1f;
+      letter-spacing: 6px;
+      margin-bottom: 12px;
+    }
+    .expiry {
+      font-size: 13px;
+      color: #86868b;
+    }
+    .expiry-time {
+      color: #1d1d1f;
+      font-weight: 600;
+    }
+    .divider {
+      height: 1px;
+      background-color: #f5f5f7;
+      margin: 24px 0;
+    }
+    .tips {
+      background-color: #fafafa;
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+    .tips-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1d1d1f;
+      margin-bottom: 10px;
+    }
+    .tips-list {
+      list-style: none;
+    }
+    .tips-item {
+      font-size: 13px;
+      color: #6e6e73;
+      padding-left: 16px;
+      position: relative;
+      margin-bottom: 6px;
+    }
+    .tips-item:last-child { margin-bottom: 0; }
+    .tips-item::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 4px;
+      height: 4px;
+      background-color: #86868b;
+      border-radius: 50%;
+    }
+    .btn-wrap {
+      text-align: center;
+      margin-top: 28px;
+    }
+    .btn {
+      display: inline-block;
+      background-color: #1d1d1f;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 14px 32px;
+      border-radius: 980px;
+      letter-spacing: -0.1px;
+    }
+    .footer {
+      padding: 20px 24px 28px;
+      text-align: center;
+      border-top: 1px solid #f5f5f7;
+    }
+    .footer-text {
+      font-size: 12px;
+      color: #86868b;
+      margin-bottom: 12px;
+    }
+    .footer-links {
+      font-size: 12px;
+    }
+    .footer-link {
+      color: #1d1d1f;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .footer-sep {
+      color: #d2d2d7;
+      margin: 0 8px;
+    }
+    .footer-copy {
+      font-size: 11px;
+      color: #86868b;
+      margin-top: 16px;
+    }
+    @media screen and (max-width: 480px) {
+      .wrapper { padding: 16px 12px; }
+      .container { border-radius: 16px; }
+      .header { padding: 24px 20px 20px; }
+      .content { padding: 24px 20px; }
+      .title { font-size: 20px; }
+      .code { font-size: 28px; letter-spacing: 4px; }
+      .code-section { padding: 24px 16px; }
+      .btn { width: 100%; padding: 16px 24px; }
+      .footer { padding: 16px 20px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <div class="logo">
+          <span class="logo-text">U</span>
+        </div>
+        <div class="brand">万象生活</div>
+      </div>
+
+      <div class="content">
+        <h1 class="title">验证您的身份</h1>
+        <p class="desc">
+          您正在进行<span class="desc-highlight" th:text="${usageType != null ? usageType.description : '安全验证'}">安全验证</span>操作，请使用以下验证码完成验证。
+        </p>
+
+        <div class="code-section">
+          <div class="code-label">验证码</div>
+          <div class="code" th:text="${captcha}">123456</div>
+          <div class="expiry">
+            <span class="expiry-time" th:text="${expirationMinutes != null ? expirationMinutes : 5}">5</span> 分钟内有效
+          </div>
+        </div>
+
+        <div class="tips">
+          <div class="tips-title">安全提示</div>
+          <ul class="tips-list">
+            <li class="tips-item">验证码仅用于<span th:text="${usageType != null ? usageType.description : '安全验证'}">安全验证</span>，请勿泄露</li>
+            <li class="tips-item">万象生活工作人员不会索要您的验证码</li>
+            <li class="tips-item">非本人操作请忽略此邮件</li>
+          </ul>
+        </div>
+
+        <div class="btn-wrap">
+          <a class="btn" th:href="${platformUrl != null ? platformUrl : 'http://127.0.0.1:3000'}" target="_blank">打开万象生活</a>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="footer-text">此邮件由系统自动发送，请勿直接回复</div>
+        <div class="footer-links">
+          <a class="footer-link" th:href="${platformUrl != null ? platformUrl : 'http://127.0.0.1:3000'}" target="_blank">访问官网</a>
+          <span class="footer-sep">·</span>
+          <a class="footer-link" href="#">帮助中心</a>
+        </div>
+        <div class="footer-copy">© 万象生活 Universe Life</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.universe.life.user.privacy.mapper.SysUserMapper">
+
+    <select id="selectSysUserList" resultType="com.universe.life.user.privacy.domain.vo.SysUserListVO">
+        SELECT
+            su.id,
+            su.employee_no,
+            su.username,
+            su.real_name,
+            su.phone,
+            su.email,
+            su.avatar_url,
+            su.gender,
+            su.status,
+            su.last_login_at,
+            su.created_at,
+            sd.dept_name AS primary_dept_name
+        FROM sys_user su
+        LEFT JOIN sys_user_department sud ON su.id = sud.user_id AND sud.is_primary = 1
+        LEFT JOIN sys_department sd ON sud.department_id = sd.id AND sd.deleted = 0
+        WHERE su.deleted = 0
+        <if test="query.departmentId != null">
+            AND EXISTS (
+                SELECT 1 FROM sys_user_department sud2
+                WHERE sud2.user_id = su.id AND sud2.department_id = #{query.departmentId}
+            )
+        </if>
+        <if test="query.status != null">
+            AND su.status = #{query.status}
+        </if>
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (
+                su.employee_no LIKE CONCAT('%', #{query.keyword}, '%')
+                OR su.username LIKE CONCAT('%', #{query.keyword}, '%')
+                OR su.real_name LIKE CONCAT('%', #{query.keyword}, '%')
+                OR su.phone LIKE CONCAT('%', #{query.keyword}, '%')
+            )
+        </if>
+        ORDER BY su.created_at DESC
+    </select>
+
+</mapper>
