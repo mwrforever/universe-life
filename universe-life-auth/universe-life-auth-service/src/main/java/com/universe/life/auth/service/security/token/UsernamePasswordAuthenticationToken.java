@@ -23,6 +23,7 @@ public class UsernamePasswordAuthenticationToken extends AbstractAuthenticationT
 
     private final Object principal;
     private final Object credentials;
+    private final Object loginType;
 
     /**
      * 【新增】Jackson 反序列化专用构造函数
@@ -34,10 +35,12 @@ public class UsernamePasswordAuthenticationToken extends AbstractAuthenticationT
             @JsonProperty("credentials") Object credentials,
             @JsonProperty("authorities") Collection<? extends GrantedAuthority> authorities,
             @JsonProperty("details") Object details,
+            @JsonProperty("loginType") Object loginType,
             @JsonProperty("authenticated") boolean authenticated) {
         super(authorities);
         this.principal = principal;
         this.credentials = credentials;
+        this.loginType = loginType;
         this.setDetails(details); // 还原 details
         super.setAuthenticated(authenticated); // 还原认证状态
     }
@@ -45,8 +48,9 @@ public class UsernamePasswordAuthenticationToken extends AbstractAuthenticationT
     /**
      * 未认证的构造函数
      */
-    public UsernamePasswordAuthenticationToken(Object principal, Object credentials) {
+    public UsernamePasswordAuthenticationToken(Object principal, Object credentials, Object loginType) {
         super(null);
+        this.loginType = loginType;
         this.principal = principal;
         this.credentials = credentials;
         setAuthenticated(false);
@@ -59,6 +63,7 @@ public class UsernamePasswordAuthenticationToken extends AbstractAuthenticationT
         super(authorities);
         this.principal = principal;
         this.credentials = null;
+        this.loginType = null;
         super.setAuthenticated(true);
     }
 

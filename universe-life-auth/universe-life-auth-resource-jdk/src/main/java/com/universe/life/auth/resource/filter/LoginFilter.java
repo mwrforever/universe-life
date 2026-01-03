@@ -43,7 +43,7 @@ public class LoginFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        log.info("{}：进入过滤器链进行认证", request.getRequestURL());
+        log.info("LoginFilter.doFilterInternal - 开始处理请求: {} {}", request.getMethod(), request.getRequestURL());
         // 1. 从请求头中获取用户信息
         String userId = request.getHeader(JwtConstants.USER_INFO);
         if (StrUtil.isBlank(userId)) {
@@ -82,9 +82,11 @@ public class LoginFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String requestURI = request.getRequestURI();
+
         if (authPathProperties.getExcludePath() == null) {
             return false;
         }
+
         return antRequestMatchUtil.matchAny(requestURI, authPathProperties.getExcludePath());
     }
 }

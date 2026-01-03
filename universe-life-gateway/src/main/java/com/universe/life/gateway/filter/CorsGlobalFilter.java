@@ -45,7 +45,6 @@ public class CorsGlobalFilter implements GlobalFilter, Ordered {
             headers.add("Access-Control-Allow-Headers", "*");
             headers.add("Access-Control-Max-Age", "3600");
             headers.add("Access-Control-Allow-Credentials", "true");
-            headers.add("Access-Control-Expose-Headers", "Content-Type, Set-Cookie, Authorization");
 
             // 返回204 No Content
             response.setStatusCode(HttpStatus.NO_CONTENT);
@@ -58,21 +57,7 @@ public class CorsGlobalFilter implements GlobalFilter, Ordered {
                     request.getMethod(), path, request.getHeaders().getOrigin());
 
             // 让后续的过滤器链处理CORS
-            return chain.filter(exchange).then(Mono.fromRunnable(() -> {
-                ServerHttpResponse response = exchange.getResponse();
-                HttpHeaders responseHeaders = response.getHeaders();
-
-                // 确保响应包含CORS头
-                if (!responseHeaders.containsKey("Access-Control-Allow-Origin")) {
-                    responseHeaders.add("Access-Control-Allow-Origin", request.getHeaders().getOrigin());
-                }
-                if (!responseHeaders.containsKey("Access-Control-Allow-Credentials")) {
-                    responseHeaders.add("Access-Control-Allow-Credentials", "true");
-                }
-                if (!responseHeaders.containsKey("Access-Control-Expose-Headers")) {
-                    responseHeaders.add("Access-Control-Expose-Headers", "Content-Type, Set-Cookie, Authorization");
-                }
-            }));
+            return chain.filter(exchange);
         }
 
         return chain.filter(exchange);

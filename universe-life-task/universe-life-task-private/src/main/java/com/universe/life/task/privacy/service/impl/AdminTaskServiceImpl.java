@@ -1,7 +1,7 @@
 package com.universe.life.task.privacy.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.universe.life.common.result.PageResult;
+import com.universe.life.common.domain.PageResult;
 import com.universe.life.task.privacy.domain.dao.query.TaskQuery;
 import com.universe.life.task.privacy.domain.dto.request.*;
 import com.universe.life.task.privacy.domain.po.Task;

@@ -1,6 +1,7 @@
 package com.universe.life.api.fallback;
 
 import com.universe.life.api.client.UserClient;
+import com.universe.life.model.domain.dto.AdminUserInfoDTO;
 import com.universe.life.model.domain.dto.RegisterFormDTO;
 import com.universe.life.model.domain.dto.UserInfoDTO;
 import com.universe.life.model.domain.dto.UserStatusDTO;
@@ -31,7 +32,7 @@ public class UserClientFallback implements FallbackFactory<UserClient> {
             }
 
             @Override
-            public UserInfoDTO login(String username) {
+            public AdminUserInfoDTO login(String username) {
                 return null;
             }
         };

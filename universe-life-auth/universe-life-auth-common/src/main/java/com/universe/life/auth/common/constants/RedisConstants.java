@@ -12,7 +12,7 @@ public interface RedisConstants {
 
     String AUTH_SECRET_KEY_GENERATE_LOCK = "auth:secret:key:generate:lock";
 
-    String AUTH_USER_CAPTCHA_KEY_PREFIX = "auth:user:captcha:key:";
+    String AUTH_USER_CAPTCHA_KEY_PREFIX = "auth:user:captcha:";
 
     String AUTH_USER_CAPTCHA_LOCK = "auth:user:captcha:lock:";
 

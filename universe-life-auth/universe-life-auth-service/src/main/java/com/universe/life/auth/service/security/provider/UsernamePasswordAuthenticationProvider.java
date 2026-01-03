@@ -1,6 +1,8 @@
 package com.universe.life.auth.service.security.provider;
 
+import com.universe.life.auth.common.constants.JwtConstants;
 import com.universe.life.auth.service.security.token.UsernamePasswordAuthenticationToken;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -9,7 +11,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * 用户名密码认证提供者
@@ -18,17 +21,12 @@ import org.springframework.stereotype.Component;
  * @since 2025/11/21
  */
 @Slf4j
-@Component
+@RequiredArgsConstructor
 public class UsernamePasswordAuthenticationProvider implements AuthenticationProvider {
 
-    private final UserDetailsService userDetailsService;
+    private final Map<String, UserDetailsService> userDetailsServices;
     private final PasswordEncoder passwordEncoder;
 
-    public UsernamePasswordAuthenticationProvider(UserDetailsService userDetailsService,
-                                                  PasswordEncoder passwordEncoder) {
-        this.userDetailsService = userDetailsService;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -36,11 +34,17 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
         UsernamePasswordAuthenticationToken authToken = (UsernamePasswordAuthenticationToken) authentication;
         String username = String.valueOf(authToken.getPrincipal());
         String password = String.valueOf(authToken.getCredentials());
+        String loginType = String.valueOf(authToken.getLoginType());
 
         log.debug("开始用户名密码认证 - 用户名: {}", username);
 
         try {
             // 通过用户名加载用户信息
+            UserDetailsService userDetailsService = getUserDetailsService(loginType);
+            if (userDetailsService == null) {
+                log.error("用户信息加载服务不存在: {}", loginType);
+                throw new BadCredentialsException("用户信息加载服务不存在");
+            }
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if (userDetails == null) {
@@ -99,5 +103,13 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
     @Override
     public boolean supports(Class<?> authentication) {
         return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+
+    private UserDetailsService getUserDetailsService(String loginType) {
+        String key = JwtConstants.USER_AUTH_INFO_SERVICE;
+        if (JwtConstants.EMPLOYEE_LOGIN.equals(loginType)) {
+            key = JwtConstants.ADMIN_AUTH_INFO_SERVICE;
+        }
+        return userDetailsServices.getOrDefault(key, null);
     }
 }

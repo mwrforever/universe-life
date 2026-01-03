@@ -1,6 +1,7 @@
 package com.universe.life.auth.service.security.filter;
 
 import cn.hutool.core.util.StrUtil;
+import com.universe.life.auth.common.constants.JwtConstants;
 import com.universe.life.auth.service.security.token.UsernamePasswordAuthenticationToken;
 import com.universe.life.auth.common.exception.AuthException;
 import com.universe.life.auth.common.message.ExceptionMessage;
@@ -56,7 +57,7 @@ public class MyUsernamePasswordAuthenticationFilter extends AbstractAuthenticati
 
         // 封装认证Token
         UsernamePasswordAuthenticationToken authenticationToken =
-            new UsernamePasswordAuthenticationToken(username, password);
+                new UsernamePasswordAuthenticationToken(username, password, JwtConstants.USER_LOGIN);
 
         // 设置详细信息
         authenticationToken.setDetails(this.authenticationDetailsSource.buildDetails(request));
@@ -77,4 +78,6 @@ public class MyUsernamePasswordAuthenticationFilter extends AbstractAuthenticati
     protected String obtainPassword(HttpServletRequest request) {
         return request.getParameter(PASSWORD);
     }
+
+
 }

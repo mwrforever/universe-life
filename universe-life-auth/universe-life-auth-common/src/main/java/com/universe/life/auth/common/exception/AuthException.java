@@ -21,7 +21,6 @@ public class AuthException {
      */
     public static class AuthenticationException extends AuthenticationServiceException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 401错误码和消息
@@ -33,13 +32,11 @@ public class AuthException {
         public AuthenticationException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public AuthenticationException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**
@@ -66,7 +63,6 @@ public class AuthException {
      */
     public static class AuthorizationException extends AccessDeniedException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 403错误码和消息
@@ -78,13 +74,11 @@ public class AuthException {
         public AuthorizationException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public AuthorizationException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**
@@ -111,7 +105,6 @@ public class AuthException {
      */
     public static class TokenExpiredException extends CredentialsExpiredException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 401错误码和消息
@@ -123,13 +116,11 @@ public class AuthException {
         public TokenExpiredException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public TokenExpiredException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**
@@ -156,7 +147,6 @@ public class AuthException {
      */
     public static class TokenInvalidException extends BadCredentialsException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 401错误码和消息
@@ -168,13 +158,11 @@ public class AuthException {
         public TokenInvalidException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public TokenInvalidException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**
@@ -201,7 +189,6 @@ public class AuthException {
      */
     public static class TokenMissingException extends AuthenticationServiceException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 401错误码和消息
@@ -213,13 +200,11 @@ public class AuthException {
         public TokenMissingException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public TokenMissingException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**
@@ -246,7 +231,6 @@ public class AuthException {
      */
     public static class UserNotFoundException extends UsernameNotFoundException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 401错误码和消息
@@ -258,13 +242,11 @@ public class AuthException {
         public UserNotFoundException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public UserNotFoundException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**
@@ -291,7 +273,6 @@ public class AuthException {
      */
     public static class PasswordIncorrectException extends BadCredentialsException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 401错误码和消息
@@ -303,13 +284,11 @@ public class AuthException {
         public PasswordIncorrectException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public PasswordIncorrectException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**
@@ -336,7 +315,6 @@ public class AuthException {
      */
     public static class AccountLockedException extends LockedException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 403错误码和消息
@@ -348,13 +326,11 @@ public class AuthException {
         public AccountLockedException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public AccountLockedException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**
@@ -381,7 +357,6 @@ public class AuthException {
      */
     public static class AccountDisabledException extends DisabledException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 403错误码和消息
@@ -393,13 +368,11 @@ public class AuthException {
         public AccountDisabledException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public AccountDisabledException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**
@@ -427,7 +400,6 @@ public class AuthException {
      */
     public static class UserAccountExpiredException extends AccountExpiredException {
         private final int code;
-        private final long timestamp;
 
         /**
          * 默认构造方法 - 使用标准的HTTP 403错误码和消息
@@ -439,13 +411,11 @@ public class AuthException {
         public UserAccountExpiredException(int code, String message) {
             super(message);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public UserAccountExpiredException(int code, String message, Throwable cause) {
             super(message, cause);
             this.code = code;
-            this.timestamp = System.currentTimeMillis();
         }
 
         /**

@@ -2,7 +2,7 @@ package com.universe.life.task.privacy.controller;
 
 import com.universe.life.auth.common.domain.Result;
 import com.universe.life.auth.resource.util.SecurityUtil;
-import com.universe.life.common.result.PageResult;
+import com.universe.life.common.domain.PageResult;
 import com.universe.life.task.privacy.domain.dao.query.TaskAppealQuery;
 import com.universe.life.task.privacy.domain.dto.request.TaskAppealHandleRequest;
 import com.universe.life.task.privacy.domain.vo.TaskAppealStatsVO;

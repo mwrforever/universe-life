@@ -29,7 +29,7 @@ public class NetworkException extends BaseServiceException {
 
     @Override
     public Result<Void> toResult() {
-        return Result.error(this.code, this.message);
+        return Result.error(this.message);
     }
 
     /**

@@ -23,6 +23,7 @@ public class SmsAuthenticationToken extends AbstractAuthenticationToken {
     private final Object principal;
     private final Object credentials;
     private final Object usageType;
+    private final Object loginType;
 
 
     @JsonCreator
@@ -32,11 +33,13 @@ public class SmsAuthenticationToken extends AbstractAuthenticationToken {
             @JsonProperty("usageType") Object usageType,
             @JsonProperty("authorities") Collection<? extends GrantedAuthority> authorities,
             @JsonProperty("details") Object details,
+            @JsonProperty("loginType") Object loginType,
             @JsonProperty("authenticated") boolean authenticated) {
         super(authorities);
         this.principal = principal;
         this.credentials = credentials;
         this.usageType = usageType;
+        this.loginType = loginType;
         this.setDetails(details); // 还原 details 信息
         super.setAuthenticated(authenticated); // 还原认证状态
     }
@@ -44,11 +47,13 @@ public class SmsAuthenticationToken extends AbstractAuthenticationToken {
     /**
      * 短信验证码登录构造函数
      */
-    public SmsAuthenticationToken(Object principal, Object credentials, Object usageType) {
+    public SmsAuthenticationToken(Object principal, Object credentials, Object usageType, Object loginType) {
         super(null);
         this.principal = principal;
         this.credentials = credentials;
         this.usageType = usageType;
+        this.loginType = loginType;
+
         setAuthenticated(false);
     }
 
@@ -57,6 +62,7 @@ public class SmsAuthenticationToken extends AbstractAuthenticationToken {
         this.principal = principal;
         this.credentials = null;
         this.usageType = null;
+        this.loginType = null;
         super.setAuthenticated(true);
     }
 

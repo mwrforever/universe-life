@@ -22,23 +22,21 @@ public abstract class BaseServiceException extends RuntimeException {
      */
     protected final String message;
 
-    /**
-     * 时间戳
-     */
-    protected final long timestamp;
-
     public BaseServiceException(int code, String message) {
         super(message);
         this.code = code;
         this.message = message;
-        this.timestamp = System.currentTimeMillis();
     }
 
     public BaseServiceException(int code, String message, Throwable cause) {
         super(message, cause);
         this.code = code;
         this.message = message;
-        this.timestamp = System.currentTimeMillis();
+    }
+
+    public BaseServiceException(String message) {
+        this.code = 0;
+        this.message = message;
     }
 
     /**
@@ -50,7 +48,7 @@ public abstract class BaseServiceException extends RuntimeException {
 
     @Override
     public String toString() {
-        return String.format("%s{code=%d, message='%s', timestamp=%d}",
-                this.getClass().getSimpleName(), code, message, timestamp);
+        return String.format("%s{code=%d, message='%s'}",
+                this.getClass().getSimpleName(), code, message);
     }
 }

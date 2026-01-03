@@ -1,5 +1,6 @@
 package com.universe.life.auth.resource.util;
 
+import com.universe.life.auth.common.domain.dto.AdminAuthInfo;
 import com.universe.life.auth.common.domain.dto.UserAuthInfo;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -11,18 +12,37 @@ public class SecurityUtil {
 
     public static Long getUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (!(principal instanceof UserAuthInfo userAuthInfo)) {
-            return null;
+        if (principal instanceof UserAuthInfo userAuthInfo) {
+            return userAuthInfo.getId();
         }
-        return userAuthInfo.getId();
+        if (principal instanceof AdminAuthInfo adminAuthInfo) {
+            return adminAuthInfo.getId();
+        }
+        return null;
     }
 
 
     public static String getUsername() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (!(principal instanceof UserAuthInfo userAuthInfo)) {
-            return null;
+        if (principal instanceof UserAuthInfo userAuthInfo) {
+            return userAuthInfo.getUsername();
+
         }
-        return userAuthInfo.getUsername();
+        if (principal instanceof AdminAuthInfo adminAuthInfo) {
+            return adminAuthInfo.getUsername();
+        }
+        return null;
     }
+
+    public static String getAvatar() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserAuthInfo userAuthInfo) {
+            return userAuthInfo.getAvatar();
+        }
+        if (principal instanceof AdminAuthInfo adminAuthInfo) {
+            return adminAuthInfo.getAvatar();
+        }
+        return null;
+    }
+
 }

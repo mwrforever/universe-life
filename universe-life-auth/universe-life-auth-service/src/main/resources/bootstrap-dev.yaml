@@ -16,6 +16,8 @@ universe-life:
   auth:
     enable: true
     exclude-path:
+      - /employee/login/password
+      - /employee/login/captcha
       - /actuator/health
       - /actuator/info
       - /v3/api-docs
@@ -26,6 +28,8 @@ universe-life:
       - /css/**
       - /js/**
       - /html/**
+      - /employee/login
+      - /employee/captcha-login
   security:
     authorization:
       server:
@@ -38,7 +42,6 @@ universe-life:
               - http://localhost:3000/auth/callback
             post-logout-redirect-uri: http://localhost:3000
           - client-id: Kp7vR9mNxq2L8tQwYzba
-            client-secret: P@5s!vB9#zK$mQ2x&Lw8
             redirect-uri:
               - http://localhost:5000/auth/callback
             post-logout-redirect-uri: http://localhost:5000/auth/logout?status=true

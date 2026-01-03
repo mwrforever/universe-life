@@ -2,13 +2,14 @@ package com.universe.life.auth.resource.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.universe.life.api.client.UserClient;
+import com.universe.life.auth.common.properties.AuthPathProperties;
+import com.universe.life.auth.common.util.AntRequestMatchUtil;
 import com.universe.life.auth.resource.filter.LoginFilter;
 import com.universe.life.auth.resource.handler.JwtAccessDeniedHandler;
 import com.universe.life.auth.resource.handler.JwtAuthenticationExceptionHandler;
+import com.universe.life.auth.resource.service.AdminAuthInfoService;
 import com.universe.life.auth.resource.service.UserAuthInfoService;
 import com.universe.life.auth.resource.util.CommonSecurityConfigUtil;
-import com.universe.life.auth.common.properties.AuthPathProperties;
-import com.universe.life.auth.common.util.AntRequestMatchUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -100,9 +101,13 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(UserClient userClient) {
+    public UserDetailsService userAuthInfoService(UserClient userClient) {
         return new UserAuthInfoService(userClient, stringRedisTemplate);
     }
 
+    @Bean
+    public UserDetailsService adminAuthInfoService(UserClient userClient) {
+        return new AdminAuthInfoService(userClient, stringRedisTemplate);
+    }
 
 }

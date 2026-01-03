@@ -1,16 +1,12 @@
 package com.universe.life.user.privacy.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.universe.life.common.result.PageResult;
-import com.universe.life.model.domain.dto.UserInfoDTO;
+import com.universe.life.common.domain.PageResult;
+import com.universe.life.model.domain.dto.AdminUserInfoDTO;
 import com.universe.life.user.privacy.domain.dao.query.SysUserListQuery;
-import com.universe.life.user.privacy.domain.dto.request.SysUserCreateRequest;
-import com.universe.life.user.privacy.domain.dto.request.SysUserPasswordResetRequest;
-import com.universe.life.user.privacy.domain.dto.request.SysUserPasswordChangeRequest;
-import com.universe.life.user.privacy.domain.dto.request.SysUserProfileUpdateRequest;
-import com.universe.life.user.privacy.domain.dto.request.SysUserStatusUpdateRequest;
-import com.universe.life.user.privacy.domain.dto.request.SysUserUpdateRequest;
+import com.universe.life.user.privacy.domain.dto.request.*;
 import com.universe.life.user.privacy.domain.po.SysUser;
+import com.universe.life.user.privacy.domain.vo.AdminSysUserProfileVO;
 import com.universe.life.user.privacy.domain.vo.SysUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.SysUserListVO;
 import com.universe.life.user.privacy.domain.vo.SysUserOptionVO;
@@ -111,7 +107,7 @@ public interface ISysUserService extends IService<SysUser> {
      * @param username 用户名
      * @return 用户信息
      */
-    UserInfoDTO login(String username);
+    AdminUserInfoDTO login(String username);
 
     /**
      * 获取员工权限列表
@@ -120,4 +116,12 @@ public interface ISysUserService extends IService<SysUser> {
      * @return 权限标识列表
      */
     List<String> getSysUserPermissions(Long sysUserId);
+
+    /**
+     * 获取当前登录用户信息
+     *
+     * @return 用户信息
+     */
+    AdminSysUserProfileVO profile();
+
 }

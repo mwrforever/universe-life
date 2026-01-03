@@ -15,6 +15,8 @@ import java.util.concurrent.*;
 @Configuration
 public class ExecutorConfiguration {
 
+
+
     @Bean
     public Executor redissonTakeDelayedJobExecutor() {
         ThreadFactory factory = new ThreadFactoryBuilder()
@@ -68,7 +70,7 @@ public class ExecutorConfiguration {
                 .setUncaughtExceptionHandler((t, e) -> {
                     log.error("线程{} 发送rabbitMq消息出现异常：{}", t.getName(), e.getMessage());
                     try {
-                        Thread.sleep(200_000);
+                        Thread.sleep(20_000);
                     } catch (InterruptedException ex) {
                     }
                 })

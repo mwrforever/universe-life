@@ -132,12 +132,6 @@
             <artifactId>mybatis-spring</artifactId>
         </dependency>
 
-        <!-- Thymeleaf Template Engine -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-
         <!-- User Client dependencies -->
         <dependency>
             <groupId>com.universe.life</groupId>

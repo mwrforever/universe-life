@@ -43,6 +43,8 @@
         <auth.common.version>${universe.life.version}</auth.common.version>
         <common.model.version>${universe.life.version}</common.model.version>
         <common.api.version>${universe.life.version}</common.api.version>
+        <trade.common.model.verseion>${universe.life.version}</trade.common.model.verseion>
+        <trade.common.api.version>${universe.life.version}</trade.common.api.version>
     </properties>
 
     <dependencies>
@@ -55,6 +57,18 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>com.universe.life</groupId>
+                <artifactId>universe-life-trade-common-api</artifactId>
+                <version>${trade.common.api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.universe.life</groupId>
+                <artifactId>universe-life-trade-common-model</artifactId>
+                <version>${trade.common.model.verseion}</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.universe.life</groupId>
@@ -242,7 +256,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.11.0</version>
+                    <version>3.13.0</version>
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
@@ -286,7 +300,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
         <!--
              注意：这里将 maven-compiler-plugin 放在 plugins 中，
              意味着所有子模块都会默认应用这个编译配置（包含 MapStruct 处理）。

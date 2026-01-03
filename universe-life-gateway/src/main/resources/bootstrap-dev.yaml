@@ -2,6 +2,8 @@ universe-life:
   auth:
     enable: true
     exclude-path:
+      - /api/auth/employee/login/password
+      - /api/auth/employee/login/captcha
       - /api/common/captcha/send
       - /api/common/captcha/verify
       - /api/auth/oauth2-jwk/update

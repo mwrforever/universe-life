@@ -7,20 +7,19 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.message.ExceptionMessage;
-import com.universe.life.common.result.PageResult;
-import com.universe.life.model.domain.dto.UserInfoDTO;
+import com.universe.life.auth.resource.util.SecurityUtil;
+import com.universe.life.common.domain.PageResult;
+import com.universe.life.model.domain.dto.AdminUserInfoDTO;
 import com.universe.life.user.privacy.domain.dao.query.SysUserListQuery;
 import com.universe.life.user.privacy.domain.dto.request.*;
 import com.universe.life.user.privacy.domain.po.SysDepartment;
 import com.universe.life.user.privacy.domain.po.SysUser;
-import com.universe.life.user.privacy.domain.vo.SysDepartmentSimpleVO;
-import com.universe.life.user.privacy.domain.vo.SysUserDetailVO;
-import com.universe.life.user.privacy.domain.vo.SysUserListVO;
-import com.universe.life.user.privacy.domain.vo.SysUserOptionVO;
+import com.universe.life.user.privacy.domain.vo.*;
 import com.universe.life.user.privacy.enums.CommonStatus;
+import com.universe.life.user.privacy.mapper.AdminResourceMapper;
+import com.universe.life.user.privacy.mapper.AdminUserRoleMapper;
 import com.universe.life.user.privacy.mapper.SysUserMapper;
 import com.universe.life.user.privacy.mapstruct.SysUserMapstruct;
-import com.universe.life.user.privacy.mapper.AdminUserRoleMapper;
 import com.universe.life.user.privacy.service.ISysDepartmentService;
 import com.universe.life.user.privacy.service.ISysUserDepartmentService;
 import com.universe.life.user.privacy.service.ISysUserService;
@@ -52,6 +51,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     private final ISysDepartmentService departmentService;
 
     private final SysUserMapstruct sysUserMapstruct;
+
+    private final AdminResourceMapper resourceMapper;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -300,27 +301,52 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
     @Override
-    public UserInfoDTO login(String username) {
+    public AdminUserInfoDTO login(String username) {
+        // 查询用户密码
         SysUser sysUser = lambdaQuery()
-                .select(SysUser::getEmployeeNo, SysUser::getAvatarUrl, SysUser::getId, SysUser::getPassword)
-                .eq(SysUser::getUsername, username)
+                .select(
+                        SysUser::getId,
+                        SysUser::getEmployeeNo,
+                        SysUser::getPassword,
+                        SysUser::getAvatarUrl
+                ).eq(SysUser::getEmail, username)
                 .or()
                 .eq(SysUser::getPhone, username)
                 .or()
-                .eq(SysUser::getEmail, username)
+                .eq(SysUser::getUsername, username)
                 .or()
                 .eq(SysUser::getEmployeeNo, username)
                 .eq(SysUser::getStatus, CommonStatus.ENABLE)
                 .one();
+
         if (ObjectUtil.isNull(sysUser)) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.USER_NOT_FOUND);
         }
-        return sysUserMapstruct.toUserInfoDTO(sysUser);
+
+        AdminUserInfoDTO result = sysUserMapstruct.toAdminUserInfoDTO(sysUser);
+
+        // 查询用户权限信息
+        List<String> permissions = resourceMapper.selectPermissions(sysUser.getId());
+
+        if (CollUtil.isNotEmpty(permissions)) {
+            result.setPermissions(permissions);
+        }
+
+        return result;
+
     }
 
     @Override
     public List<String> getSysUserPermissions(Long sysUserId) {
         log.info("获取员工权限，员工ID：{}", sysUserId);
         return userRoleMapper.selectPermissionsByUserId(sysUserId);
+    }
+
+    @Override
+    public AdminSysUserProfileVO profile() {
+        AdminSysUserProfileVO adminSysUserProfileVO = new AdminSysUserProfileVO();
+        adminSysUserProfileVO.setAvatar(SecurityUtil.getAvatar());
+        adminSysUserProfileVO.setEmployeeNo(SecurityUtil.getUsername());
+        return adminSysUserProfileVO;
     }
 }

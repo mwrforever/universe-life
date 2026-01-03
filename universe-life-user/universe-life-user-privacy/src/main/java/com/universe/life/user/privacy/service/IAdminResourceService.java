@@ -1,7 +1,7 @@
 package com.universe.life.user.privacy.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.universe.life.common.result.PageResult;
+import com.universe.life.common.domain.PageResult;
 import com.universe.life.user.privacy.domain.dao.query.ResourceListQuery;
 import com.universe.life.user.privacy.domain.dto.request.ResourceCreateRequest;
 import com.universe.life.user.privacy.domain.dto.request.ResourceStatusUpdateRequest;

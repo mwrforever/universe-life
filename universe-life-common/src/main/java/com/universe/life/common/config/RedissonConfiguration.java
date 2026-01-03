@@ -1,6 +1,8 @@
 package com.universe.life.common.config;
 
 import com.universe.life.common.properties.RedissonProperties;
+import com.universe.life.common.util.LuaScriptPreloader;
+import com.universe.life.common.util.RedisScriptExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.Redisson;
@@ -27,6 +29,17 @@ import org.springframework.context.annotation.Configuration;
 public class RedissonConfiguration {
 
     private final RedissonProperties redissonProperties;
+
+
+    @Bean
+    public LuaScriptPreloader luaScriptPreloader(RedissonClient redissonClient) {
+        return new LuaScriptPreloader(redissonClient);
+    }
+
+    @Bean
+    public RedisScriptExecutor redisScriptExecutor(RedissonClient redissonClient, LuaScriptPreloader luaScriptPreloader) {
+        return new RedisScriptExecutor(redissonClient, luaScriptPreloader);
+    }
 
     /**
      * 唯一的RedissonClient Bean

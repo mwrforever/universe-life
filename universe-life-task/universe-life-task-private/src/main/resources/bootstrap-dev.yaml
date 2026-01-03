@@ -8,7 +8,7 @@ universe-life:
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
-      database: 10
+      database: 0
       host: 43.142.103.248
       port: 6379
       password: 1010520mao
@@ -29,7 +29,7 @@ universe-life:
     single:
       enabled: true
       address: redis://43.142.103.248:6379
-      database: 10
+      database: 0
   mybatis-plus:
     type-aliases-package: com.universe.life.task.privacy.domain
 

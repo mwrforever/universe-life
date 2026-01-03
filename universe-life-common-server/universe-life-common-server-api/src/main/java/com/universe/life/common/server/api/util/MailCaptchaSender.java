@@ -124,38 +124,6 @@ public class MailCaptchaSender implements CaptchaSenderStrategy {
     }
 
     /**
-     * 发送自定义内容的邮件
-     *
-     * @param toEmail     目标邮箱
-     * @param subject     邮件主题
-     * @param htmlContent HTML内容
-     */
-    public void sendCustomHtmlEmail(String toEmail, String subject, String htmlContent) {
-        try {
-            if (!Validator.isEmail(toEmail)) {
-                throw new IllegalArgumentException("邮箱地址格式不正确: " + toEmail);
-            }
-
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-
-            helper.setFrom(mailProperties.getFrom());
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setSentDate(new Date());
-            helper.setText(htmlContent, true);
-
-            mailSender.send(mimeMessage);
-
-            log.info("自定义HTML邮件发送成功 - 收件人: {}, 主题: {}", toEmail, subject);
-
-        } catch (Exception e) {
-            log.error("自定义HTML邮件发送失败 - 收件人: {}, 错误: {}", toEmail, e.getMessage(), e);
-            throw new RuntimeException("邮件发送失败: " + e.getMessage(), e);
-        }
-    }
-
-    /**
      * 创建验证码DTO的便捷方法
      *
      * @param toEmail   目标邮箱

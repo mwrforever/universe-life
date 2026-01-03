@@ -27,6 +27,8 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 
+import java.util.Map;
+
 /**
  * @author 毛伟然
  * @since 2025/12/21 14:05
@@ -77,6 +79,30 @@ public class LoginSecurityConfiguration {
     }
 
     /**
+     * AuthenticationManager Bean - 用于用户认证
+     * 将其暴露为 Bean 以便在其他服务中注入使用
+     */
+    @Bean
+    public AuthenticationManager authenticationManager(
+            HttpSecurity http,
+            Map<String, UserDetailsService> userAuthInfoServices,
+            PasswordEncoder bCryptPasswordEncoder,
+            VerifyCaptchaUtil verifyCaptchaUtil) throws Exception {
+        // 获取 AuthenticationManagerBuilder
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+
+        // 注册自定义 Provider
+        SmsAuthenticationProvider smsProvider = new SmsAuthenticationProvider(userAuthInfoServices, verifyCaptchaUtil);
+        UsernamePasswordAuthenticationProvider usernamePasswordProvider =
+                new UsernamePasswordAuthenticationProvider(userAuthInfoServices, bCryptPasswordEncoder);
+
+        authenticationManagerBuilder.authenticationProvider(smsProvider);
+        authenticationManagerBuilder.authenticationProvider(usernamePasswordProvider);
+
+        return authenticationManagerBuilder.build();
+    }
+
+    /**
      * 用户认证安全过滤器链 - 优先级为1
      * 处理登录、注册相关的所有请求和静态资源
      */
@@ -84,23 +110,13 @@ public class LoginSecurityConfiguration {
     @Order(1)
     public SecurityFilterChain authenficationSecurityFilterChain(
             HttpSecurity http,
-            UserDetailsService userDetailsService,
-            PasswordEncoder bCryptPasswordEncoder,
+            AuthenticationManager authenticationManager,
             AuthenticationEntryPoint authenticationEntryPoint,
             AccessDeniedHandler accessDeniedHandler,
-            JsonAuthenticationFailureHandler authenticationFailureHandler,
-            VerifyCaptchaUtil verifyCaptchaUtil) throws Exception {
+            JsonAuthenticationFailureHandler authenticationFailureHandler) throws Exception {
         log.info("配置用户认证安全过滤器链");
-        // 1. 获取 AuthenticationManager
-        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-        // 注册我们的 Provider
-        SmsAuthenticationProvider smsProvider = new SmsAuthenticationProvider(userDetailsService, verifyCaptchaUtil);
-        UsernamePasswordAuthenticationProvider usernamePasswordProvider =
-                new UsernamePasswordAuthenticationProvider(userDetailsService, bCryptPasswordEncoder);
-        authenticationManagerBuilder.authenticationProvider(smsProvider);
-        authenticationManagerBuilder.authenticationProvider(usernamePasswordProvider);
-        AuthenticationManager authenticationManager = authenticationManagerBuilder.build();
-        // 2. 配置 Filter
+
+        // 配置 Filter
         SmsAuthenticationFilter smsFilter = new SmsAuthenticationFilter(authenticationManager);
         MyUsernamePasswordAuthenticationFilter usernamePasswordFilter =
                 new MyUsernamePasswordAuthenticationFilter(authenticationManager);
@@ -122,20 +138,10 @@ public class LoginSecurityConfiguration {
         usernamePasswordFilter.setSecurityContextRepository(securityContextRepository());
         http
                 .securityMatcher(
-                        "/",
-                        "/user-agreement",
-                        "/privacy-policy",
-                        "/disclaimer",
-                        "/register-info",
-                        "/login",
-                        "/login/**",
-                        "/register",
-                        "/register/**",
-                        "/css/**",
-                        "/js/**",
-                        "/img/**",
-                        "/favicon.ico",
-                        "/static/**"
+                        "/", "/user-agreement", "/privacy-policy", "/disclaimer", "/register-info"
+                        , "/login/**", "/register", "/register/**", "/css/**", "/js/**", "/img/**",
+                        "/favicon.ico", "/static/**"
+
                 )
                 .securityContext(securityContext ->
                         securityContext.securityContextRepository(securityContextRepository()))

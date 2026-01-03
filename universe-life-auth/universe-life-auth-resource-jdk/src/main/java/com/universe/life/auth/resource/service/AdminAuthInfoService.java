@@ -7,7 +7,7 @@ import com.universe.life.api.client.UserClient;
 import com.universe.life.auth.common.constants.RedisConstants;
 import com.universe.life.auth.common.domain.dto.AdminAuthInfo;
 import com.universe.life.auth.common.message.ExceptionMessage;
-import com.universe.life.model.domain.dto.UserInfoDTO;
+import com.universe.life.model.domain.dto.AdminUserInfoDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,14 +29,12 @@ public class AdminAuthInfoService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // 获取用户信息
-        UserInfoDTO userInfo = userClient.login(username);
+        AdminUserInfoDTO userInfo = userClient.login(username);
         if (ObjectUtil.isNull(userInfo)) {
             throw new UsernameNotFoundException(ExceptionMessage.COMMON_ERROR);
         }
-        // TODO 获取用户权限
-
         // 封装用户信息
-        AdminAuthInfo info = new AdminAuthInfo(userInfo.getId(), userInfo.getUsername(), userInfo.getPassword(), null, userInfo.getAvatar());
+        AdminAuthInfo info = new AdminAuthInfo(userInfo.getId(), userInfo.getUsername(), userInfo.getPassword(), userInfo.getPermissions(), userInfo.getAvatar());
         // 将数据缓存到 redis 中
         String key = RedisConstants.USER_AUTH_UID_KEY + userInfo.getId();
         stringRedisTemplate.opsForHash().put(

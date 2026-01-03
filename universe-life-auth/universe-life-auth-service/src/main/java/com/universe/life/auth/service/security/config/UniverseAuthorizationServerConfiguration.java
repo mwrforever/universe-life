@@ -115,7 +115,6 @@ public class UniverseAuthorizationServerConfiguration {
     }
 
 
-
     /**
      * 授权服务器基本设置Bean
      * <p>配置OAuth2授权服务器的核心参数，主要是issuer URI。
@@ -284,15 +283,17 @@ public class UniverseAuthorizationServerConfiguration {
         // 检查默认客户端是否已存在，避免重复创建
         for (AuthorizationServerProperties.AuthorizationServerPropertiesConfig config : authorizationServerProperties.getConfigs()) {
             if (!isClientExists(repository, config.getClientId())) {
-                // 创建网关客户端配置
-                RegisteredClient gatewayClient = createGatewayClient(
+                // 创建客户端配置
+                RegisteredClient client = createGatewayClient(
                         config.getClientId(),
+                        config.getClientSecret(),
                         config.getRedirectUri(),
                         config.getPostLogoutRedirectUri()
                 );
                 // 保存客户端到数据库
-                repository.save(gatewayClient);
-                log.info("已创建网关客户端: {}", config.getClientId());
+                repository.save(client);
+                log.info("已创建客户端: {}, 认证方式: {}", config.getClientId(),
+                        config.getClientSecret() != null ? "机密客户端" : "公共客户端");
             }
         }
         // 返回配置好的客户端仓库
@@ -303,50 +304,60 @@ public class UniverseAuthorizationServerConfiguration {
      * 创建网关客户端配置
      *
      * <p>构建一个完整的OAuth2客户端配置，包括认证方式、授权类型、权限范围等。
-     * 此客户端主要用于网关服务的OAuth2集成。</p>
+     * 根据是否有 clientSecret 自动判断创建公共客户端还是机密客户端。</p>
      *
-     * @param clientId    客户端标识符
-     * @param redirectUri 授权回调URI
+     * @param clientId              客户端标识符
+     * @param clientSecret          客户端密钥（可选，为 null 则创建公共客户端）
+     * @param redirectUris          授权回调URI
+     * @param postLogoutRedirectUri 登出后重定向URI
      * @return 配置完成的RegisteredClient对象
      */
     private RegisteredClient createGatewayClient(
             String clientId,
-            Collection<String> redirectUri,
+            String clientSecret,
+            Collection<String> redirectUris,
             String postLogoutRedirectUri
     ) {
-        // 使用建造者模式创建RegisteredClient对象
-        return RegisteredClient.withId(UUID.randomUUID().toString().replace("-", ""))  // 生成唯一客户端ID
-                .clientId(clientId)  // 设置客户端标识符
-                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)  // 客户端认证方式：HTTP Basic认证
-                .authorizationGrantTypes(grants -> grants.addAll(Arrays.asList(  // 支持的授权类型
-                        AuthorizationGrantType.AUTHORIZATION_CODE,  // 授权码模式，最安全的OAuth2流程
-                        AuthorizationGrantType.REFRESH_TOKEN  // 刷新令牌模式，支持令牌续期
+        // 判断是否为公共客户端（无 clientSecret）
+        boolean isPublicClient = clientSecret == null || clientSecret.trim().isEmpty();
+
+        log.info("创建{}客户端 - ClientID: {}", isPublicClient ? "公共" : "机密", clientId);
+
+        RegisteredClient.Builder builder = RegisteredClient.withId(UUID.randomUUID().toString().replace("-", ""))
+                .clientId(clientId);
+
+        // 根据是否有密钥设置认证方式
+        if (isPublicClient) {
+            // 公共客户端：不需要密钥认证
+            builder.clientAuthenticationMethod(ClientAuthenticationMethod.NONE);
+        } else {
+            // 机密客户端：使用 POST 方式认证
+            builder.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+                    .clientSecret(clientSecret);
+        }
+
+        builder.authorizationGrantTypes(at -> at.addAll(List.of(
+                        AuthorizationGrantType.AUTHORIZATION_CODE,
+                        AuthorizationGrantType.REFRESH_TOKEN
                 )))
-                .redirectUris(uris -> uris.addAll(redirectUri))
-                .postLogoutRedirectUri(postLogoutRedirectUri)
-                .scopes(scopes -> scopes.addAll(Arrays.asList(  // 支持的权限范围
-                        OidcScopes.OPENID,  // OpenID Connect标准范围，获取用户标识
-                        OidcScopes.PROFILE,  // 用户基本信息范围
-                        OidcScopes.EMAIL,  // 用户邮箱范围
-                        OidcScopes.PHONE,  // 用户电话范围
+                .redirectUris(uris -> uris.addAll(redirectUris))
+        .postLogoutRedirectUri(postLogoutRedirectUri)
+                .scopes(scopes -> scopes.addAll(Arrays.asList(
+                        OidcScopes.OPENID,
+                        OidcScopes.PROFILE,
+                        OidcScopes.EMAIL,
+                        OidcScopes.PHONE,
                         "offline_access",
-                        "read",  // 读权限，自定义业务权限
-                        "write",  // 写权限，自定义业务权限
-                        "admin",  // 管理员权限
-                        "trust",
-                        "user_info"// 信任权限，用于特殊操作
+                        "user_info"
                 )))
-                .clientSettings(ClientSettings.builder()  // 客户端设置
-                        .requireAuthorizationConsent(false)  // 不要求用户授权同意，适用于可信客户端
-                        .requireProofKey(true)  // 启用PKCE，增强授权码模式安全性
-                        .build())
-                .tokenSettings(TokenSettings.builder()  // 令牌设置
-                        .accessTokenTimeToLive(Duration.ofHours(2))  // 访问令牌有效期：2 小时
-                        .refreshTokenTimeToLive(Duration.ofDays(7))  // 刷新令牌有效期：7天
-                        .reuseRefreshTokens(false)  // 不重复使用刷新令牌，增强安全性
-                        .authorizationCodeTimeToLive(Duration.ofMinutes(5))  // 授权码有效期：5分钟
-                        .build())
-                .build();  // 构建最终的客户端配置
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).requireProofKey(true).build())
+                .tokenSettings(TokenSettings.builder()
+                        .accessTokenTimeToLive(Duration.ofHours(2))     // 访问令牌 2 小时
+                        .refreshTokenTimeToLive(Duration.ofDays(7))     // 刷新令牌 7 天
+                        .reuseRefreshTokens(false)                       // 刷新后生成新的 refresh_token
+                        .authorizationCodeTimeToLive(Duration.ofMinutes(5))
+                        .build());
+        return builder.build();
     }
 
     /**
@@ -370,10 +381,6 @@ public class UniverseAuthorizationServerConfiguration {
             return false;
         }
     }
-
-
-
-
 
 
     /**

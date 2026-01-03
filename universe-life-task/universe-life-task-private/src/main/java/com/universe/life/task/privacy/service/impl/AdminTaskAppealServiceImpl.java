@@ -2,7 +2,7 @@ package com.universe.life.task.privacy.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.universe.life.common.result.PageResult;
+import com.universe.life.common.domain.PageResult;
 import com.universe.life.task.privacy.domain.dao.query.TaskAppealQuery;
 import com.universe.life.task.privacy.domain.dto.TaskAppealDTO;
 import com.universe.life.task.privacy.domain.dto.request.TaskAppealHandleRequest;

@@ -23,4 +23,5 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
      * @return 员工列表
      */
     IPage<SysUserListVO> selectSysUserList(IPage<SysUserListVO> page, @Param("query") SysUserListQuery query);
+
 }

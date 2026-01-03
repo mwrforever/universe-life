@@ -1,11 +1,10 @@
 package com.universe.life.user.privacy.mapstruct;
 
-import com.universe.life.model.domain.dto.UserInfoDTO;
+import com.universe.life.model.domain.dto.AdminUserInfoDTO;
 import com.universe.life.user.privacy.domain.dto.request.SysUserCreateRequest;
 import com.universe.life.user.privacy.domain.dto.request.SysUserUpdateRequest;
 import com.universe.life.user.privacy.domain.po.SysUser;
 import com.universe.life.user.privacy.domain.vo.SysUserDetailVO;
-import com.universe.life.user.privacy.domain.vo.SysUserListVO;
 import com.universe.life.user.privacy.domain.vo.SysUserOptionVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -48,13 +47,6 @@ public interface SysUserMapstruct {
      */
     SysUserDetailVO toDetailVO(SysUser sysUser);
 
-    /**
-     * PO列表转列表VO
-     *
-     * @param sysUsers PO列表
-     * @return 列表VO
-     */
-    List<SysUserListVO> toListVO(List<SysUser> sysUsers);
 
     /**
      * PO列表转选项VO列表
@@ -64,12 +56,13 @@ public interface SysUserMapstruct {
      */
     List<SysUserOptionVO> toOptionVOList(List<SysUser> sysUsers);
 
+
     /**
-     * PO转用户信息DTO
+     * PO转管理员用户信息DTO
      *
      * @param sysUser PO对象
-     * @return 用户信息DTO
      */
     @Mapping(target = "username", source = "employeeNo")
-    UserInfoDTO toUserInfoDTO(SysUser sysUser);
+    @Mapping(target = "avatar", source = "avatarUrl")
+    AdminUserInfoDTO toAdminUserInfoDTO(SysUser sysUser);
 }

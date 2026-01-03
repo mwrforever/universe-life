@@ -1,6 +1,7 @@
 package com.universe.life.auth.service.security.filter;
 
 import cn.hutool.core.util.StrUtil;
+import com.universe.life.auth.common.constants.JwtConstants;
 import com.universe.life.auth.common.exception.AuthException;
 import com.universe.life.auth.common.message.ExceptionMessage;
 import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
@@ -59,7 +60,7 @@ public class SmsAuthenticationFilter extends AbstractAuthenticationProcessingFil
 
         // 封装认证Token，默认使用登录用途类型
         SmsAuthenticationToken authenticationToken = new SmsAuthenticationToken(
-            identification, verifyCode, CaptchaUsageType.of(Integer.valueOf(usageType)));
+            identification, verifyCode, CaptchaUsageType.of(Integer.valueOf(usageType)), JwtConstants.USER_LOGIN);
 
         // 设置详细信息
         authenticationToken.setDetails(this.authenticationDetailsSource.buildDetails(request));

@@ -10,31 +10,25 @@ package com.universe.life.auth.common.domain;
 public record Result<T>(
         Integer code,
         String message,
-        T data,
-        Long timestamp
+        T data
 ) {
     public static <T> Result<T> success(T data) {
-        return new Result<>(1, "success", data, System.currentTimeMillis());
+        return new Result<>(1, "success", data);
     }
 
     public static <T> Result<T> success() {
-        return new Result<>(1, "success", null, System.currentTimeMillis());
+        return new Result<>(1, "success", null);
     }
 
     public static <T> Result<T> error(String message) {
-        return new Result<>(0, message, null, System.currentTimeMillis());
+        return new Result<>(0, message, null);
     }
 
     public static <T> Result<T> error(Integer code, String message) {
-        return new Result<>(code, message, null, System.currentTimeMillis());
+        return new Result<>(code, message, null);
     }
 
     public static <T> Result<T> error(Integer code, String message, T data) {
-        return new Result<>(code, message, data, System.currentTimeMillis());
-    }
-
-    // 为了兼容性，保留原有的构造方法
-    public Result(Integer code, String message, T data) {
-        this(code, message, data, System.currentTimeMillis());
+        return new Result<>(code, message, data);
     }
 }

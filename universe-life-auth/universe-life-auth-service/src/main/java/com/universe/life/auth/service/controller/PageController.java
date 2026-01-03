@@ -6,13 +6,13 @@ import com.universe.life.auth.service.domain.vo.PrivacyPolicyVO;
 import com.universe.life.auth.service.domain.vo.UserAgreementVO;
 import com.universe.life.auth.service.service.IPageService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping("/")
 @RequiredArgsConstructor
+@Tag(name = "页面控制器", description = "负责处理页面跳转和Thymeleaf模板渲染")
 public class PageController {
 
     private final IPageService pageService;

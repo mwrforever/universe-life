@@ -1,6 +1,7 @@
 package com.universe.life.api.client;
 
 import com.universe.life.api.fallback.UserClientFallback;
+import com.universe.life.model.domain.dto.AdminUserInfoDTO;
 import com.universe.life.model.domain.dto.RegisterFormDTO;
 import com.universe.life.model.domain.dto.UserInfoDTO;
 import com.universe.life.model.domain.dto.UserStatusDTO;
@@ -27,6 +28,6 @@ public interface UserClient {
     UserStatusDTO getUserStatus(@RequestParam String username);
 
     @GetMapping("/admin/sys-user/login")
-    UserInfoDTO login(@RequestParam String username);
+    AdminUserInfoDTO login(@RequestParam String username);
 
 }

@@ -1,7 +1,7 @@
 package com.universe.life.user.privacy.controller;
 
 import com.universe.life.auth.common.domain.Result;
-import com.universe.life.common.result.PageResult;
+import com.universe.life.common.domain.PageResult;
 import com.universe.life.user.privacy.domain.dao.query.AdminUserListQuery;
 import com.universe.life.user.privacy.domain.dao.query.UserStatusQuery;
 import com.universe.life.user.privacy.domain.dto.request.*;

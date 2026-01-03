@@ -11,7 +11,7 @@ import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.exception.DatabaseException;
 import com.universe.life.auth.common.exception.SecurityException;
 import com.universe.life.auth.common.message.ExceptionMessage;
-import com.universe.life.common.result.PageResult;
+import com.universe.life.common.domain.PageResult;
 import com.universe.life.user.privacy.domain.dao.query.AdminUserListQuery;
 import com.universe.life.user.privacy.domain.dto.AdminUserDetailDTO;
 import com.universe.life.user.privacy.domain.dto.AdminUserDetailRoleDTO;

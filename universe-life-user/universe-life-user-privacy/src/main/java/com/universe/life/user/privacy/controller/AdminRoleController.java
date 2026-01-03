@@ -1,7 +1,7 @@
 package com.universe.life.user.privacy.controller;
 
 import com.universe.life.auth.common.domain.Result;
-import com.universe.life.common.result.PageResult;
+import com.universe.life.common.domain.PageResult;
 import com.universe.life.user.privacy.domain.dao.query.RoleListQuery;
 import com.universe.life.user.privacy.domain.dto.request.RoleCreateRequest;
 import com.universe.life.user.privacy.domain.dto.request.RoleStatusUpdateRequest;

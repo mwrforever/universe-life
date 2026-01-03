@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.message.ExceptionMessage;
-import com.universe.life.common.result.PageResult;
+import com.universe.life.common.domain.PageResult;
 import com.universe.life.user.privacy.domain.dao.query.ResourceListQuery;
 import com.universe.life.user.privacy.domain.dto.request.ResourceCreateRequest;
 import com.universe.life.user.privacy.domain.dto.request.ResourceStatusUpdateRequest;

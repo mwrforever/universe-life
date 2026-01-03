@@ -1,13 +1,14 @@
 package com.universe.life.user.privacy.controller;
 
 import com.universe.life.auth.common.domain.Result;
-import com.universe.life.common.result.PageResult;
-import com.universe.life.model.domain.dto.UserInfoDTO;
+import com.universe.life.common.domain.PageResult;
+import com.universe.life.model.domain.dto.AdminUserInfoDTO;
 import com.universe.life.user.privacy.domain.dao.query.SysUserListQuery;
 import com.universe.life.user.privacy.domain.dto.request.SysUserCreateRequest;
 import com.universe.life.user.privacy.domain.dto.request.SysUserPasswordResetRequest;
 import com.universe.life.user.privacy.domain.dto.request.SysUserStatusUpdateRequest;
 import com.universe.life.user.privacy.domain.dto.request.SysUserUpdateRequest;
+import com.universe.life.user.privacy.domain.vo.AdminSysUserProfileVO;
 import com.universe.life.user.privacy.domain.vo.SysUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.SysUserListVO;
 import com.universe.life.user.privacy.domain.vo.SysUserOptionVO;
@@ -17,8 +18,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,7 +43,7 @@ public class AdminSysUserController {
 
     @GetMapping("/login")
     @Operation(summary = "员工登录", description = "员工页面")
-    public UserInfoDTO login(String username) {
+    public AdminUserInfoDTO login(String username) {
         log.info("员工：{}正在登录", username);
         return sysUserService.login(username);
     }
@@ -54,6 +55,8 @@ public class AdminSysUserController {
         log.info("创建员工，工号：{}", request.getEmployeeNo());
         return Result.success(sysUserService.createSysUser(request));
     }
+
+
 
     @GetMapping("/{id}")
     @Operation(summary = "获取员工详情", description = "根据ID获取员工详细信息")
@@ -128,5 +131,12 @@ public class AdminSysUserController {
             @Parameter(description = "员工ID", required = true) @PathVariable Long sysUserId) {
         log.info("获取员工权限列表，员工ID：{}", sysUserId);
         return sysUserService.getSysUserPermissions(sysUserId);
+    }
+
+    @GetMapping("/profile")
+    @Operation(summary = "获取当前登录用户的信息", description = "获取当前登录用户的信息")
+    public Result<AdminSysUserProfileVO> profile() {
+        log.info("获取当前登录用户信息");
+        return Result.success(sysUserService.profile());
     }
 }
