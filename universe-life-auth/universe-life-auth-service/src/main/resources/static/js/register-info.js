@@ -198,7 +198,8 @@ class RegisterInfoAuth {
 
         // 验证必填字段
         if (!formData.issuer || formData.issuer.trim() === '') {
-            showToast('验证码请求标识不能为空', 'error');
+            this.hideLoading('register-submit');
+            showToast('验证码请求标识不能为空，请返回重新验证邮箱', 'error');
             return;
         }
 
@@ -212,12 +213,10 @@ class RegisterInfoAuth {
             issuer: formData.issuer.trim() // 验证码请求唯一标识（必填）
         };
 
-        console.log('注册请求数据:', requestBody);
-        console.log('发送请求到: /register');
-
-        makeRequest('/register', {
+        makeRequest('http://localhost:8101/api/user/register', {
             method: 'POST',
-            body: requestBody
+            body: requestBody,
+            showErrorToast: false  // 禁用自动错误提示，手动处理
         }).then(data => {
             this.hideLoading('register-submit');
             showToast('注册成功！请使用新账号登录', 'success');
@@ -228,34 +227,41 @@ class RegisterInfoAuth {
             }, 2000);
         }).catch(error => {
             this.hideLoading('register-submit');
-            console.error('注册请求失败:', error);
 
-            // 显示详细的错误信息
-            if (typeof error === 'string') {
-                showToast(error, 'error');
-            } else if (error.message) {
-                showToast(error.message, 'error');
-            } else if (error.error) {
-                showToast(error.error, 'error');
-            } else {
-                showToast('注册失败，请检查输入信息', 'error');
-            }
-
-            this.formValidator.handleBackendErrors(error);
-
-            // 处理具体的字段错误
+            // 优先处理字段级错误
             if (error.data && error.data.errors) {
                 const errors = error.data.errors;
+                let hasFieldError = false;
+                
                 if (errors.username) {
                     this.formValidator.showFieldError('username', errors.username);
+                    hasFieldError = true;
                 }
                 if (errors.password) {
                     this.formValidator.showFieldError('password', errors.password);
+                    hasFieldError = true;
                 }
                 if (errors.confirmPassword) {
                     this.formValidator.showFieldError('confirmPassword', errors.confirmPassword);
+                    hasFieldError = true;
+                }
+                
+                // 有字段错误时不显示Toast
+                if (hasFieldError) {
+                    return;
                 }
             }
+
+            // 没有字段错误时，显示通用错误Toast（只显示一个）
+            let errorMessage = '注册失败，请检查输入信息';
+            if (error.message) {
+                errorMessage = error.message;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            } else if (error.error) {
+                errorMessage = error.error;
+            }
+            showToast(errorMessage, 'error');
         });
     }
 

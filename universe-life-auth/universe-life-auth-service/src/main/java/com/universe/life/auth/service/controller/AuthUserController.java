@@ -1,11 +1,10 @@
 package com.universe.life.auth.service.controller;
 
+import com.universe.life.auth.common.domain.Result;
 import com.universe.life.auth.service.domain.dto.request.EmployeeCaptchaLoginRequest;
 import com.universe.life.auth.service.domain.dto.request.EmployeeLoginRequest;
-import com.universe.life.auth.service.domain.dto.request.RegisterFormRequest;
 import com.universe.life.auth.service.domain.vo.UserLoginVO;
 import com.universe.life.auth.service.service.IAuthUserService;
-import com.universe.life.auth.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -31,18 +30,7 @@ public class AuthUserController {
 
     private final IAuthUserService authUserService;
 
-    @PostMapping("/register")
-    @Operation(
-            summary = "用户注册",
-            description = "新用户注册，包含验证码校验和速率限制保护"
-    )
-    public Result<Void> register(@Validated @RequestBody RegisterFormRequest request) {
-        log.info("收到用户注册请求，用户标识: {}", request.getIdentification());
 
-        authUserService.register(request);
-        log.info("用户注册成功，用户标识: {}", request.getIdentification());
-        return Result.success();
-    }
 
     @PostMapping("/employee/login/password")
     @Operation(

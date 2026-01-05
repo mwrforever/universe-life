@@ -37,7 +37,6 @@ universe-life:
         consent-page: http://localhost:8099/auth/consent
         configs:
           - client-id: fCSYj5XOia6J4O9shfka
-            client-secret: m&#H:YN&@[Ijhn3s&ehV
             redirect-uri:
               - http://localhost:3000/auth/callback
             post-logout-redirect-uri: http://localhost:3000

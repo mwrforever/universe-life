@@ -55,6 +55,28 @@ class LoginAuth {
         this.createFloatingIcons();
         this.initToast();
         this.setupPasswordToggle();
+        
+        // 检查URL参数中的错误信息并显示
+        this.checkAndShowUrlError();
+    }
+    
+    // 检查URL参数中的错误信息并显示
+    checkAndShowUrlError() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorMessage = urlParams.get('error');
+        
+        if (errorMessage) {
+            // 解码错误信息并显示Toast
+            const decodedMessage = decodeURIComponent(errorMessage);
+            // 延迟显示，确保Toast容器已初始化
+            setTimeout(() => {
+                this.showToast(decodedMessage, 'error', 5000);
+            }, 100);
+            
+            // 清除URL中的error参数，避免刷新页面时重复显示
+            const newUrl = window.location.pathname + window.location.hash;
+            window.history.replaceState({}, document.title, newUrl);
+        }
     }
 
     // 初始化Toast容器
@@ -568,7 +590,6 @@ class LoginAuth {
             }
         } catch (error) {
             this.hideLoading('email-submit');
-            console.error('登录请求失败:', error);
             this.showToast('网络错误，请稍后重试', 'error');
         }
     }
@@ -608,7 +629,6 @@ class LoginAuth {
                 this.showToast(result.message || '发送验证码失败，请稍后重试', 'error');
             }
         } catch (error) {
-            console.error('发送验证码请求失败:', error);
             this.showToast('网络错误，请稍后重试', 'error');
         }
     }

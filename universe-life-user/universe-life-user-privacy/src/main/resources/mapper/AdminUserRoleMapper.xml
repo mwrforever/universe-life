@@ -34,7 +34,7 @@
         inner join universe_life_user.role r
         on ur.role_id = r.id
         where ur.user_id in
-        <foreach collection="userIds" separator="," close=")" open="," item="userId">
+        <foreach collection="userIds" separator="," close=")" open="(" item="userId">
             #{userId}
         </foreach>
         and r.status = 1 and r.deleted = 0;

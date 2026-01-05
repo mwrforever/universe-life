@@ -12,14 +12,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -83,23 +81,17 @@ public class LoginSecurityConfiguration {
      * 将其暴露为 Bean 以便在其他服务中注入使用
      */
     @Bean
-    public AuthenticationManager authenticationManager(
-            HttpSecurity http,
+    public AuthenticationManager loginAuthenticationManager(
             Map<String, UserDetailsService> userAuthInfoServices,
             PasswordEncoder bCryptPasswordEncoder,
-            VerifyCaptchaUtil verifyCaptchaUtil) throws Exception {
-        // 获取 AuthenticationManagerBuilder
-        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-
+            VerifyCaptchaUtil verifyCaptchaUtil) {
         // 注册自定义 Provider
         SmsAuthenticationProvider smsProvider = new SmsAuthenticationProvider(userAuthInfoServices, verifyCaptchaUtil);
         UsernamePasswordAuthenticationProvider usernamePasswordProvider =
                 new UsernamePasswordAuthenticationProvider(userAuthInfoServices, bCryptPasswordEncoder);
 
-        authenticationManagerBuilder.authenticationProvider(smsProvider);
-        authenticationManagerBuilder.authenticationProvider(usernamePasswordProvider);
 
-        return authenticationManagerBuilder.build();
+        return new ProviderManager(smsProvider, usernamePasswordProvider);
     }
 
     /**
@@ -111,8 +103,6 @@ public class LoginSecurityConfiguration {
     public SecurityFilterChain authenficationSecurityFilterChain(
             HttpSecurity http,
             AuthenticationManager authenticationManager,
-            AuthenticationEntryPoint authenticationEntryPoint,
-            AccessDeniedHandler accessDeniedHandler,
             JsonAuthenticationFailureHandler authenticationFailureHandler) throws Exception {
         log.info("配置用户认证安全过滤器链");
 
@@ -154,12 +144,8 @@ public class LoginSecurityConfiguration {
                 .addFilterBefore(smsFilter, UsernamePasswordAuthenticationFilter.class)
                 // 添加我们自定义的用户名密码过滤器（同时支持表单和JSON提交）
                 .addFilterBefore(usernamePasswordFilter, UsernamePasswordAuthenticationFilter.class)
-                // 启用CSRF保护，Thymeleaf会自动处理CSRF token
-                .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint)
-                        .accessDeniedHandler(accessDeniedHandler))
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                )
+                // 禁用CSRF保护：网关已提供安全防护，内部服务之间不需要CSRF
+                .csrf(csrf -> csrf.disable())
                 .cors(AbstractHttpConfigurer::disable)
                 .headers(CommonSecurityConfigUtil::getPermissionsPolicyConfig);
 

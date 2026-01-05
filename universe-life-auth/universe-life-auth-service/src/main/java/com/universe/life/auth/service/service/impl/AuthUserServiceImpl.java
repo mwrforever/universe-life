@@ -1,24 +1,17 @@
 package com.universe.life.auth.service.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
-import com.universe.life.api.client.UserClient;
 import com.universe.life.auth.common.constants.JwtConstants;
 import com.universe.life.auth.common.exception.AuthException;
-import com.universe.life.auth.common.message.ExceptionMessage;
-import com.universe.life.auth.resource.util.VerifyCaptchaUtil;
 import com.universe.life.auth.service.domain.dto.request.EmployeeCaptchaLoginRequest;
 import com.universe.life.auth.service.domain.dto.request.EmployeeLoginRequest;
-import com.universe.life.auth.service.domain.dto.request.RegisterFormRequest;
 import com.universe.life.auth.service.domain.vo.UserLoginVO;
 import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
 import com.universe.life.auth.service.security.token.UsernamePasswordAuthenticationToken;
 import com.universe.life.auth.service.service.IAuthUserService;
-import com.universe.life.model.domain.dto.RegisterFormDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -37,6 +30,7 @@ import org.springframework.stereotype.Service;
 import java.security.Principal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -53,10 +47,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthUserServiceImpl implements IAuthUserService {
 
-    private final UserClient userClient;
-    private final PasswordEncoder bcryptPasswordEncoder;
-    private final VerifyCaptchaUtil verifyCaptchaUtil;
-    private final AuthenticationManager authenticationManager;
+    private final AuthenticationManager loginAuthenticationManager;
     private final OAuth2AuthorizationService authorizationService;
     private final OAuth2TokenGenerator<?> tokenGenerator;
     private final RegisteredClientRepository registeredClientRepository;
@@ -67,21 +58,13 @@ public class AuthUserServiceImpl implements IAuthUserService {
      */
     private static final String EMPLOYEE_CLIENT_ID = "Kp7vR9mNxq2L8tQwYzba";
 
+    /**
+     * Access Token 生成结果记录类
+     */
+    private record AccessTokenResult(OAuth2AccessToken accessToken, Jwt jwt) {}
 
-    @Override
-    public void register(RegisterFormRequest request) {
-        // 用户注册
-        boolean success = verifyCaptchaUtil.verifyCaptchaIssuer(request.getCaptchaUsageType(), request.getIdentification(), request.getIssuer());
-        if (!success) {
-            throw new AuthException.AuthenticationException(ExceptionMessage.AUTHORIZATION_CODE_EXPIRED);
-        }
-        // 封装用户数据
-        RegisterFormDTO registerFormDTO = BeanUtil.toBean(request, RegisterFormDTO.class);
-        // 对密码进行加密处理
-        registerFormDTO.setPassword(bcryptPasswordEncoder.encode(registerFormDTO.getPassword()));
-        // 保存用户数据
-        userClient.add(registerFormDTO);
-    }
+
+
 
     @Override
     public UserLoginVO employeeLogin(EmployeeLoginRequest request) {
@@ -90,7 +73,7 @@ public class AuthUserServiceImpl implements IAuthUserService {
         try {
             // 1. 使用 AuthenticationManager 进行认证
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(request.getIdentification(), request.getPassword(), JwtConstants.EMPLOYEE_LOGIN);
-            Authentication authentication = authenticationManager.authenticate(authenticationToken);
+            Authentication authentication = loginAuthenticationManager.authenticate(authenticationToken);
 
             // 2. 生成 Token 并保存授权记录
             return generateTokensAndSaveAuthorization(authentication, request.getIdentification());
@@ -109,7 +92,7 @@ public class AuthUserServiceImpl implements IAuthUserService {
         log.info("员工验证码登录请求 - 用户标识: {}", request.getIdentification());
 
         SmsAuthenticationToken authenticationToken = new SmsAuthenticationToken(request.getIdentification(), request.getCaptcha(), request.getCaptchaUsageType(), JwtConstants.EMPLOYEE_LOGIN);
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        Authentication authentication = loginAuthenticationManager.authenticate(authenticationToken);
 
         // 4. 生成 Token 并保存授权记录
         return generateTokensAndSaveAuthorization(authentication, request.getIdentification());
@@ -147,15 +130,18 @@ public class AuthUserServiceImpl implements IAuthUserService {
         };
 
         // 4. 生成 Access Token
-        OAuth2AccessToken accessToken = generateAccessToken(
+        AccessTokenResult accessTokenResult = generateAccessToken(
                 registeredClient,
                 authentication,
                 ctx
         );
 
-        if (accessToken == null) {
+        if (accessTokenResult == null || accessTokenResult.accessToken() == null) {
             throw new AuthException.AuthenticationException("令牌生成失败");
         }
+
+        OAuth2AccessToken accessToken = accessTokenResult.accessToken();
+        Jwt jwt = accessTokenResult.jwt();
 
         // 5. 生成 Refresh Token
         OAuth2RefreshToken refreshToken = null;
@@ -173,7 +159,8 @@ public class AuthUserServiceImpl implements IAuthUserService {
                 registeredClient,
                 authentication,
                 accessToken,
-                refreshToken
+                refreshToken,
+                jwt
         );
 
         // 7. 保存授权记录
@@ -191,7 +178,7 @@ public class AuthUserServiceImpl implements IAuthUserService {
     /**
      * 生成 Access Token
      */
-    private OAuth2AccessToken generateAccessToken(
+    private AccessTokenResult generateAccessToken(
             RegisteredClient registeredClient,
             Authentication authentication,
             AuthorizationServerContext authorizationServerContext) {
@@ -207,19 +194,20 @@ public class AuthUserServiceImpl implements IAuthUserService {
         // tokenGenerator 可能返回 Jwt 或 OAuth2AccessToken
         Object token = tokenGenerator.generate(contextBuilder.build());
 
-        // 如果是 JWT token，需要转换为 OAuth2AccessToken
+        // 如果是 JWT token，需要转换为 OAuth2AccessToken，同时保留 Jwt 对象
         if (token instanceof Jwt jwt) {
-            return new OAuth2AccessToken(
+            OAuth2AccessToken accessToken = new OAuth2AccessToken(
                     OAuth2AccessToken.TokenType.BEARER,
                     jwt.getTokenValue(),
                     jwt.getIssuedAt(),
                     jwt.getExpiresAt(),
                     registeredClient.getScopes()
             );
+            return new AccessTokenResult(accessToken, jwt);
         }
 
         // 否则直接转换为 OAuth2AccessToken
-        return (OAuth2AccessToken) token;
+        return new AccessTokenResult((OAuth2AccessToken) token, null);
     }
 
     /**
@@ -256,25 +244,39 @@ public class AuthUserServiceImpl implements IAuthUserService {
 
     /**
      * 构建 OAuth2Authorization 对象
+     * <p>
+     * 关键：需要保存 token 的完整元数据，包括 JWT claims，
+     * 这样刷新 token 时 OAuth2RefreshTokenAuthenticationProvider 才能正确处理
+     * </p>
      */
     private OAuth2Authorization buildAuthorization(
             String authorizationId,
             RegisteredClient registeredClient,
             Authentication authentication,
             OAuth2AccessToken accessToken,
-            OAuth2RefreshToken refreshToken) {
+            OAuth2RefreshToken refreshToken,
+            Jwt jwt) {
 
         OAuth2Authorization.Builder builder = OAuth2Authorization.withRegisteredClient(registeredClient)
                 .id(authorizationId)
                 .principalName(authentication.getName())
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizedScopes(registeredClient.getScopes())
-                .attribute(Principal.class.getName(), authentication)
-                .attribute("authorized_scopes", registeredClient.getScopes())
-                .accessToken(accessToken);
+                .attribute(Principal.class.getName(), authentication);
+
+        // 关键：需要保存 token 的完整元数据，包括 claims
+        if (jwt != null) {
+            builder.token(accessToken, metadata -> {
+                metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME, jwt.getClaims());
+                metadata.put(OAuth2Authorization.Token.INVALIDATED_METADATA_NAME, false);
+            });
+        } else {
+            builder.accessToken(accessToken);
+        }
 
         if (refreshToken != null) {
-            builder.refreshToken(refreshToken);
+            builder.token(refreshToken, metadata ->
+                    metadata.put(OAuth2Authorization.Token.INVALIDATED_METADATA_NAME, false));
         }
 
         return builder.build();

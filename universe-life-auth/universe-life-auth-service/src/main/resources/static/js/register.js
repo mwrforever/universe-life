@@ -144,7 +144,6 @@ class RegisterAuth {
 
     // 发送验证码函数
     sendVerificationCode(identification, usageType) {
-        console.log('sendVerificationCode被调用:', identification, usageType);
         makeRequest(`${GATEWAY_BASE_URL}/api/common/captcha/send`, {
             method: 'POST',
             body: {
@@ -155,11 +154,9 @@ class RegisterAuth {
             showSuccessToast: true,
             successMessage: '验证码发送成功'
         }).then(data => {
-            console.log('验证码发送成功，开始倒计时:', data);
             // 开始倒计时
             this.startCountdown();
         }).catch(error => {
-            console.log('验证码发送失败:', error);
             // 错误处理已在makeRequest中完成
             if (error.message && error.message.includes('identification')) {
                 this.formValidator.showFieldError('identification', error.message);
@@ -183,7 +180,8 @@ class RegisterAuth {
                 identification: formData.identification,
                 verifyCode: formData.verifyCode,
                 captchaUsageType: parseInt(formData.usageType)
-            }
+            },
+            showErrorToast: false  // 禁用自动错误提示，手动处理
         }).then(data => {
             showToast('邮箱验证成功！请完善您的账户信息', 'success');
 
@@ -200,44 +198,47 @@ class RegisterAuth {
                 window.location.href = url;
             }, 1500);
         }).catch(error => {
-            this.formValidator.handleBackendErrors(error);
-
-            // 处理具体的字段错误
+            // 只显示一个错误提示
+            let errorMessage = '验证失败，请重试';
+            
+            // 优先处理字段级错误
             if (error.data && error.data.errors) {
                 const errors = error.data.errors;
                 if (errors.identification) {
                     this.formValidator.showFieldError('identification', errors.identification);
+                    return; // 有字段错误时不显示Toast
                 }
                 if (errors.verifyCode) {
                     this.formValidator.showFieldError('verifyCode', errors.verifyCode);
+                    return; // 有字段错误时不显示Toast
                 }
             }
+            
+            // 没有字段错误时，显示通用错误Toast
+            if (error.message) {
+                errorMessage = error.message;
+            }
+            showToast(errorMessage, 'error');
         });
     }
 
     // 倒计时函数
     startCountdown() {
-        console.log('开始倒计时');
         let countdown = 60;
         const btn = document.getElementById('send-code-btn');
 
         if (btn) {
-            console.log('找到按钮，开始倒计时');
             btn.disabled = true;
             const interval = setInterval(() => {
                 countdown--;
                 btn.textContent = `${countdown}秒后重试`;
-                console.log('倒计时:', countdown);
 
                 if (countdown <= 0) {
                     clearInterval(interval);
                     btn.disabled = false;
                     btn.textContent = '获取验证码';
-                    console.log('倒计时结束');
                 }
             }, 1000);
-        } else {
-            console.log('未找到倒计时按钮');
         }
     }
   // 设置表单验证

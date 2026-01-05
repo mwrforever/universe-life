@@ -2,7 +2,6 @@ package com.universe.life.auth.service.service;
 
 import com.universe.life.auth.service.domain.dto.request.EmployeeCaptchaLoginRequest;
 import com.universe.life.auth.service.domain.dto.request.EmployeeLoginRequest;
-import com.universe.life.auth.service.domain.dto.request.RegisterFormRequest;
 import com.universe.life.auth.service.domain.vo.UserLoginVO;
 
 /**
@@ -11,12 +10,6 @@ import com.universe.life.auth.service.domain.vo.UserLoginVO;
  */
 public interface IAuthUserService {
 
-    /**
-     * 用户注册
-     *
-     * @param request 注册表单
-     */
-    void register(RegisterFormRequest request);
 
     /**
      * 员工登录

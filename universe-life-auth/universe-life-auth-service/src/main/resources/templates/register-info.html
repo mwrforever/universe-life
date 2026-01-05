@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${title ?: '万象生活 - 完善账户信息'}">万象生活 - 完善账户信息</title>
 
-    <!-- CSRF Meta Tags for Spring Security -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <!-- CSRF Meta Tags for Spring Security (only if CSRF is enabled) -->
+    <meta name="_csrf" th:if="${_csrf}" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:if="${_csrf}" th:content="${_csrf.headerName}"/>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" th:href="@{/css/fontawesome-all.min.css}">

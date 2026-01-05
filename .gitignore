@@ -231,14 +231,15 @@ scripts/
 *.iml
 *.ipr
 *.iws
-.idea/
 
 # System files
 nul
 
 # Test code (排除测试代码)
 **/src/test/
-
+api
+md
+.kiro
 
 
 

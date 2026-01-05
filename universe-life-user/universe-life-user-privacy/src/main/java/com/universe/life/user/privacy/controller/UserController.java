@@ -2,8 +2,8 @@ package com.universe.life.user.privacy.controller;
 
 import com.universe.life.auth.common.domain.Result;
 import com.universe.life.auth.resource.util.SecurityUtil;
-import com.universe.life.model.domain.dto.RegisterFormDTO;
 import com.universe.life.model.domain.dto.UserStatusDTO;
+import com.universe.life.user.privacy.domain.dto.request.RegisterFormRequest;
 import com.universe.life.user.privacy.domain.dto.request.UserProfileUpdateRequest;
 import com.universe.life.user.privacy.domain.vo.UserInfoVO;
 import com.universe.life.user.privacy.service.IUserService;
@@ -32,14 +32,17 @@ public class UserController {
 
     private final IUserService userService;
 
-    /**
-     * 添加用户
-     * 服务间调用添加用户信息
-     */
-    @PostMapping("/add")
-    @Operation(description = "添加用户")
-    public void add(@RequestBody RegisterFormDTO registerFormDTO) {
-        userService.add(registerFormDTO);
+    @PostMapping("/register")
+    @Operation(
+            summary = "用户注册",
+            description = "新用户注册，包含验证码校验和速率限制保护"
+    )
+    public Result<Void> register(@Validated @RequestBody RegisterFormRequest request) {
+        log.info("收到用户注册请求，用户标识: {}", request.getIdentification());
+
+        userService.register(request);
+        log.info("用户注册成功，用户标识: {}", request.getIdentification());
+        return Result.success();
     }
 
     /**

@@ -16,6 +16,7 @@ universe-life:
   auth:
     enable: true
     exclude-path:
+      - /register
       - /admin/sys-user/login
       - /actuator/health
       - /actuator/info

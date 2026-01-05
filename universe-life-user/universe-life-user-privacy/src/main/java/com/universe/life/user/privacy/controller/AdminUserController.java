@@ -72,6 +72,14 @@ public class AdminUserController {
         return Result.success(adminUserService.updateUser(request));
     }
 
+    @PostMapping("/check/password")
+    @Operation(summary = "检查密码", description = "管理员检查密码")
+    public Result<Boolean> checkPassword(
+            @Valid @RequestBody PasswordUserRequest request) {
+        log.info("管理员检查密码");
+        return Result.success(adminUserService.checkPassword(request));
+    }
+
     @PostMapping("/{id}")
     @Operation(summary = "删除用户", description = "管理员软删除指定用户")
     public Result<Void> deleteUser(
@@ -96,7 +104,7 @@ public class AdminUserController {
     public Result<Void> resetPassword(
             @Parameter(description = "用户ID", required = true)
             @PathVariable Long id,
-            @RequestBody @Validated PasswordUserRequest request
+            @RequestBody @Validated ResetPasswordRequest request
     ) {
         log.info("管理员重置用户密码，用户ID：{}", id);
         adminUserService.resetPassword(id, request);

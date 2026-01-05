@@ -9,6 +9,7 @@ import com.universe.life.user.privacy.domain.vo.AdminUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.AdminUserListVO;
 import com.universe.life.user.privacy.domain.vo.AdminUserUpdateVO;
 import com.universe.life.user.privacy.domain.vo.UserStatusVO;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -74,7 +75,7 @@ public interface IAdminUserService extends IService<User> {
      *
      * @param id 用户ID
      */
-    void resetPassword(Long id, PasswordUserRequest request);
+    void resetPassword(Long id, ResetPasswordRequest request);
 
     /**
      * 更新用户状态
@@ -96,4 +97,13 @@ public interface IAdminUserService extends IService<User> {
      * @param request 批量更新请求
      */
     void batchUpdateUserStatus(UserBatchStatusUpdateRequest request);
+
+
+    /**
+     * 校验密码
+     *
+     * @param request 密码请求
+     * @return 是否通过校验
+     */
+    Boolean checkPassword(@Valid PasswordUserRequest request);
 }

@@ -29,6 +29,11 @@
     <dependencies>
 
         <dependency>
+            <groupId>com.qcloud</groupId>
+            <artifactId>cos_api</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.universe.life</groupId>
             <artifactId>universe-life-common-server-model</artifactId>
         </dependency>

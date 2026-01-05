@@ -416,7 +416,6 @@ function showToast(message, type = 'info') {
 
     const container = document.getElementById('toast-container');
     if (!container) {
-        console.warn('Toast container not found');
         return;
     }
 
@@ -436,11 +435,11 @@ function showToast(message, type = 'info') {
 /**
  * 处理API响应
  * @param {Response} response fetch响应对象
- * @param {Object} options 选项 {showSuccessToast: boolean, successMessage: string}
+ * @param {Object} options 选项 {showSuccessToast: boolean, successMessage: string, showErrorToast: boolean}
  * @returns {Promise}
  */
 function handleApiResponse(response, options = {}) {
-    const { showSuccessToast = false, successMessage = '操作成功' } = options;
+    const { showSuccessToast = false, successMessage = '操作成功', showErrorToast = true } = options;
 
     return response.json().then(data => {
         // code = 1 表示成功，code = 0 或其他值表示失败
@@ -450,15 +449,14 @@ function handleApiResponse(response, options = {}) {
             }
             return { success: true, data };
         } else {
-            // 业务错误 - 显示错误消息
-            if (data.message) {
+            // 业务错误 - 只在showErrorToast为true时显示错误消息
+            if (showErrorToast && data.message) {
                 showToast(data.message, 'error');
             }
             return { success: false, data };
         }
     }).catch(error => {
         // JSON解析错误或网络错误
-        console.error('API响应处理错误:', error);
         return { success: false, error: error.message };
     });
 }
@@ -476,10 +474,9 @@ async function makeRequest(url, options = {}) {
         headers = {},
         showLoading = true,
         showSuccessToast = false,
-        successMessage = '操作成功'
+        successMessage = '操作成功',
+        showErrorToast = true  // 新增：控制是否自动显示错误Toast
     } = options;
-
-    console.log('makeRequest调用:', url, method, body);
 
     // 获取CSRF token
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
@@ -491,8 +488,6 @@ async function makeRequest(url, options = {}) {
         ...headers
     };
 
-    console.log('请求头:', defaultHeaders);
-
     try {
         const response = await fetch(url, {
             method,
@@ -500,10 +495,7 @@ async function makeRequest(url, options = {}) {
             body: body ? JSON.stringify(body) : null
         });
 
-        console.log('响应状态:', response.status, response.ok);
-
-        const result = await handleApiResponse(response, { showSuccessToast, successMessage });
-        console.log('处理结果:', result);
+        const result = await handleApiResponse(response, { showSuccessToast, successMessage, showErrorToast });
 
         if (result.success) {
             return result.data;
@@ -511,7 +503,6 @@ async function makeRequest(url, options = {}) {
             throw result.data;
         }
     } catch (error) {
-        console.error('请求失败:', error);
         throw error;
     }
 }

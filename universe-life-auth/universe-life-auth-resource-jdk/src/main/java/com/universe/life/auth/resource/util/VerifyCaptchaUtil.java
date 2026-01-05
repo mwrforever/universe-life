@@ -18,11 +18,10 @@ public class VerifyCaptchaUtil {
 
     public boolean verifyCaptchaIssuer(CaptchaUsageType usage, String identification, String issuer) {
         // 先在redis中查看当前验证的业务标识
-        String key = RedisConstants.AUTH_USER_CAPTCHA_KEY_PREFIX +
-                usage.getDisplayName() + ":" +
-                identification + ":" +
-                RedisConstants.AUTH_ISSUER;
-        return checkCode(issuer, key);
+        String key = verifyCaptchaIssuerNotDelete(usage, identification, issuer);
+        // 删除issuer标识
+        stringRedisTemplate.delete(key);
+        return true;
     }
 
     private boolean checkCode(String issuer, String key) {
@@ -32,12 +31,17 @@ public class VerifyCaptchaUtil {
             return false;
         }
         // 校验授权码与当前业务标识的验证码是否一致
-        if (!rawIssuer.equals(issuer)) {
-            return false;
-        }
-        // 删除issuer标识
-        stringRedisTemplate.delete(key);
-        return true;
+        return rawIssuer.equals(issuer);
+    }
+
+    public String verifyCaptchaIssuerNotDelete(CaptchaUsageType usage, String identification, String issuer) {
+        // 先在redis中查看当前验证的业务标识
+        String key = RedisConstants.AUTH_USER_CAPTCHA_KEY_PREFIX +
+                usage.getDisplayName() + ":" +
+                identification + ":" +
+                RedisConstants.AUTH_ISSUER;
+        boolean checked = checkCode(issuer, key);
+        return checked ? key : null;
     }
 
     public boolean verifyCaptcha(CaptchaUsageType usage, String identification, String captcha) {

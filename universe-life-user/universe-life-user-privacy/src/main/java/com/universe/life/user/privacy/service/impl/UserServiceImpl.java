@@ -3,12 +3,14 @@ package com.universe.life.user.privacy.service.impl;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.universe.life.auth.common.exception.AuthException;
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.exception.DatabaseException;
 import com.universe.life.auth.common.message.ExceptionMessage;
-import com.universe.life.model.domain.dto.RegisterFormDTO;
+import com.universe.life.auth.resource.util.VerifyCaptchaUtil;
 import com.universe.life.model.domain.dto.UserStatusDTO;
 import com.universe.life.model.enums.UserAuthType;
+import com.universe.life.user.privacy.domain.dto.request.RegisterFormRequest;
 import com.universe.life.user.privacy.domain.dto.request.UserProfileUpdateRequest;
 import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.po.UserAuth;
@@ -19,6 +21,8 @@ import com.universe.life.user.privacy.service.IUserAuthService;
 import com.universe.life.user.privacy.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     private final IUserAuthService userAuthService;
     private final UserMapstruct userMapstruct;
+    private final VerifyCaptchaUtil verifyCaptchaUtil;
+    private final PasswordEncoder bcryptPasswordEncoder;
+    private final StringRedisTemplate stringRedisTemplate;
+
 
     @Override
     public UserStatusDTO getStatusByUsername(String username) {
@@ -53,25 +61,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Override
     @Transactional
-    public void add(RegisterFormDTO registerFormDTO) {
-        // 保留原有的用户添加逻辑
+    public void register(RegisterFormRequest request) {
+        // 用户注册
+        String key = verifyCaptchaUtil.verifyCaptchaIssuerNotDelete(request.getCaptchaUsageType(), request.getIdentification(), request.getIssuer());
+        if (ObjectUtil.isNull(key)) {
+            throw new AuthException.AuthenticationException(ExceptionMessage.AUTHORIZATION_CODE_EXPIRED);
+        }
+        // 封装用户数据
         User user = new User();
-        user.setUsername(registerFormDTO.getUsername());
-        save(user);
-
+        user.setUsername(request.getUsername());
+        // 保存用户数据
+        boolean userSaved = save(user);
+        if (!userSaved) {
+            throw new DatabaseException.UpdateException(ExceptionMessage.Formatter.operationFailed("用户添加失败，用户名可能重复"));
+        }
+        // 对密码进行加密处理
+        String encodePassword = bcryptPasswordEncoder.encode(request.getPassword());
         UserAuth userAuth = new UserAuth();
         userAuth.setUserId(user.getId());
-        userAuth.setIdentification(registerFormDTO.getIdentification());
-        userAuth.setIdentificationType(registerFormDTO.getIdentificationType());
-        userAuth.setPassword(registerFormDTO.getPassword());
+        userAuth.setIdentification(request.getIdentification());
+        userAuth.setIdentificationType(request.getIdentificationType());
+        userAuth.setPassword(encodePassword);
 
         UserAuth userAuthDefault = new UserAuth();
         userAuthDefault.setUserId(user.getId());
         userAuthDefault.setIdentification(user.getUsername());
         userAuthDefault.setIdentificationType(UserAuthType.USERNAME);
-        userAuthDefault.setPassword(registerFormDTO.getPassword());
+        userAuthDefault.setPassword(encodePassword);
 
-        userAuthService.saveBatch(List.of(userAuth, userAuthDefault));
+        boolean saved = userAuthService.saveBatch(List.of(userAuth, userAuthDefault));
+        if (!saved) {
+            throw new DatabaseException.UpdateException(ExceptionMessage.Formatter.operationFailed("用户认证信息添加失败，请检查手机号或邮箱是否已经注册"));
+        }
+        stringRedisTemplate.delete(key);
     }
 
     @Override

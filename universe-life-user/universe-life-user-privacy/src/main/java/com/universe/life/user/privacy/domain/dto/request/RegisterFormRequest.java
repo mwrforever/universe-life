@@ -1,4 +1,4 @@
-package com.universe.life.auth.service.domain.dto.request;
+package com.universe.life.user.privacy.domain.dto.request;
 
 import com.universe.life.common.server.model.domain.domain.enums.CaptchaUsageType;
 import com.universe.life.model.enums.UserAuthType;

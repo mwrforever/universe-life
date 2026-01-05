@@ -21,6 +21,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler
+    public ResponseEntity<Result<Void>> handleException(Exception e) {
+        log.error("未知异常: {}", e.getMessage(), e);
+        SystemException systemException = new SystemException("系统内部错误", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(systemException.toResult());
+    }
+
     /**
      * 处理基础服务异常
      */
@@ -131,14 +139,4 @@ public class GlobalExceptionHandler {
                 .body(systemException.toResult());
     }
 
-    /**
-     * 处理通用异常
-     */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Result<Void>> handleException(Exception e) {
-        log.error("未知异常: {}", e.getMessage(), e);
-        SystemException systemException = new SystemException("系统内部错误", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(systemException.toResult());
-    }
 }

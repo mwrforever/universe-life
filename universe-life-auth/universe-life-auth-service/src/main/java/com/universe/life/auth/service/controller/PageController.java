@@ -40,6 +40,19 @@ public class PageController {
         model.addAttribute("appName", "万象生活");
         model.addAttribute("appDescription", "连接您的生活，创造无限可能");
 
+        // 从 URL 参数获取错误信息（认证失败后的重定向）
+        String errorParam = request.getParameter("error");
+        if (errorParam != null && !errorParam.isEmpty()) {
+            try {
+                // URL 解码错误信息
+                String errorMessage = java.net.URLDecoder.decode(errorParam, "UTF-8");
+                model.addAttribute("errorMessage", errorMessage);
+            } catch (Exception e) {
+                // 如果解码失败，使用原始值
+                model.addAttribute("errorMessage", errorParam);
+            }
+        }
+
         // 记录请求参数，便于调试OAuth2重定向问题
         String clientId = request.getParameter("client_id");
         String redirectUri = request.getParameter("redirect_uri");

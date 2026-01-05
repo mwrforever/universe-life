@@ -6,29 +6,32 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.universe.life.auth.resource.util.SecurityUtil;
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.exception.DatabaseException;
 import com.universe.life.auth.common.exception.SecurityException;
 import com.universe.life.auth.common.message.ExceptionMessage;
+import com.universe.life.auth.resource.util.SecurityUtil;
 import com.universe.life.common.domain.PageResult;
 import com.universe.life.user.privacy.domain.dao.query.AdminUserListQuery;
 import com.universe.life.user.privacy.domain.dto.AdminUserDetailDTO;
 import com.universe.life.user.privacy.domain.dto.AdminUserDetailRoleDTO;
 import com.universe.life.user.privacy.domain.dto.AdminUserRoleListDTO;
 import com.universe.life.user.privacy.domain.dto.request.*;
+import com.universe.life.user.privacy.domain.po.SysUser;
 import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.po.UserAuth;
 import com.universe.life.user.privacy.domain.po.UserRole;
 import com.universe.life.user.privacy.domain.vo.*;
-import com.universe.life.user.privacy.mapper.UserAuthMapper;
+import com.universe.life.user.privacy.enums.CommonStatus;
 import com.universe.life.user.privacy.mapper.AdminUserMapper;
 import com.universe.life.user.privacy.mapper.AdminUserRoleMapper;
+import com.universe.life.user.privacy.mapper.UserAuthMapper;
 import com.universe.life.user.privacy.mapstruct.UserAuthMapstruct;
 import com.universe.life.user.privacy.mapstruct.UserMapstruct;
-import com.universe.life.user.privacy.service.IUserAuthService;
 import com.universe.life.user.privacy.service.IAdminUserRoleService;
 import com.universe.life.user.privacy.service.IAdminUserService;
+import com.universe.life.user.privacy.service.ISysUserService;
+import com.universe.life.user.privacy.service.IUserAuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -56,6 +59,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     private final AdminUserRoleMapper adminUserRoleMapper;
     private final UserAuthMapper userAuthMapper;
     private final PasswordEncoder bcryptPasswordEncoder;
+    private final ISysUserService sysUserService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -191,10 +195,10 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     }
 
     @Override
-    public void resetPassword(Long id, PasswordUserRequest request) {
+    public void resetPassword(Long id, ResetPasswordRequest request) {
         log.info("重置用户密码，用户ID：{}", id);
         boolean updated = userAuthService.lambdaUpdate()
-                .set(UserAuth::getPassword, request.getPassword())
+                .set(UserAuth::getPassword, bcryptPasswordEncoder.encode(request.getNewPassword()))
                 .eq(UserAuth::getUserId, id)
                 .update();
         if (!updated) {
@@ -249,5 +253,24 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
             throw new BusinessException.OperationFailedException(ExceptionMessage.OPERATION_FAILED);
         }
         log.info("批量更新用户状态成功，更新数量：{}", request.getUserIds().size());
+    }
+
+    @Override
+    public Boolean checkPassword(PasswordUserRequest request) {
+        // 获取当前用户密码
+        SysUser sysUser = sysUserService.lambdaQuery()
+                .select(
+                        SysUser::getPassword
+                ).eq(SysUser::getId, SecurityUtil.getUserId())
+                .eq(SysUser::getStatus, CommonStatus.ENABLE)
+                .one();
+        if (ObjectUtil.isNull(sysUser)) {
+            throw new DatabaseException.QueryException(ExceptionMessage.Formatter.operationFailed("您的账户出现异常，请刷新重试"));
+        }
+        // 校验用户密码
+        if (!bcryptPasswordEncoder.matches(request.getPassword(), sysUser.getPassword())) {
+            throw new SecurityException.InvalidCredentialsException(ExceptionMessage.PASSWORD_INCORRECT);
+        }
+        return true;
     }
 }

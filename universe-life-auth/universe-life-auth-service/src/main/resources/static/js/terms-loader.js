@@ -49,7 +49,6 @@ class TermsLoader {
             this.termsCache.user = response.data.content;
             return this.termsCache.user;
         } catch (error) {
-            console.error('获取用户服务协议失败:', error);
             throw error;
         } finally {
             this.loading.user = false;
@@ -89,7 +88,6 @@ class TermsLoader {
             this.termsCache.privacy = response.data.content;
             return this.termsCache.privacy;
         } catch (error) {
-            console.error('获取隐私政策失败:', error);
             throw error;
         } finally {
             this.loading.privacy = false;
@@ -129,7 +127,6 @@ class TermsLoader {
             this.termsCache.disclaimer = response.data.content;
             return this.termsCache.disclaimer;
         } catch (error) {
-            console.error('获取平台免责声明失败:', error);
             throw error;
         } finally {
             this.loading.disclaimer = false;
@@ -165,7 +162,6 @@ class TermsLoader {
 
             container.innerHTML = content;
         } catch (error) {
-            console.error('显示协议内容失败:', error);
             container.innerHTML = '<p>协议内容加载失败，请稍后重试</p>';
         }
     }
@@ -190,7 +186,6 @@ class TermsLoader {
         const contents = modal?.querySelectorAll(`.${contentClass}`);
 
         if (!modal || !modalTitle || !tabButtons?.length || !contents?.length) {
-            console.warn('协议模态框元素未找到');
             return;
         }
 
@@ -259,7 +254,6 @@ class TermsLoader {
         const modal = document.getElementById(modalId);
 
         if (!modal) {
-            console.error('协议模态框未找到');
             return;
         }
 

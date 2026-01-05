@@ -1,8 +1,8 @@
 package com.universe.life.user.privacy.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.universe.life.model.domain.dto.RegisterFormDTO;
 import com.universe.life.model.domain.dto.UserStatusDTO;
+import com.universe.life.user.privacy.domain.dto.request.RegisterFormRequest;
 import com.universe.life.user.privacy.domain.dto.request.UserProfileUpdateRequest;
 import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.vo.UserInfoVO;
@@ -14,13 +14,6 @@ import com.universe.life.user.privacy.domain.vo.UserInfoVO;
  * @since 2025-11-13
  */
 public interface IUserService extends IService<User> {
-
-    /**
-     * 添加用户（保留原有接口）
-     *
-     * @param registerFormDTO 注册表单
-     */
-    void add(RegisterFormDTO registerFormDTO);
 
     /**
      * 获取用户状态（保留原有接口）
@@ -46,4 +39,11 @@ public interface IUserService extends IService<User> {
      * @return 用户信息VO
      */
     UserInfoVO updateUserProfile(Long userId, UserProfileUpdateRequest request);
+
+    /**
+     * 注册用户
+     *
+     * @param request 注册请求
+     */
+    void register(RegisterFormRequest request);
 }

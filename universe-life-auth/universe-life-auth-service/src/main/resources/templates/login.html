@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${title ?: '万象生活 - 登录注册'}">万象生活 - 登录注册</title>
 
-    <!-- CSRF Meta Tags for Spring Security -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <!-- CSRF Meta Tags for Spring Security (only if CSRF is enabled) -->
+    <meta name="_csrf" th:if="${_csrf}" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:if="${_csrf}" th:content="${_csrf.headerName}"/>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" th:href="@{/css/fontawesome-all.min.css}">
@@ -44,8 +44,8 @@
                     <!-- 密码登录表单 -->
                     <div class="tab-content active" id="password-tab">
                         <form class="login-form" id="password-form" method="post" action="/login/password">
-                            <!-- CSRF Token -->
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <!-- CSRF Token (only if CSRF is enabled) -->
+                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
                             <!-- 隐藏字段用于传递OAuth2回调信息 -->
                             <input type="hidden" name="client_id" th:value="${param.client_id}">
@@ -98,8 +98,8 @@
                     <!-- 邮箱验证码登录表单 -->
                     <div class="tab-content" id="email-tab">
                         <form class="login-form" id="email-form" method="post" action="/login/code">
-                            <!-- CSRF Token -->
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <!-- CSRF Token (only if CSRF is enabled) -->
+                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
                             <!-- 隐藏字段用于传递OAuth2回调信息 -->
                             <input type="hidden" name="client_id" th:value="${param.client_id}">
