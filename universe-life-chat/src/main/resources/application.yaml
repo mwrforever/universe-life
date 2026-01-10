@@ -1,0 +1,55 @@
+# Chat Service Configuration
+server:
+  port: 8105
+
+spring:
+  application:
+    name: universe-life-chat
+
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:43.142.103.248:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: 1
+      retries: 3
+      batch-size: 16384
+      buffer-memory: 33554432
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: latest
+      enable-auto-commit: true
+      auto-commit-interval: 1000
+
+# Chat Service Custom Configuration
+chat:
+  server:
+    address: ${spring.cloud.nacos.discovery.ip:localhost}:${server.port}
+    max-connections: 10000
+
+  kafka:
+    topic:
+      message: chat-message
+      message-partitions: 6
+      message-replicas: 1
+      broadcast: chat-broadcast
+      broadcast-partitions: 3
+      persistence: chat-persistence
+      dead-letter: chat-dead-letter
+
+  ratelimit:
+    private:
+      rate: 10
+      capacity: 20
+    group:
+      rate: 5
+      capacity: 10
+    room:
+      rate: 3
+      capacity: 6
+
+  sensitive-word:
+    file-path: sensitive-words.txt
+    use-redis: false

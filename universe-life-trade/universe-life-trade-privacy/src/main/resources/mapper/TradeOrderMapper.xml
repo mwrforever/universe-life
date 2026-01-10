@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.universe.life.trade.privacy.mapper.TradeOrderMapper">
+
+    <!-- 检查用户是否已对某需求接单 -->
+    <select id="checkUserAccepted" resultType="int">
+        SELECT COUNT(1)
+        FROM trade_order
+        WHERE task_id = #{taskId}
+          AND acceptor_id = #{acceptorId}
+          AND deleted = 0
+          AND status NOT IN (6, 7)  <!-- 排除已拒绝和已放弃的订单 -->
+    </select>
+
+    <!-- 分页查询我的接单列表 -->
+    <select id="selectMyOrderPage" resultType="com.universe.life.trade.privacy.domain.dto.TradeOrderDTO">
+        SELECT
+            o.id,
+            o.task_id,
+            o.publisher_id,
+            o.acceptor_id,
+            o.reward_amount,
+            o.status,
+            o.submit_content,
+            o.submit_images AS submitImagesJson,
+            o.reject_reason,
+            o.applied_at,
+            o.approved_at,
+            o.submitted_at,
+            o.completed_at,
+            o.created_at
+        FROM trade_order o
+        WHERE o.acceptor_id = #{acceptorId}
+          AND o.deleted = 0
+        <if test="query.status != null">
+            AND o.status = #{query.status}
+        </if>
+        <if test="query.taskId != null">
+            AND o.task_id = #{query.taskId}
+        </if>
+        ORDER BY o.created_at DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计我的接单数量 -->
+    <select id="countMyOrder" resultType="long">
+        SELECT COUNT(1)
+        FROM trade_order o
+        WHERE o.acceptor_id = #{acceptorId}
+          AND o.deleted = 0
+        <if test="query.status != null">
+            AND o.status = #{query.status}
+        </if>
+        <if test="query.taskId != null">
+            AND o.task_id = #{query.taskId}
+        </if>
+    </select>
+
+    <!-- 分页查询需求的接单列表 -->
+    <select id="selectTaskOrderPage" resultType="com.universe.life.trade.privacy.domain.dto.TradeOrderDTO">
+        SELECT
+            o.id,
+            o.task_id,
+            o.publisher_id,
+            o.acceptor_id,
+            o.reward_amount,
+            o.status,
+            o.submit_content,
+            o.submit_images AS submitImagesJson,
+            o.reject_reason,
+            o.applied_at,
+            o.approved_at,
+            o.submitted_at,
+            o.completed_at,
+            o.created_at
+        FROM trade_order o
+        WHERE o.task_id = #{taskId}
+          AND o.deleted = 0
+        <if test="query.status != null">
+            AND o.status = #{query.status}
+        </if>
+        ORDER BY o.created_at DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计需求的接单数量 -->
+    <select id="countTaskOrder" resultType="long">
+        SELECT COUNT(1)
+        FROM trade_order o
+        WHERE o.task_id = #{taskId}
+          AND o.deleted = 0
+        <if test="query.status != null">
+            AND o.status = #{query.status}
+        </if>
+    </select>
+
+    <!-- 查询订单详情 -->
+    <select id="selectOrderDetail" resultType="com.universe.life.trade.privacy.domain.dto.TradeOrderDTO">
+        SELECT
+            o.id,
+            o.task_id,
+            o.publisher_id,
+            o.acceptor_id,
+            o.reward_amount,
+            o.status,
+            o.submit_content,
+            o.submit_images AS submitImagesJson,
+            o.reject_reason,
+            o.applied_at,
+            o.approved_at,
+            o.submitted_at,
+            o.completed_at,
+            o.created_at
+        FROM trade_order o
+        WHERE o.id = #{orderId}
+          AND o.deleted = 0
+    </select>
+
+    <!-- 统计需求下指定状态的订单数量 -->
+    <select id="countByTaskIdAndStatus" resultType="int">
+        SELECT COUNT(1)
+        FROM trade_order
+        WHERE task_id = #{taskId}
+          AND status = #{status}
+          AND deleted = 0
+    </select>
+
+</mapper>

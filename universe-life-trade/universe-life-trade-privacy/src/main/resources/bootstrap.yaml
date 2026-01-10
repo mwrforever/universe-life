@@ -1,0 +1,52 @@
+server:
+  port: 8094
+spring:
+  profiles:
+    active: dev
+  application:
+    name: universe-life-trade
+  cloud:
+    nacos:
+      config:
+        enabled: true
+        server-addr: 43.142.103.248:8848
+        file-extension: yaml
+        group: DEFAULT_GROUP
+        namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
+        username: ${NACOS_ACCOUNT:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+        shared-configs:
+          - data-id: shared-datasource.yaml
+            refresh: true
+          - data-id: shared-redis.yaml
+            refresh: true
+          - data-id: shared-mybatis-plus.yaml
+            refresh: true
+          - data-id: shared-jackson.yaml
+            refresh: true
+      discovery:
+        server-addr: 43.142.103.248:8848
+        namespace: 3c085602-c7a2-4095-8ca3-c53bba163e0f
+        group: DEFAULT_GROUP
+        username: ${NACOS_ACCOUNT:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+
+# springdoc-openapi 项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan:
+        - com.universe.life.trade.privacy.controller
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+

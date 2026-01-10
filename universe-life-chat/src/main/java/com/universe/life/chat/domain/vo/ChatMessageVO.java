@@ -1,0 +1,94 @@
+package com.universe.life.chat.domain.vo;
+
+import com.universe.life.message.enums.ContentType;
+import com.universe.life.message.enums.MessageStatus;
+import com.universe.life.message.enums.MessageType;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+/**
+ * 聊天消息 VO
+ * 用于 WebSocket 推送给客户端
+ *
+ * @author Kiro
+ * @since 2026/01/09
+ */
+@Data
+public class ChatMessageVO {
+
+    /**
+     * 消息ID
+     */
+    private String messageId;
+
+    /**
+     * 发送者ID
+     */
+    private Long senderId;
+
+    /**
+     * 发送者用户名
+     */
+    private String senderName;
+
+    /**
+     * 发送者头像
+     */
+    private String senderAvatar;
+
+    /**
+     * 接收者ID（私聊/公共单人会话）
+     */
+    private Long receiverId;
+
+    /**
+     * 群组ID（群聊）
+     */
+    private Long groupId;
+
+    /**
+     * 聊天室ID（公共聊天室）
+     */
+    private Long roomId;
+
+    /**
+     * 消息类型
+     */
+    private MessageType messageType;
+
+    /**
+     * 内容类型
+     */
+    private ContentType contentType;
+
+    /**
+     * 消息内容
+     */
+    private String content;
+
+    /**
+     * 扩展信息（JSON格式）
+     */
+    private String extra;
+
+    /**
+     * 消息序列号
+     */
+    private Long sequence;
+
+    /**
+     * 消息状态
+     */
+    private MessageStatus status;
+
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createdAt;
+
+    /**
+     * 客户端消息ID（用于客户端确认）
+     */
+    private String clientMessageId;
+}
