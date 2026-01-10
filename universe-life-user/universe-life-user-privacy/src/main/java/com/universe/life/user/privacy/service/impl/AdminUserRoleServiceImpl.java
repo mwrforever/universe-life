@@ -44,7 +44,7 @@ public class AdminUserRoleServiceImpl extends ServiceImpl<AdminUserRoleMapper, U
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<UserRoleDetailVO> assignRoles(UserRoleAssignRequest request) {
+    public void assignRoles(UserRoleAssignRequest request) {
         log.info("为用户分配角色，用户ID：{}，角色ID列表：{}", request.getUserId(), request.getRoleIds());
 
         Long operatorId = SecurityUtil.getUserId();
@@ -69,7 +69,6 @@ public class AdminUserRoleServiceImpl extends ServiceImpl<AdminUserRoleMapper, U
         saveBatch(userRoles);
 
         log.info("为用户分配角色成功，用户ID：{}", request.getUserId());
-        return getUserRoles(request.getUserId());
     }
 
     @Override
@@ -99,7 +98,7 @@ public class AdminUserRoleServiceImpl extends ServiceImpl<AdminUserRoleMapper, U
     }
 
     @Override
-    public Integer batchRemoveUserRoles(Long userId, RoleIdsRequest request) {
+    public void batchRemoveUserRoles(Long userId, RoleIdsRequest request) {
         log.info("批量移除用户角色，用户ID：{}，角色ID列表：{}", userId, request.getRoleIds());
 
         boolean removed = lambdaUpdate()
@@ -110,7 +109,6 @@ public class AdminUserRoleServiceImpl extends ServiceImpl<AdminUserRoleMapper, U
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("用户与角色关系批量删除"));
         }
         log.info("批量移除用户角色成功，移除数量：{}", request.getRoleIds().size());
-        return request.getRoleIds().size();
     }
 
     @Override

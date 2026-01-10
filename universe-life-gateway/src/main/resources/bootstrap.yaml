@@ -64,8 +64,13 @@ knife4j:
       version: openapi3
       excluded-services:
         - gateway-service
-
-
+logging:
+  level:
+    org.springframework.amqp: INFO
+    com.rabbitmq.client: INFO
+    com.universe.life.auth.service: DEBUG
+    com.github.xiaoymin.knife4j: INFO
+    org.springframework.security: DEBUG
 
 
 

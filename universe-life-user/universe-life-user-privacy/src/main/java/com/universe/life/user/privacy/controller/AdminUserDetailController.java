@@ -44,11 +44,12 @@ public class AdminUserDetailController {
     @PutMapping("/detail/{id}")
     @Operation(summary = "更新用户详情", description = "管理员更新用户详细信息")
     @PreAuthorize("@pm.match('sys:admin:detail:update')")
-    public Result<UserDetailVO> updateUserDetail(
+    public Result<Void> updateUserDetail(
             @Parameter(description = "用户ID", required = true)
             @PathVariable Long id,
             @Valid @RequestBody UserDetailUpdateRequest request) {
         log.info("管理员更新用户详情，用户ID：{}", id);
-        return Result.success(adminUserDetailService.updateUserDetail(id, request));
+        adminUserDetailService.updateUserDetail(id, request);
+        return Result.success();
     }
 }

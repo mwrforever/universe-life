@@ -1,6 +1,5 @@
 package com.universe.life.user.privacy.domain.dao.query;
 
-import com.universe.life.user.privacy.enums.CommonStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -28,8 +27,8 @@ public class SysUserListQuery {
     @Schema(description = "部门ID筛选")
     private Long departmentId;
 
-    @Schema(description = "状态筛选")
-    private CommonStatus status;
+    @Schema(description = "状态筛选: 0-禁用, 1-启用")
+    private Integer status;
 
     @Schema(description = "关键词搜索（工号/用户名/真实姓名/手机号）")
     private String keyword;

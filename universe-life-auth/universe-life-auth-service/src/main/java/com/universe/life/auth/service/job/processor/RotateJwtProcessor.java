@@ -32,7 +32,7 @@ public class RotateJwtProcessor implements BasicProcessor {
     private final IOauth2JwkService oauth2JwkService;
 
     @Override
-    public ProcessResult process(TaskContext taskContext) throws Exception {
+    public ProcessResult process(TaskContext taskContext) {
         List<String> allPrimaryKids = jwkManager.allPrimaryKids();
         // 执行轮换任务
         jwkManager.rotate();
@@ -46,7 +46,7 @@ public class RotateJwtProcessor implements BasicProcessor {
         }
         // 生成清理jwk延时任务
         RedissonDelayJob<Object> clearJwkJob = new RedissonDelayJob<>();
-        clearJwkJob.setJobId(UUID.randomUUID().toString().replace("-", ""));
+        clearJwkJob.setJobId(UUID.randomUUID().toString());
         clearJwkJob.setData(null);
         clearJwkJob.setDelayTime(7L);
         clearJwkJob.setTimeUnit(TimeUnit.DAYS);

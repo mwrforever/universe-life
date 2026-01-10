@@ -40,9 +40,10 @@ public class AdminUserRoleController {
     @PostMapping
     @Operation(summary = "为用户分配角色", description = "为用户分配角色（会替换原有角色）")
     @PreAuthorize("@pm.match('sys:admin:user-role:add')")
-    public Result<List<UserRoleDetailVO>> assignRoles(@Valid @RequestBody UserRoleAssignRequest request) {
+    public Result<Void> assignRoles(@Valid @RequestBody UserRoleAssignRequest request) {
         log.info("为用户分配角色，用户ID：{}，角色ID列表：{}", request.getUserId(), request.getRoleIds());
-        return Result.success(userRoleService.assignRoles(request));
+        userRoleService.assignRoles(request);
+        return Result.success();
     }
 
     @GetMapping("/users/{userId}/roles")
@@ -68,12 +69,12 @@ public class AdminUserRoleController {
     @DeleteMapping("/users/{userId}/roles")
     @Operation(summary = "批量移除用户的角色", description = "批量移除用户的角色")
     @PreAuthorize("@pm.match('sys:admin:user-role:users:roles:delete')")
-    public Result<Map<String, Integer>> batchRemoveUserRoles(
+    public Result<Void> batchRemoveUserRoles(
             @Parameter(description = "用户ID", required = true) @PathVariable Long userId,
             @Valid @RequestBody RoleIdsRequest request) {
         log.info("批量移除用户角色，用户ID：{}，角色ID列表：{}", userId, request.getRoleIds());
-        Integer removedCount = userRoleService.batchRemoveUserRoles(userId, request);
-        return Result.success(Map.of("removedCount", removedCount));
+        userRoleService.batchRemoveUserRoles(userId, request);
+        return Result.success();
     }
 
     @PutMapping("/users/{userId}/roles")

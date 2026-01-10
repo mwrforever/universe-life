@@ -26,7 +26,6 @@ public interface IAdminUserDetailService extends IService<UserDetail> {
      *
      * @param id 用户ID
      * @param request 更新请求
-     * @return 更新后的用户详情VO
      */
-    UserDetailVO updateUserDetail(Long id, UserDetailUpdateRequest request);
+    void updateUserDetail(Long id, UserDetailUpdateRequest request);
 }

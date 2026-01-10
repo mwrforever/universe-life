@@ -131,7 +131,7 @@ public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, S
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public SysDepartmentDetailVO updateDepartment(Long id, SysDepartmentUpdateRequest request) {
+    public void updateDepartment(Long id, SysDepartmentUpdateRequest request) {
         log.info("更新部门，部门ID：{}", id);
 
         SysDepartment existingDepartment = getById(id);
@@ -159,7 +159,6 @@ public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, S
         }
 
         log.info("更新部门成功，部门ID：{}", id);
-        return getDepartmentById(id);
     }
 
     @Override

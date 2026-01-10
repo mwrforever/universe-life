@@ -1,6 +1,7 @@
 package com.universe.life.auth.service.security.config;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
@@ -74,10 +75,7 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * @author 毛伟然
@@ -198,7 +196,7 @@ public class UniverseAuthorizationServerConfiguration {
                 .build();
 
         // 启用默认类型处理，使用PROPERTY格式以兼容现有数据
-        objectMapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL, com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY);
+        objectMapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
 
         // 3.1 注册 Spring Security 默认模块 (核心安全类)
         List<Module> modules = SecurityJackson2Modules.getModules(classLoader);
@@ -242,6 +240,7 @@ public class UniverseAuthorizationServerConfiguration {
         // 注册自定义的 User/Principal 类 (日志里显示是 UserAuthInfo，这个也必须加，否则修好了Token就会报这个错)
         objectMapper.addMixIn(UserAuthInfo.class, CustomSecurityMixin.class);
 
+
         // 3.6 配置额外的反序列化选项以处理类型格式兼容性问题
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
@@ -250,9 +249,9 @@ public class UniverseAuthorizationServerConfiguration {
 
         // 3.7 为Map类型配置特殊的Mixin以解决类型信息格式问题
         // 使用接口和公共基类替代不可访问的内部类
-        objectMapper.addMixIn(java.util.Map.class, CollectionMixins.MapMixin.class);
-        objectMapper.addMixIn(java.util.List.class, CollectionMixins.ListMixin.class);
-        objectMapper.addMixIn(java.util.Collection.class, CollectionMixins.ListMixin.class);
+        objectMapper.addMixIn(Map.class, CollectionMixins.MapMixin.class);
+        objectMapper.addMixIn(List.class, CollectionMixins.ListMixin.class);
+        objectMapper.addMixIn(Collection.class, CollectionMixins.ListMixin.class);
         // 4. 将配置好的 ObjectMapper 设置给 RowMapper
         rowMapper.setObjectMapper(objectMapper);
         // 5. 将 RowMapper 设置给 Service
@@ -283,6 +282,7 @@ public class UniverseAuthorizationServerConfiguration {
         // 检查默认客户端是否已存在，避免重复创建
         for (AuthorizationServerProperties.AuthorizationServerPropertiesConfig config : authorizationServerProperties.getConfigs()) {
             if (!isClientExists(repository, config.getClientId())) {
+                // 判断是否为员工客户端，使用不同的scope配置
                 // 创建客户端配置
                 RegisteredClient client = createGatewayClient(
                         config.getClientId(),
@@ -292,8 +292,6 @@ public class UniverseAuthorizationServerConfiguration {
                 );
                 // 保存客户端到数据库
                 repository.save(client);
-                log.info("已创建客户端: {}, 认证方式: {}", config.getClientId(),
-                        config.getClientSecret() != null ? "机密客户端" : "公共客户端");
             }
         }
         // 返回配置好的客户端仓库
@@ -304,7 +302,8 @@ public class UniverseAuthorizationServerConfiguration {
      * 创建网关客户端配置
      *
      * <p>构建一个完整的OAuth2客户端配置，包括认证方式、授权类型、权限范围等。
-     * 根据是否有 clientSecret 自动判断创建公共客户端还是机密客户端。</p>
+     * 根据是否有 clientSecret 自动判断创建公共客户端还是机密客户端。
+     * 员工客户端不包含 openid scope，避免刷新 token 时需要 id_token。</p>
      *
      * @param clientId              客户端标识符
      * @param clientSecret          客户端密钥（可选，为 null 则创建公共客户端）
@@ -321,7 +320,6 @@ public class UniverseAuthorizationServerConfiguration {
         // 判断是否为公共客户端（无 clientSecret）
         boolean isPublicClient = clientSecret == null || clientSecret.trim().isEmpty();
 
-        log.info("创建{}客户端 - ClientID: {}", isPublicClient ? "公共" : "机密", clientId);
 
         RegisteredClient.Builder builder = RegisteredClient.withId(UUID.randomUUID().toString().replace("-", ""))
                 .clientId(clientId);
@@ -341,15 +339,18 @@ public class UniverseAuthorizationServerConfiguration {
                         AuthorizationGrantType.REFRESH_TOKEN
                 )))
                 .redirectUris(uris -> uris.addAll(redirectUris))
-        .postLogoutRedirectUri(postLogoutRedirectUri)
-                .scopes(scopes -> scopes.addAll(Arrays.asList(
-                        OidcScopes.OPENID,
-                        OidcScopes.PROFILE,
-                        OidcScopes.EMAIL,
-                        OidcScopes.PHONE,
-                        "offline_access",
-                        "user_info"
-                )))
+                .postLogoutRedirectUri(postLogoutRedirectUri)
+                .scopes(scopes -> {
+                    // 用户客户端：包含完整的 OIDC scope
+                    scopes.addAll(Arrays.asList(
+                            OidcScopes.OPENID,
+                            OidcScopes.PROFILE,
+                            OidcScopes.EMAIL,
+                            OidcScopes.PHONE,
+                            "offline_access",
+                            "user_info"
+                    ));
+                })
                 .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).requireProofKey(true).build())
                 .tokenSettings(TokenSettings.builder()
                         .accessTokenTimeToLive(Duration.ofHours(2))     // 访问令牌 2 小时
@@ -404,7 +405,8 @@ public class UniverseAuthorizationServerConfiguration {
         return http
                 // 设置安全匹配器，只处理授权服务器端点请求
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-                .authorizeHttpRequests(requests -> requests.anyRequest().authenticated())
+                .authorizeHttpRequests(requests -> requests
+                        .anyRequest().authenticated())
                 //                 应用授权服务器配置
                 .with(authorizationServerConfigurer, configurer ->
                         configurer.authorizationServerSettings(authorizationServerSettings)

@@ -35,7 +35,6 @@ spring:
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
   session:
-    store-type: redis       # 指定 Session 存储在 Redis
     redis:
       namespace: "spring:session" # Redis Key 的前缀，防止冲突
     timeout: 30m
@@ -57,14 +56,6 @@ spring:
     # 内容类型
     servlet:
       content-type: text/html
-
-  # 静态资源配置
-  web:
-    resources:
-      # 静态资源位置
-      static-locations: classpath:/static/
-      # 静态资源路径模式
-      static-path-pattern: /**
 # springdoc-openapi 项目配置
 springdoc:
   swagger-ui:
@@ -82,4 +73,12 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+
+logging:
+  level:
+    org.springframework.amqp: INFO
+    com.rabbitmq.client: INFO
+    com.universe.life.auth.service: DEBUG
+    com.github.xiaoymin.knife4j: INFO
+    org.springframework.security: DEBUG
 

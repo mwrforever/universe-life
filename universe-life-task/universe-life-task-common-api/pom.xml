@@ -10,7 +10,7 @@
     <artifactId>universe-life-task-common-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>universe-life-task-common-api</name>
-    <description>universe-life-task-common-api</description>
+    <description>universe-life-task-common-api - Task服务Feign客户端接口</description>
     <url/>
     <licenses>
         <license/>
@@ -26,16 +26,41 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
+        <!-- Task公共模型 -->
+        <dependency>
+            <groupId>com.universe.life</groupId>
+            <artifactId>universe-life-task-common-model</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
 
+        <!-- OpenFeign -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- 禁用Spring Boot插件，因为这是一个公共API模块，没有主类 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -30,7 +31,7 @@ import org.springframework.stereotype.Service;
 import java.security.Principal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -136,7 +137,7 @@ public class AuthUserServiceImpl implements IAuthUserService {
                 ctx
         );
 
-        if (accessTokenResult == null || accessTokenResult.accessToken() == null) {
+        if (accessTokenResult.accessToken() == null) {
             throw new AuthException.AuthenticationException("令牌生成失败");
         }
 
@@ -187,7 +188,7 @@ public class AuthUserServiceImpl implements IAuthUserService {
                 .registeredClient(registeredClient)
                 .principal(authentication)
                 .authorizationServerContext(authorizationServerContext)
-                .authorizedScopes(registeredClient.getScopes())
+                .authorizedScopes(Set.of(OidcScopes.PROFILE))
                 .tokenType(OAuth2TokenType.ACCESS_TOKEN)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE);
 
@@ -201,7 +202,7 @@ public class AuthUserServiceImpl implements IAuthUserService {
                     jwt.getTokenValue(),
                     jwt.getIssuedAt(),
                     jwt.getExpiresAt(),
-                    registeredClient.getScopes()
+                    Set.of(OidcScopes.PROFILE)
             );
             return new AccessTokenResult(accessToken, jwt);
         }
@@ -222,9 +223,9 @@ public class AuthUserServiceImpl implements IAuthUserService {
                 .registeredClient(registeredClient)
                 .principal(authentication)
                 .authorizationServerContext(authorizationServerContext)
-                .authorizedScopes(registeredClient.getScopes())
+                .authorizedScopes(Set.of(OidcScopes.PROFILE))
                 .tokenType(OAuth2TokenType.REFRESH_TOKEN)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN);
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE);  // 修复：使用 AUTHORIZATION_CODE 而不是 REFRESH_TOKEN
 
         // tokenGenerator 可能返回不同类型的 token
         Object token = tokenGenerator.generate(contextBuilder.build());
@@ -245,8 +246,9 @@ public class AuthUserServiceImpl implements IAuthUserService {
     /**
      * 构建 OAuth2Authorization 对象
      * <p>
-     * 关键：需要保存 token 的完整元数据，包括 JWT claims，
-     * 这样刷新 token 时 OAuth2RefreshTokenAuthenticationProvider 才能正确处理
+     * 与用户端标准OAuth2流程保持一致的认证记录结构：
+     * - access_token: 包含完整的 JWT claims 元数据
+     * - refresh_token: 仅包含 invalidated 标记，不包含 claims（与标准流程一致）
      * </p>
      */
     private OAuth2Authorization buildAuthorization(
@@ -261,10 +263,10 @@ public class AuthUserServiceImpl implements IAuthUserService {
                 .id(authorizationId)
                 .principalName(authentication.getName())
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizedScopes(registeredClient.getScopes())
+                .authorizedScopes(Set.of(OidcScopes.PROFILE))
                 .attribute(Principal.class.getName(), authentication);
 
-        // 关键：需要保存 token 的完整元数据，包括 claims
+        // access_token: 保存完整的 JWT claims 元数据
         if (jwt != null) {
             builder.token(accessToken, metadata -> {
                 metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME, jwt.getClaims());
@@ -274,9 +276,9 @@ public class AuthUserServiceImpl implements IAuthUserService {
             builder.accessToken(accessToken);
         }
 
+        // refresh_token: 与用户端标准流程一致，仅设置 invalidated 标记
         if (refreshToken != null) {
-            builder.token(refreshToken, metadata ->
-                    metadata.put(OAuth2Authorization.Token.INVALIDATED_METADATA_NAME, false));
+            builder.token(refreshToken, metadata -> metadata.put(OAuth2Authorization.Token.INVALIDATED_METADATA_NAME, false));
         }
 
         return builder.build();

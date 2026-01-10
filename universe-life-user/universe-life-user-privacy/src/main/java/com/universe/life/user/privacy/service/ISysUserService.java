@@ -42,9 +42,8 @@ public interface ISysUserService extends IService<SysUser> {
      *
      * @param id      员工ID
      * @param request 更新请求
-     * @return 员工详情
      */
-    SysUserDetailVO updateSysUser(Long id, SysUserUpdateRequest request);
+    void updateSysUser(Long id, SysUserUpdateRequest request);
 
     /**
      * 删除员工

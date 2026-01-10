@@ -128,7 +128,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public SysUserDetailVO updateSysUser(Long id, SysUserUpdateRequest request) {
+    public void updateSysUser(Long id, SysUserUpdateRequest request) {
         log.info("更新员工，员工ID：{}", id);
 
         SysUser existingSysUser = getById(id);
@@ -154,7 +154,6 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         }
 
         log.info("更新员工成功，员工ID：{}", id);
-        return getSysUserById(id);
     }
 
     @Override

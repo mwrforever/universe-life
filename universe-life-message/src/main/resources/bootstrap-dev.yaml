@@ -13,6 +13,39 @@ universe-life:
       port: 6379
       password: 1010520mao
       timeout: 10000
+    mongodb:
+      host: 43.142.103.248
+      port: 27017
+      database: universe_life_message
+      username: root
+      password: 1010520mao
+      authentication-database: admin
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://root:1010520mao@43.142.103.248:27017/universe_life_message?authSource=admin
+  kafka:
+    bootstrap-servers: 43.142.103.248:9092
+    consumer:
+      group-id: message-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: true
+
+# 聊天系统配置
+chat:
+  snowflake:
+    worker-id: 1
+    datacenter-id: 1
+  encryption:
+    secret-key: universe-life-chat-secret-key-2026
+  # 离线消息配置
+  offline:
+    expire-days: 7
+    max-count: 1000
+  # 幂等处理配置
+  idempotent:
+    expire-hours: 24
   # Redisson 分布式锁配置（测试环境）
   redisson:
     # 基础配置
@@ -50,3 +83,19 @@ logging:
     org.springframework.amqp: INFO
     com.rabbitmq.client: INFO
     com.universe.life.message: DEBUG
+
+
+# Actuator 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

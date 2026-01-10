@@ -1,8 +1,8 @@
 package com.universe.life.auth.service.config;
 
-import com.universe.life.auth.service.job.delayjob.ClearOldJwkJobStrategy;
 import com.universe.life.common.factory.RedissonDelayJobFactory;
 import com.universe.life.common.job.delayjob.RedissonDelayJobQueue;
+import com.universe.life.common.strategy.RedissonDelayStrategy;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -24,10 +24,10 @@ public class RedissonDelayedJobConfiguration {
             RedissonDelayJobQueue redissonDelayJobQueue,
             @Qualifier("redissonExecDelayedJobExecutor") Executor redissonExecDelayedJobExecutor,
             @Qualifier("redissonTakeDelayedJobExecutor") Executor redissonTakeDelayedJobExecutor,
-            @Qualifier("clearOldJwkJobStrategy") ClearOldJwkJobStrategy clearOldJwkJobStrategy
+            List<RedissonDelayStrategy> jobs
     ) {
         RedissonDelayJobFactory redissonDelayJobFactory = new RedissonDelayJobFactory(redissonDelayJobQueue, redissonExecDelayedJobExecutor, redissonTakeDelayedJobExecutor);
-        redissonDelayJobFactory.register(List.of(clearOldJwkJobStrategy));
+        redissonDelayJobFactory.register(jobs);
         return redissonDelayJobFactory;
     }
 

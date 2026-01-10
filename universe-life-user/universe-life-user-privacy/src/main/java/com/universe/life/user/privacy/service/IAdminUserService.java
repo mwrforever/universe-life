@@ -51,9 +51,8 @@ public interface IAdminUserService extends IService<User> {
      * 更新用户信息
      *
      * @param request 更新请求
-     * @return 更新后的用户VO
      */
-    AdminUserUpdateVO updateUser(UserUpdateRequest request);
+    void updateUser(UserUpdateRequest request);
 
     /**
      * 删除用户（软删除）

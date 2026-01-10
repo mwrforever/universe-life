@@ -36,6 +36,13 @@
             <artifactId>universe-life-common</artifactId>
         </dependency>
 
+        <!-- Task公共模型 -->
+        <dependency>
+            <groupId>com.universe.life</groupId>
+            <artifactId>universe-life-task-common-model</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
         <dependency>
             <groupId>com.universe.life</groupId>
             <artifactId>universe-life-auth-resource-jdk</artifactId>

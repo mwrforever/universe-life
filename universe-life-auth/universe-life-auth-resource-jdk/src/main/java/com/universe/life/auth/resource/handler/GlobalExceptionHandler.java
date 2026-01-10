@@ -2,6 +2,7 @@ package com.universe.life.auth.resource.handler;
 
 import com.universe.life.auth.common.domain.Result;
 import com.universe.life.auth.common.exception.*;
+import com.universe.life.auth.common.exception.SecurityException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -124,8 +125,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Result<Void>> handleIllegalArgumentException(IllegalArgumentException e) {
         log.error("参数非法异常: {}", e.getMessage(), e);
         BusinessException.ParamException paramException = new BusinessException.ParamException(e.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(paramException.toResult());
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<Result<Void>> handleSecurityException(SecurityException e) {
+        log.error("安全异常: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(e.toResult());
     }
 
     /**

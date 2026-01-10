@@ -17,6 +17,7 @@ import com.universe.life.user.privacy.domain.po.Resource;
 import com.universe.life.user.privacy.domain.vo.ResourceDetailVO;
 import com.universe.life.user.privacy.domain.vo.ResourceListVO;
 import com.universe.life.user.privacy.domain.vo.ResourceTreeVO;
+import com.universe.life.user.privacy.enums.CommonStatus;
 import com.universe.life.user.privacy.enums.ResourceStatus;
 import com.universe.life.user.privacy.enums.ResourceType;
 import com.universe.life.user.privacy.mapper.AdminResourceMapper;
@@ -80,7 +81,7 @@ public class AdminResourceServiceImpl extends ServiceImpl<AdminResourceMapper, R
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ResourceDetailVO updateResource(Long id, ResourceUpdateRequest request) {
+    public void updateResource(Long id, ResourceUpdateRequest request) {
         log.info("更新资源，资源ID：{}", id);
         // 如果有父资源，检查父资源是否存在且不能是自己
         if (ObjectUtil.isNotNull(request.getParentId())) {
@@ -101,7 +102,6 @@ public class AdminResourceServiceImpl extends ServiceImpl<AdminResourceMapper, R
         updateById(resource);
 
         log.info("更新资源成功，资源ID：{}", id);
-        return resourceMapstruct.toDetailVO(resource);
     }
 
     @Override
@@ -123,10 +123,14 @@ public class AdminResourceServiceImpl extends ServiceImpl<AdminResourceMapper, R
     public PageResult<ResourceListVO> pageResources(ResourceListQuery query) {
         IPage<Resource> page = new Page<>(query.getPage(), query.getSize());
 
+        // 将 Integer 转换为枚举
+        ResourceType resourceType = ResourceType.of(query.getResourceType());
+        CommonStatus commonStatus = CommonStatus.of(query.getStatus());
+
         IPage<Resource> result = lambdaQuery()
-                .eq(ObjectUtil.isNotNull(query.getResourceType()), Resource::getResourceType, query.getResourceType())
+                .eq(ObjectUtil.isNotNull(resourceType), Resource::getResourceType, resourceType)
                 .eq(StrUtil.isNotBlank(query.getServiceName()), Resource::getServiceName, query.getServiceName())
-                .eq(ObjectUtil.isNotNull(query.getStatus()), Resource::getStatus, query.getStatus())
+                .eq(ObjectUtil.isNotNull(commonStatus), Resource::getStatus, commonStatus)
                 .and(StrUtil.isNotBlank(query.getKeyword()),
                         wrapper -> wrapper.like(Resource::getResourceCode, query.getKeyword())
                                 .or()

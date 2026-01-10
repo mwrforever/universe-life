@@ -59,11 +59,12 @@ public class AdminResourceController {
     @PutMapping("/{id}")
     @Operation(summary = "更新资源", description = "更新资源信息")
     @PreAuthorize("@pm.match('sys:admin:resource:update')")
-    public Result<ResourceDetailVO> updateResource(
+    public Result<Void> updateResource(
             @Parameter(description = "资源ID", required = true) @PathVariable Long id,
             @Valid @RequestBody ResourceUpdateRequest request) {
         log.info("更新资源，资源ID：{}", id);
-        return Result.success(resourceService.updateResource(id, request));
+        resourceService.updateResource(id, request);
+        return Result.success();
     }
 
     @DeleteMapping("/{id}")
@@ -89,9 +90,9 @@ public class AdminResourceController {
     @PreAuthorize("@pm.match('sys:admin:resource:tree:read')")
     public Result<List<ResourceTreeVO>> getResourceTree(
             @Parameter(description = "微服务名称筛选") @RequestParam(required = false) String serviceName,
-            @Parameter(description = "资源类型筛选") @RequestParam(required = false) ResourceType resourceType) {
+            @Parameter(description = "资源类型筛选") @RequestParam(required = false) Integer resourceType) {
         log.info("获取资源树，服务名称：{}，资源类型：{}", serviceName, resourceType);
-        return Result.success(resourceService.getResourceTree(serviceName, resourceType));
+        return Result.success(resourceService.getResourceTree(serviceName, ResourceType.of(resourceType)));
     }
 
     @PatchMapping("/{id}/status")

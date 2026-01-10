@@ -21,11 +21,13 @@ import com.universe.life.user.privacy.domain.po.SysUser;
 import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.po.UserAuth;
 import com.universe.life.user.privacy.domain.po.UserRole;
-import com.universe.life.user.privacy.domain.vo.*;
+import com.universe.life.user.privacy.domain.vo.AdminUserDetailVO;
+import com.universe.life.user.privacy.domain.vo.AdminUserListVO;
+import com.universe.life.user.privacy.domain.vo.AdminUserRoleVO;
+import com.universe.life.user.privacy.domain.vo.UserStatusVO;
 import com.universe.life.user.privacy.enums.CommonStatus;
 import com.universe.life.user.privacy.mapper.AdminUserMapper;
 import com.universe.life.user.privacy.mapper.AdminUserRoleMapper;
-import com.universe.life.user.privacy.mapper.UserAuthMapper;
 import com.universe.life.user.privacy.mapstruct.UserAuthMapstruct;
 import com.universe.life.user.privacy.mapstruct.UserMapstruct;
 import com.universe.life.user.privacy.service.IAdminUserRoleService;
@@ -57,7 +59,6 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     private final IAdminUserRoleService adminUserRoleService;
     private final UserAuthMapstruct userAuthMapstruct;
     private final AdminUserRoleMapper adminUserRoleMapper;
-    private final UserAuthMapper userAuthMapper;
     private final PasswordEncoder bcryptPasswordEncoder;
     private final ISysUserService sysUserService;
 
@@ -151,11 +152,11 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
             vo.setRoles(roleMap.getOrDefault(record.getId(), Collections.emptyList()));
             list.add(vo);
         }
-        return PageResult.of(list, page);
+        return PageResult.of(list, result);
     }
 
     @Override
-    public AdminUserUpdateVO updateUser(UserUpdateRequest request) {
+    public void updateUser(UserUpdateRequest request) {
         log.info("更新用户信息，用户ID：{}", request.getId());
         // 将请求参数转换成PO对象
         User user = userMapstruct.toPoByUserUpdateRequest(request);
@@ -163,8 +164,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
         user.setLastLoginIp(null);
         user.setLastLoginAt(null);
         updateById(user);
-        // 封装用户返回数据
-        return userMapstruct.toAdminUserUpdateVO(request);
+        log.info("更新用户信息成功，用户ID：{}", request.getId());
     }
 
     @Override
@@ -232,11 +232,14 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
 
     private void checkUserByPassword(PasswordUserRequest request) {
         Long userId = SecurityUtil.getUserId();
-        PasswordUserRequest passwordByUserId = userAuthMapper.getPasswordByUserId(userId);
-        if (ObjectUtil.isNull(passwordByUserId)) {
+        SysUser sysUser = sysUserService.lambdaQuery()
+                .select(SysUser::getPassword)
+                .eq(SysUser::getId, userId)
+                .one();
+        if (ObjectUtil.isNull(sysUser)) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
         }
-        if (!bcryptPasswordEncoder.matches(request.getPassword(), passwordByUserId.getPassword())) {
+        if (!bcryptPasswordEncoder.matches(request.getPassword(), sysUser.getPassword())) {
             throw new SecurityException.InvalidCredentialsException(ExceptionMessage.PASSWORD_INCORRECT);
         }
     }

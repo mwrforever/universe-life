@@ -1,7 +1,5 @@
 package com.universe.life.user.privacy.domain.dao.query;
 
-import com.universe.life.user.privacy.enums.CommonStatus;
-import com.universe.life.user.privacy.enums.RoleType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -26,11 +24,11 @@ public class RoleListQuery {
     @Max(value = 100, message = "每页大小不能超过100")
     private Integer size = 10;
 
-    @Schema(description = "角色类型筛选")
-    private RoleType roleType;
+    @Schema(description = "角色类型筛选: 0-系统角色, 1-业务角色, 2-自定义角色")
+    private Integer roleType;
 
-    @Schema(description = "状态筛选")
-    private CommonStatus status;
+    @Schema(description = "状态筛选: 0-禁用, 1-启用")
+    private Integer status;
 
     @Schema(description = "关键词搜索（角色编码/名称）")
     private String keyword;

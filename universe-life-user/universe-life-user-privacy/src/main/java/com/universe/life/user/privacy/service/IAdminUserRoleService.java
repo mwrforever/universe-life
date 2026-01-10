@@ -23,9 +23,8 @@ public interface IAdminUserRoleService extends IService<UserRole> {
      * 为用户分配角色
      *
      * @param request 分配请求
-     * @return 用户角色详情列表
      */
-    List<UserRoleDetailVO> assignRoles(UserRoleAssignRequest request);
+    void assignRoles(UserRoleAssignRequest request);
 
     /**
      * 获取用户的角色列表
@@ -48,9 +47,8 @@ public interface IAdminUserRoleService extends IService<UserRole> {
      *
      * @param userId  用户ID
      * @param request 角色ID列表请求
-     * @return 移除数量
      */
-    Integer batchRemoveUserRoles(Long userId, RoleIdsRequest request);
+    void batchRemoveUserRoles(Long userId, RoleIdsRequest request);
 
     /**
      * 更新用户的角色（全量替换）

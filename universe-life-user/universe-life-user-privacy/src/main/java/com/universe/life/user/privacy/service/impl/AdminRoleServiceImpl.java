@@ -82,7 +82,7 @@ public class AdminRoleServiceImpl extends ServiceImpl<AdminRoleMapper, Role> imp
     }
 
     @Override
-    public RoleDetailVO updateRole(Long id, RoleUpdateRequest request) {
+    public void updateRole(Long id, RoleUpdateRequest request) {
         log.info("更新角色，角色ID：{}", id);
         // 更新角色
         Role role = roleMapstruct.toPo(request);
@@ -91,7 +91,6 @@ public class AdminRoleServiceImpl extends ServiceImpl<AdminRoleMapper, Role> imp
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("角色更新"));
         }
         log.info("更新角色成功，角色ID：{}", id);
-        return roleMapstruct.toDetailVO(role);
     }
 
     @Override
@@ -125,9 +124,13 @@ public class AdminRoleServiceImpl extends ServiceImpl<AdminRoleMapper, Role> imp
     public PageResult<RoleListVO> pageRoles(RoleListQuery query) {
         IPage<Role> page = new Page<>(query.getPage(), query.getSize());
 
+        // 将 Integer 转换为枚举
+        RoleType roleType = RoleType.of(query.getRoleType());
+        CommonStatus status = CommonStatus.of(query.getStatus());
+
         IPage<Role> result = lambdaQuery()
-                .eq(ObjectUtil.isNotNull(query.getRoleType()), Role::getRoleType, query.getRoleType())
-                .eq(ObjectUtil.isNotNull(query.getStatus()), Role::getStatus, query.getStatus())
+                .eq(ObjectUtil.isNotNull(roleType), Role::getRoleType, roleType)
+                .eq(ObjectUtil.isNotNull(status), Role::getStatus, status)
                 .and(StrUtil.isNotBlank(query.getKeyword()),
                         wrapper -> wrapper.like(Role::getRoleCode, query.getKeyword())
                                 .or()

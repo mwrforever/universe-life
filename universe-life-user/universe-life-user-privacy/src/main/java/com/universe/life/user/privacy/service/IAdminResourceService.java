@@ -43,9 +43,8 @@ public interface IAdminResourceService extends IService<Resource> {
      *
      * @param id      资源ID
      * @param request 更新请求
-     * @return 资源详情
      */
-    ResourceDetailVO updateResource(Long id, ResourceUpdateRequest request);
+    void updateResource(Long id, ResourceUpdateRequest request);
 
     /**
      * 删除资源
@@ -72,8 +71,6 @@ public interface IAdminResourceService extends IService<Resource> {
     List<ResourceTreeVO> getResourceTree(String serviceName, ResourceType resourceType);
 
     /**
-     * 更新资源状态
-     *
      * @param id      资源ID
      * @param request 状态更新请求
      */

@@ -43,9 +43,8 @@ public interface ISysDepartmentService extends IService<SysDepartment> {
      *
      * @param id      部门ID
      * @param request 更新请求
-     * @return 部门详情
      */
-    SysDepartmentDetailVO updateDepartment(Long id, SysDepartmentUpdateRequest request);
+    void updateDepartment(Long id, SysDepartmentUpdateRequest request);
 
     /**
      * 删除部门

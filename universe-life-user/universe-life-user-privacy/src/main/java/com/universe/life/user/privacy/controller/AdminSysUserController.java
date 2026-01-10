@@ -70,11 +70,12 @@ public class AdminSysUserController {
     @PutMapping("/{id}")
     @Operation(summary = "更新员工", description = "更新员工信息")
     @PreAuthorize("@pm.match('sys:admin:sys-user:update')")
-    public Result<SysUserDetailVO> updateSysUser(
+    public Result<Void> updateSysUser(
             @Parameter(description = "员工ID", required = true) @PathVariable Long id,
             @Valid @RequestBody SysUserUpdateRequest request) {
         log.info("更新员工，员工ID：{}", id);
-        return Result.success(sysUserService.updateSysUser(id, request));
+        sysUserService.updateSysUser(id, request);
+        return Result.success();
     }
 
     @DeleteMapping("/{id}")

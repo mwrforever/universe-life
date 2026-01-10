@@ -41,9 +41,10 @@ public class AdminResourceRoleController {
     @PostMapping
     @Operation(summary = "为角色分配资源权限", description = "为角色分配资源权限（会替换原有权限）")
     @PreAuthorize("@pm.match('sys:admin:resource-role:add')")
-    public Result<List<ResourceRoleVO>> assignResources(@Valid @RequestBody ResourceRoleAssignRequest request) {
+    public Result<Void> assignResources(@Valid @RequestBody ResourceRoleAssignRequest request) {
         log.info("为角色分配资源权限，角色ID：{}，资源ID列表：{}", request.getRoleId(), request.getResourceIds());
-        return Result.success(resourceRoleService.assignResources(request));
+        resourceRoleService.assignResources(request);
+        return Result.success();
     }
 
     @GetMapping("/roles/{roleId}/resources")
@@ -69,12 +70,12 @@ public class AdminResourceRoleController {
     @DeleteMapping("/roles/{roleId}/resources")
     @Operation(summary = "批量移除角色的资源权限", description = "批量移除角色的资源权限")
     @PreAuthorize("@pm.match('sys:admin:resource-role:roles:resources:delete')")
-    public Result<Map<String, Integer>> batchRemoveRoleResources(
+    public Result<Void> batchRemoveRoleResources(
             @Parameter(description = "角色ID", required = true) @PathVariable Long roleId,
             @Valid @RequestBody ResourceIdsRequest request) {
         log.info("批量移除角色资源权限，角色ID：{}，资源ID列表：{}", roleId, request.getResourceIds());
-        Integer removedCount = resourceRoleService.batchRemoveRoleResources(roleId, request);
-        return Result.success(Map.of("removedCount", removedCount));
+        resourceRoleService.batchRemoveRoleResources(roleId, request);
+        return Result.success();
     }
 
     @PutMapping("/roles/{roleId}/resources")

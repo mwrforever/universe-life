@@ -35,6 +35,11 @@
         <mapstruct.version>1.6.0</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <cos_api.version>5.6.227</cos_api.version>
+        <cos_sts_api.version>3.1.0</cos_sts_api.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
+        <caffeine.version>3.1.8</caffeine.version>
+        <jqwik.version>1.8.2</jqwik.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
 
         <!-- 项目模块统一版本管理 -->
         <universe.life.version>1.0.0-SNAPSHOT</universe.life.version>
@@ -63,6 +68,60 @@
                 <groupId>com.qcloud</groupId>
                 <artifactId>cos_api</artifactId>
                 <version>${cos_api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.qcloud</groupId>
+                <artifactId>cos-sts_api</artifactId>
+                <version>${cos_sts_api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>net.jqwik</groupId>
+                <artifactId>jqwik</artifactId>
+                <version>${jqwik.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>minio</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- AWS S3 SDK for MinIO integration tests -->
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3</artifactId>
+                <version>2.21.0</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>

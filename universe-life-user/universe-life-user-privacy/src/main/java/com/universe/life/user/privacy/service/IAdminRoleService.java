@@ -43,9 +43,8 @@ public interface IAdminRoleService extends IService<Role> {
      *
      * @param id      角色ID
      * @param request 更新请求
-     * @return 角色详情
      */
-    RoleDetailVO updateRole(Long id, RoleUpdateRequest request);
+    void updateRole(Long id, RoleUpdateRequest request);
 
     /**
      * 删除角色

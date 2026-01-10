@@ -59,11 +59,12 @@ public class AdminSysDepartmentController {
     @PutMapping("/{id}")
     @Operation(summary = "更新部门", description = "更新部门信息")
     @PreAuthorize("@pm.match('sys:admin:department:update')")
-    public Result<SysDepartmentDetailVO> updateDepartment(
+    public Result<Void> updateDepartment(
             @Parameter(description = "部门ID", required = true) @PathVariable Long id,
             @Valid @RequestBody SysDepartmentUpdateRequest request) {
         log.info("更新部门，部门ID：{}", id);
-        return Result.success(departmentService.updateDepartment(id, request));
+        departmentService.updateDepartment(id, request);
+        return Result.success();
     }
 
     @DeleteMapping("/{id}")

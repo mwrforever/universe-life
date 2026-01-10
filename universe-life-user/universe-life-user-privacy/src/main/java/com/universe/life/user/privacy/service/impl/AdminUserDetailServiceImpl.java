@@ -58,14 +58,13 @@ public class AdminUserDetailServiceImpl extends ServiceImpl<UserDetailMapper, Us
     }
 
     @Override
-    public UserDetailVO updateUserDetail(Long id, UserDetailUpdateRequest request) {
+    public void updateUserDetail(Long id, UserDetailUpdateRequest request) {
         log.info("管理员更新用户详情，用户ID：{}", id);
         // 转换成实体对象
         UserDetail po = userDetailMapstruct.toPO(request);
         po.setId(id);
         // 更新用户详情
         updateById(po);
-        // 在Service层完成PO到VO的转换
-        return userDetailMapstruct.toVO(po);
+        log.info("管理员更新用户详情成功，用户ID：{}", id);
     }
 }

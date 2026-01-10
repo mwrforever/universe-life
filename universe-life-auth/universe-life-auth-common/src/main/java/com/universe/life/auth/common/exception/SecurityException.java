@@ -1,5 +1,7 @@
 package com.universe.life.auth.common.exception;
 
+import com.universe.life.auth.common.domain.Result;
+
 /**
  * 安全相关异常
  * 用于处理速率限制、暴力破解防护等安全场景
@@ -7,7 +9,7 @@ package com.universe.life.auth.common.exception;
  * @author Quinn (Test Architect)
  * @since 2025/11/17
  */
-public class SecurityException extends RuntimeException {
+public class SecurityException extends BaseServiceException {
 
     public static class RateLimitExceededException extends SecurityException {
         public RateLimitExceededException(String message) {
@@ -43,7 +45,9 @@ public class SecurityException extends RuntimeException {
         super(message);
     }
 
-    public SecurityException(String message, Throwable cause) {
-        super(message, cause);
+    @Override
+    public Result<Void> toResult() {
+        return Result.error(message);
     }
+
 }

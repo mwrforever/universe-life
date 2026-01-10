@@ -48,7 +48,7 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<ResourceRoleVO> assignResources(ResourceRoleAssignRequest request) {
+    public void assignResources(ResourceRoleAssignRequest request) {
         log.info("为角色分配资源权限，角色ID：{}，资源ID列表：{}", request.getRoleId(), request.getResourceIds());
 
         Long operatorId = SecurityUtil.getUserId();
@@ -82,7 +82,6 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
         saveBatch(resourceRoles);
 
         log.info("为角色分配资源权限成功，角色ID：{}", request.getRoleId());
-        return getRoleResources(request.getRoleId());
     }
 
     @Override
@@ -113,7 +112,7 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Integer batchRemoveRoleResources(Long roleId, ResourceIdsRequest request) {
+    public void batchRemoveRoleResources(Long roleId, ResourceIdsRequest request) {
         log.info("批量移除角色资源权限，角色ID：{}，资源ID列表：{}", roleId, request.getResourceIds());
 
         boolean removed = lambdaUpdate()
@@ -124,7 +123,6 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("批量删除角色"));
         }
         log.info("批量移除角色资源权限成功，移除数量：{}", request.getResourceIds().size());
-        return request.getResourceIds().size();
     }
 
     @Override

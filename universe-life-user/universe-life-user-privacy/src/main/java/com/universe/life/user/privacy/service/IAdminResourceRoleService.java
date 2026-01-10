@@ -24,9 +24,8 @@ public interface IAdminResourceRoleService extends IService<ResourceRole> {
      * 为角色分配资源权限
      *
      * @param request 分配请求
-     * @return 资源角色关联列表
      */
-    List<ResourceRoleVO> assignResources(ResourceRoleAssignRequest request);
+    void assignResources(ResourceRoleAssignRequest request);
 
     /**
      * 获取角色的资源权限列表
@@ -49,9 +48,8 @@ public interface IAdminResourceRoleService extends IService<ResourceRole> {
      *
      * @param roleId  角色ID
      * @param request 资源ID列表请求
-     * @return 移除数量
      */
-    Integer batchRemoveRoleResources(Long roleId, ResourceIdsRequest request);
+    void batchRemoveRoleResources(Long roleId, ResourceIdsRequest request);
 
     /**
      * 更新角色的资源权限（全量替换）

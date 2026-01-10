@@ -59,11 +59,12 @@ public class AdminRoleController {
     @PutMapping("/{id}")
     @Operation(summary = "更新角色", description = "更新角色信息")
     @PreAuthorize("@pm.match('sys:admin:role:update')")
-    public Result<RoleDetailVO> updateRole(
+    public Result<Void> updateRole(
             @Parameter(description = "角色ID", required = true) @PathVariable Long id,
             @Valid @RequestBody RoleUpdateRequest request) {
         log.info("更新角色，角色ID：{}", id);
-        return Result.success(roleService.updateRole(id, request));
+        roleService.updateRole(id, request);
+        return Result.success();
     }
 
     @DeleteMapping("/{id}")

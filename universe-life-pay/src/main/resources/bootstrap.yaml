@@ -28,8 +28,6 @@ spring:
             refresh: true
           - data-id: shared-rabbitmq.yaml
             refresh: true
-          - data-id: shared-server-springdoc.yaml
-            refresh: true
           - data-id: shared-mail.yaml
             refresh: true
       discovery:

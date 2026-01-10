@@ -7,7 +7,6 @@ import com.universe.life.user.privacy.domain.dao.query.UserStatusQuery;
 import com.universe.life.user.privacy.domain.dto.request.*;
 import com.universe.life.user.privacy.domain.vo.AdminUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.AdminUserListVO;
-import com.universe.life.user.privacy.domain.vo.AdminUserUpdateVO;
 import com.universe.life.user.privacy.domain.vo.UserStatusVO;
 import com.universe.life.user.privacy.service.IAdminUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,13 +62,14 @@ public class AdminUserController {
 
     @PutMapping("/{id}")
     @Operation(summary = "更新用户信息", description = "管理员更新用户基本信息和角色信息")
-    public Result<AdminUserUpdateVO> updateUser(
+    public Result<Void> updateUser(
             @Parameter(description = "用户ID", required = true)
             @PathVariable Long id,
             @Valid @RequestBody UserUpdateRequest request) {
         log.info("管理员更新用户信息，用户ID：{}", id);
         request.setId(id);
-        return Result.success(adminUserService.updateUser(request));
+        adminUserService.updateUser(request);
+        return Result.success();
     }
 
     @PostMapping("/check/password")
