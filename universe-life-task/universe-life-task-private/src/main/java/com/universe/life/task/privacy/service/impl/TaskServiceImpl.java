@@ -1,6 +1,6 @@
 package com.universe.life.task.privacy.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.universe.life.common.domain.PageResult;
 import com.universe.life.task.privacy.domain.dao.query.TaskQuery;
 import com.universe.life.task.privacy.domain.dto.request.TaskCreateRequest;
@@ -59,8 +59,10 @@ public class TaskServiceImpl implements ITaskService {
     @Transactional(rollbackFor = Exception.class)
     public Long createTask(TaskCreateRequest request, Long userId) {
         // 1. 校验任务分类是否存在
-        TaskCategory category = categoryMapper.selectById(request.getCategoryId());
-        if (category == null) {
+        boolean categoryExists = new LambdaQueryChainWrapper<>(categoryMapper)
+                .eq(TaskCategory::getId, request.getCategoryId())
+                .exists();
+        if (!categoryExists) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务分类"));
         }
 
@@ -94,7 +96,13 @@ public class TaskServiceImpl implements ITaskService {
     @Transactional(rollbackFor = Exception.class)
     public void updateTask(Long id, TaskUpdateRequest request, Long userId) {
         // 1. 查询并校验任务
-        Task task = taskMapper.selectById(id);
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getPublisherId, Task::getStatus, Task::getTitle,
+                        Task::getDescription, Task::getRewardAmount, Task::getDepositAmount,
+                        Task::getCategoryId, Task::getDeadline, Task::getMaxAcceptors,
+                        Task::getReviewStatus, Task::getVersion)
+                .eq(Task::getId, id)
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -117,8 +125,10 @@ public class TaskServiceImpl implements ITaskService {
             task.setDepositAmount(request.getRewardAmount() / 2);
         }
         if (request.getCategoryId() != null) {
-            TaskCategory category = categoryMapper.selectById(request.getCategoryId());
-            if (category == null) {
+            boolean categoryExists = new LambdaQueryChainWrapper<>(categoryMapper)
+                    .eq(TaskCategory::getId, request.getCategoryId())
+                    .exists();
+            if (!categoryExists) {
                 throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务分类"));
             }
             task.setCategoryId(request.getCategoryId());
@@ -170,7 +180,10 @@ public class TaskServiceImpl implements ITaskService {
     @Transactional(rollbackFor = Exception.class)
     public void cancelTask(Long id, Long userId) {
         // 1. 查询并校验任务
-        Task task = taskMapper.selectById(id);
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getPublisherId, Task::getStatus, Task::getVersion)
+                .eq(Task::getId, id)
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -203,7 +216,10 @@ public class TaskServiceImpl implements ITaskService {
     @Transactional(rollbackFor = Exception.class)
     public TaskDepositVO payDeposit(Long id, TaskDepositRequest request, Long userId) {
         // 1. 查询并校验任务
-        Task task = taskMapper.selectById(id);
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getPublisherId, Task::getStatus)
+                .eq(Task::getId, id)
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -273,11 +289,12 @@ public class TaskServiceImpl implements ITaskService {
      */
     @Override
     public List<TaskCategoryVO> listCategories() {
-        List<TaskCategory> categories = categoryMapper.selectList(
-                new LambdaQueryWrapper<TaskCategory>()
-                        .eq(TaskCategory::getStatus, CommonStatus.ENABLE)
-                        .orderByAsc(TaskCategory::getSort)
-        );
+        List<TaskCategory> categories = new LambdaQueryChainWrapper<>(categoryMapper)
+                .select(TaskCategory::getId, TaskCategory::getName, TaskCategory::getCode,
+                        TaskCategory::getSort, TaskCategory::getStatus)
+                .eq(TaskCategory::getStatus, CommonStatus.ENABLE)
+                .orderByAsc(TaskCategory::getSort)
+                .list();
         return categoryMapstruct.toVOList(categories);
     }
 

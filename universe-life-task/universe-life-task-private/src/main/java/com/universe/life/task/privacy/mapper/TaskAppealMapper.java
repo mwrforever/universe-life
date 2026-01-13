@@ -24,6 +24,4 @@ public interface TaskAppealMapper extends BaseMapper<TaskAppeal> {
     TaskAppealDTO selectAppealDetail(@Param("id") Long id);
 
     TaskAppealStatsVO selectAppealStats();
-
-    int checkPendingAppeal(@Param("acceptanceId") Long acceptanceId);
 }

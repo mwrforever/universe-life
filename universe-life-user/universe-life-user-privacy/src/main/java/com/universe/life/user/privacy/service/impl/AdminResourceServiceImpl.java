@@ -48,7 +48,7 @@ public class AdminResourceServiceImpl extends ServiceImpl<AdminResourceMapper, R
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ResourceDetailVO createResource(ResourceCreateRequest request) {
+    public void createResource(ResourceCreateRequest request) {
         log.info("创建资源，资源编码：{}", request.getResourceCode());
         // 如果有父资源，检查父资源是否存在
         if (ObjectUtil.isNotNull(request.getParentId())) {
@@ -67,7 +67,6 @@ public class AdminResourceServiceImpl extends ServiceImpl<AdminResourceMapper, R
             throw new BusinessException.OperationFailedException(ExceptionMessage.OPERATION_FAILED);
         }
         log.info("创建资源成功，资源ID：{}", resource.getId());
-        return resourceMapstruct.toDetailVO(resource);
     }
 
     @Override

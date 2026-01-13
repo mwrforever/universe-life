@@ -25,15 +25,15 @@ public enum TaskStatus {
     private final String desc;
 
     @JsonValue
-    public String getValue() {
-        return this.name();
+    public Integer getValue() {
+        return this.code;
     }
 
     @JsonCreator
-    public static TaskStatus of(String name) {
-        if (name == null) return null;
+    public static TaskStatus of(Integer code) {
+        if (code == null) return null;
         for (TaskStatus e : values()) {
-            if (e.name().equals(name)) return e;
+            if (e.code.equals(code)) return e;
         }
         return null;
     }

@@ -18,15 +18,6 @@ import java.util.List;
 public interface TradeOrderMapper extends BaseMapper<TradeOrder> {
 
     /**
-     * 检查用户是否已对某需求接单（存在未完结的订单）
-     *
-     * @param taskId     需求ID
-     * @param acceptorId 接单者ID
-     * @return 存在的订单数量
-     */
-    int checkUserAccepted(@Param("taskId") Long taskId, @Param("acceptorId") Long acceptorId);
-
-    /**
      * 分页查询我的接单列表
      *
      * @param acceptorId 接单者ID
@@ -79,13 +70,4 @@ public interface TradeOrderMapper extends BaseMapper<TradeOrder> {
      * @return 订单详情
      */
     TradeOrderDTO selectOrderDetail(@Param("orderId") Long orderId);
-
-    /**
-     * 统计需求下指定状态的订单数量
-     *
-     * @param taskId 需求ID
-     * @param status 状态码
-     * @return 订单数量
-     */
-    int countByTaskIdAndStatus(@Param("taskId") Long taskId, @Param("status") Integer status);
 }

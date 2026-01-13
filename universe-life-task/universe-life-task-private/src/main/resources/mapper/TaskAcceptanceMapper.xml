@@ -93,14 +93,4 @@
         WHERE a.id = #{id} AND a.deleted = 0
     </select>
 
-    <!-- 检查用户是否已接受任务 -->
-    <select id="checkUserAccepted" resultType="int">
-        SELECT COUNT(*)
-        FROM task_acceptance
-        WHERE task_id = #{taskId} 
-          AND acceptor_id = #{userId} 
-          AND status NOT IN (3, 5)
-          AND deleted = 0
-    </select>
-
 </mapper>

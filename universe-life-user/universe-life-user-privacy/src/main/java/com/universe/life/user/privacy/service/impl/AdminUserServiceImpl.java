@@ -15,33 +15,30 @@ import com.universe.life.common.domain.PageResult;
 import com.universe.life.user.privacy.domain.dao.query.AdminUserListQuery;
 import com.universe.life.user.privacy.domain.dto.AdminUserDetailDTO;
 import com.universe.life.user.privacy.domain.dto.AdminUserDetailRoleDTO;
-import com.universe.life.user.privacy.domain.dto.AdminUserRoleListDTO;
 import com.universe.life.user.privacy.domain.dto.request.*;
 import com.universe.life.user.privacy.domain.po.SysUser;
 import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.po.UserAuth;
-import com.universe.life.user.privacy.domain.po.UserRole;
+import com.universe.life.user.privacy.domain.po.UserDetail;
 import com.universe.life.user.privacy.domain.vo.AdminUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.AdminUserListVO;
-import com.universe.life.user.privacy.domain.vo.AdminUserRoleVO;
 import com.universe.life.user.privacy.domain.vo.UserStatusVO;
 import com.universe.life.user.privacy.enums.CommonStatus;
 import com.universe.life.user.privacy.mapper.AdminUserMapper;
 import com.universe.life.user.privacy.mapper.AdminUserRoleMapper;
 import com.universe.life.user.privacy.mapstruct.UserAuthMapstruct;
 import com.universe.life.user.privacy.mapstruct.UserMapstruct;
-import com.universe.life.user.privacy.service.IAdminUserRoleService;
 import com.universe.life.user.privacy.service.IAdminUserService;
 import com.universe.life.user.privacy.service.ISysUserService;
 import com.universe.life.user.privacy.service.IUserAuthService;
+import com.universe.life.user.privacy.service.IUserDetailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 /**
  * 管理员用户服务实现类
@@ -56,11 +53,11 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
 
     private final IUserAuthService userAuthService;
     private final UserMapstruct userMapstruct;
-    private final IAdminUserRoleService adminUserRoleService;
     private final UserAuthMapstruct userAuthMapstruct;
     private final AdminUserRoleMapper adminUserRoleMapper;
     private final PasswordEncoder bcryptPasswordEncoder;
     private final ISysUserService sysUserService;
+    private final IUserDetailService userDetailService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -73,21 +70,10 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
         if (!saved) {
             throw new DatabaseException.UpdateException(ExceptionMessage.OPERATION_FAILED);
         }
-        // 分配角色
-        List<UserRole> roles = request.getRoles()
-                .stream()
-                .map(r -> new UserRole().setUserId(po.getId()).setRoleId(r.getRoleId()))
-                .toList();
-        if (CollUtil.isNotEmpty(roles)) {
-            adminUserRoleService.saveBatch(roles);
-        }
-        List<UserAuth> userAuths = request.getUserAuthList()
-                .stream()
-                .map(ua -> {
-                    UserAuth userAuth = userAuthMapstruct.userAuthRequestToPo(ua);
-                    return userAuth.setUserId(po.getId());
-                })
-                .toList();
+        List<UserAuth> userAuths = request.getUserAuthList().stream().map(ua -> {
+            UserAuth userAuth = userAuthMapstruct.userAuthRequestToPo(ua);
+            return userAuth.setUserId(po.getId());
+        }).toList();
         // 保存用户认证信息
         userAuthService.saveBatch(userAuths);
         // 构建返回结果
@@ -114,78 +100,55 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     }
 
     @Override
-    public PageResult<AdminUserListVO> pageUsers(AdminUserListQuery query) {
+    public PageResult<User> pageUsers(AdminUserListQuery query) {
         // 复杂查询使用DTO，连表查询用户列表和角色信息
         IPage<User> page = new Page<>(query.getPage(), query.getSize());
         // 查询用户列表
-        IPage<User> result = lambdaQuery()
-                .like(StrUtil.isNotBlank(query.getUsername()), User::getUsername, query.getUsername())
-                .gt(ObjectUtil.isNotNull(query.getStartTime()), User::getCreatedAt, query.getStartTime())
-                .lt(ObjectUtil.isNotNull(query.getEndTime()), User::getCreatedAt, query.getEndTime())
-                .eq(ObjectUtil.isNotNull(query.getGender()), User::getGender, query.getGender())
-                .eq(ObjectUtil.isNotNull(query.getStatus()), User::getStatus, query.getStatus())
-                .orderByDesc(User::getCreatedAt)
-                .page(page);
+        IPage<User> result = lambdaQuery().like(StrUtil.isNotBlank(query.getUsername()), User::getUsername, query.getUsername()).gt(ObjectUtil.isNotNull(query.getStartTime()), User::getCreatedAt, query.getStartTime()).lt(ObjectUtil.isNotNull(query.getEndTime()), User::getCreatedAt, query.getEndTime()).eq(ObjectUtil.isNotNull(query.getGender()), User::getGender, query.getGender()).eq(ObjectUtil.isNotNull(query.getStatus()), User::getStatus, query.getStatus()).orderByDesc(User::getCreatedAt).page(page);
         // 获取用户列表
         List<User> records = result.getRecords();
         if (CollUtil.isEmpty(records)) {
             return PageResult.empty(page);
         }
-        // 查询用户角色信息
-        Set<Long> ids = records.stream().map(User::getId).collect(Collectors.toSet());
-        // 根据用户ID查询用户角色信息
-        List<AdminUserRoleListDTO> roleVOS = adminUserRoleMapper.getUserRoleByUserIds(ids);
-        List<AdminUserListVO> list = new ArrayList<>(ids.size());
-        Map<Long, List<AdminUserRoleVO>> roleMap = new HashMap<>();
-        if (CollUtil.isNotEmpty(roleVOS)) {
-            Map<Long, List<AdminUserRoleVO>> finalRoleMap = roleMap;
-            roleMap = roleVOS.stream().collect(Collectors.toMap(AdminUserRoleListDTO::getUserId, c -> {
-                AdminUserRoleVO adminUserRoleVO = userMapstruct.toAdminUserRoleVO(c);
-                List<AdminUserRoleVO> roleList = finalRoleMap.computeIfAbsent(c.getUserId(), k -> new ArrayList<>());
-                roleList.add(adminUserRoleVO);
-                return roleList;
-            }));
-        }
-        // 封装成VO对象
-        for (User record : records) {
-            AdminUserListVO vo = userMapstruct.toAdminUserListVO(record);
-            vo.setRoles(roleMap.getOrDefault(record.getId(), Collections.emptyList()));
-            list.add(vo);
-        }
-        return PageResult.of(list, result);
+        return PageResult.of(records, result);
     }
 
     @Override
-    public void updateUser(UserUpdateRequest request) {
-        log.info("更新用户信息，用户ID：{}", request.getId());
+    @Transactional
+    public void updateUser(Long id, UserUpdateRequest request) {
+        log.info("更新用户信息，用户ID：{}", id);
         // 将请求参数转换成PO对象
         User user = userMapstruct.toPoByUserUpdateRequest(request);
         // 更新用户信息
         user.setLastLoginIp(null);
         user.setLastLoginAt(null);
         updateById(user);
-        log.info("更新用户信息成功，用户ID：{}", request.getId());
+        log.info("更新用户信息成功，用户ID：{}", id);
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long id, PasswordUserRequest request) {
         log.info("删除用户，用户ID：{}", id);
         checkUserByPassword(request);
         // 删除用户
         removeById(id);
+        // 删除用户认证信息
+        boolean removed = userAuthService.lambdaUpdate().eq(UserAuth::getUserId, id).remove();
+        if (!removed) {
+            throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("用户认证信息删除"));
+        }
+        // 删除用户详细信息
+        boolean detailRemoved = userDetailService.lambdaUpdate().eq(UserDetail::getId, id).remove();
+        if (detailRemoved) {
+            throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("用户详细信息删除"));
+        }
         log.info("删除用户成功，用户ID：{}", id);
     }
 
     @Override
     public UserStatusVO getUserStatus(String username) {
-        User user = lambdaQuery()
-                .select(
-                        User::getId,
-                        User::getUsername,
-                        User::getStatus
-                )
-                .eq(User::getUsername, username)
-                .one();
+        User user = lambdaQuery().select(User::getId, User::getUsername, User::getStatus).eq(User::getUsername, username).one();
         // 判空
         if (ObjectUtil.isNull(user)) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
@@ -197,10 +160,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     @Override
     public void resetPassword(Long id, ResetPasswordRequest request) {
         log.info("重置用户密码，用户ID：{}", id);
-        boolean updated = userAuthService.lambdaUpdate()
-                .set(UserAuth::getPassword, bcryptPasswordEncoder.encode(request.getNewPassword()))
-                .eq(UserAuth::getUserId, id)
-                .update();
+        boolean updated = userAuthService.lambdaUpdate().set(UserAuth::getPassword, bcryptPasswordEncoder.encode(request.getNewPassword())).eq(UserAuth::getUserId, id).update();
         if (!updated) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.OPERATION_FAILED);
         }
@@ -211,10 +171,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     public void updateUserStatus(UserStatusUpdateRequest request) {
         log.info("更新用户状态，用户ID：{}，状态：{}", request.getId(), request.getStatus());
         // 更新用户状态
-        boolean updated = lambdaUpdate()
-                .set(User::getStatus, request.getStatus())
-                .eq(User::getId, request.getId())
-                .update();
+        boolean updated = lambdaUpdate().set(User::getStatus, request.getStatus()).eq(User::getId, request.getId()).update();
         if (!updated) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.OPERATION_FAILED);
         }
@@ -222,20 +179,26 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     }
 
     @Override
+    @Transactional
     public void batchDeleteUsers(List<Long> ids, PasswordUserRequest request) {
         log.info("批量删除用户，用户ID列表：{}", ids);
         // 获取需要删除的用户
         checkUserByPassword(request);
         removeByIds(ids);
+        boolean removed = userAuthService.lambdaUpdate().in(UserAuth::getUserId, ids).remove();
+        if (!removed) {
+            throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("用户认证信息批量删除"));
+        }
+        removed = userDetailService.lambdaUpdate().in(UserDetail::getId, ids).remove();
+        if (removed) {
+            throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("用户详细信息批量删除"));
+        }
         log.info("批量删除用户成功，删除数量：{}", ids.size());
     }
 
     private void checkUserByPassword(PasswordUserRequest request) {
         Long userId = SecurityUtil.getUserId();
-        SysUser sysUser = sysUserService.lambdaQuery()
-                .select(SysUser::getPassword)
-                .eq(SysUser::getId, userId)
-                .one();
+        SysUser sysUser = sysUserService.lambdaQuery().select(SysUser::getPassword).eq(SysUser::getId, userId).one();
         if (ObjectUtil.isNull(sysUser)) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
         }
@@ -248,10 +211,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     public void batchUpdateUserStatus(UserBatchStatusUpdateRequest request) {
         log.info("批量更新用户状态，用户ID列表：{}，状态：{}", request.getUserIds(), request.getStatus());
         // 直接更新用户状态
-        boolean updated = lambdaUpdate()
-                .set(User::getStatus, request.getStatus())
-                .in(User::getId, request.getUserIds())
-                .update();
+        boolean updated = lambdaUpdate().set(User::getStatus, request.getStatus()).in(User::getId, request.getUserIds()).update();
         if (!updated) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.OPERATION_FAILED);
         }
@@ -261,12 +221,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     @Override
     public Boolean checkPassword(PasswordUserRequest request) {
         // 获取当前用户密码
-        SysUser sysUser = sysUserService.lambdaQuery()
-                .select(
-                        SysUser::getPassword
-                ).eq(SysUser::getId, SecurityUtil.getUserId())
-                .eq(SysUser::getStatus, CommonStatus.ENABLE)
-                .one();
+        SysUser sysUser = sysUserService.lambdaQuery().select(SysUser::getPassword).eq(SysUser::getId, SecurityUtil.getUserId()).eq(SysUser::getStatus, CommonStatus.ENABLE).one();
         if (ObjectUtil.isNull(sysUser)) {
             throw new DatabaseException.QueryException(ExceptionMessage.Formatter.operationFailed("您的账户出现异常，请刷新重试"));
         }

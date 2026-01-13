@@ -59,10 +59,10 @@ universe-life:
 cos:
   secret-id: ${COS_SECRET_ID}
   secret-key: ${COS_SECRET_KEY}
-  tmp-bucket: universe-life-tmp-1234567890
-  formal-bucket: universe-life-formal-1234567890
-  region: ap-guangzhou
-  app-id: "1234567890"
+  tmp-bucket: universelifetemp-1369282249
+  formal-bucket: universelifeformal-1369282249
+  region: ap-chongqing
+  app-id: 100043346404
   sts-duration: 7200
   download-url-expiration: 1800
 

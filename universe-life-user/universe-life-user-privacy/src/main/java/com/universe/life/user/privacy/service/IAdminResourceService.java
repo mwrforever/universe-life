@@ -28,7 +28,7 @@ public interface IAdminResourceService extends IService<Resource> {
      * @param request 创建请求
      * @return 资源详情
      */
-    ResourceDetailVO createResource(ResourceCreateRequest request);
+    void createResource(ResourceCreateRequest request);
 
     /**
      * 获取资源详情

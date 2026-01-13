@@ -1,13 +1,11 @@
 package com.universe.life.user.privacy.domain.dto.request;
 
 import com.universe.life.model.enums.UserStatus;
-import com.universe.life.user.privacy.domain.vo.AdminUserRoleVO;
 import com.universe.life.user.privacy.enums.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 用户更新请求对象
@@ -18,9 +16,6 @@ import java.util.List;
 @Data
 @Schema(description = "用户更新请求对象")
 public class UserUpdateRequest {
-
-    @Schema(description = "用户ID", example = "1")
-    private Long id;
 
     @Schema(description = "用户名", example = "updateduser")
     private String username;
@@ -45,7 +40,4 @@ public class UserUpdateRequest {
 
     @Schema(description = "更新时间", example = "2024-12-01T11:00:00")
     private LocalDateTime updatedAt;
-
-    @Schema(description = "角色列表")
-    private List<AdminUserRoleVO> roles;
 }

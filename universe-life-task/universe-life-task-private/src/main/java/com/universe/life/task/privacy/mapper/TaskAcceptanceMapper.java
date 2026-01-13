@@ -26,6 +26,4 @@ public interface TaskAcceptanceMapper extends BaseMapper<TaskAcceptance> {
     long countTaskAcceptance(@Param("taskId") Long taskId, @Param("query") TaskAcceptanceQuery query);
 
     TaskAcceptanceDTO selectAcceptanceDetail(@Param("id") Long id);
-
-    int checkUserAccepted(@Param("taskId") Long taskId, @Param("userId") Long userId);
 }

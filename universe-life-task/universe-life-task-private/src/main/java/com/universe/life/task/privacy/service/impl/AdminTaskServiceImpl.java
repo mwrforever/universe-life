@@ -1,6 +1,5 @@
 package com.universe.life.task.privacy.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.universe.life.common.domain.PageResult;
 import com.universe.life.task.privacy.domain.dao.query.TaskQuery;
 import com.universe.life.task.privacy.domain.dto.request.*;
@@ -21,6 +20,7 @@ import com.universe.life.task.privacy.mapstruct.TaskCategoryMapstruct;
 import com.universe.life.task.privacy.service.IAdminTaskService;
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.message.ExceptionMessage;
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -107,8 +107,10 @@ public class AdminTaskServiceImpl implements IAdminTaskService {
     @Override
     public List<TaskReviewVO> getTaskReviews(Long id) {
         // 1. 校验任务是否存在
-        Task task = taskMapper.selectById(id);
-        if (task == null) {
+        boolean taskExists = new LambdaQueryChainWrapper<>(taskMapper)
+                .eq(Task::getId, id)
+                .exists();
+        if (!taskExists) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
         
@@ -132,7 +134,10 @@ public class AdminTaskServiceImpl implements IAdminTaskService {
     @Transactional(rollbackFor = Exception.class)
     public void approveTask(Long id, TaskApproveRequest request, Long adminId) {
         // 1. 查询并校验任务状态
-        Task task = taskMapper.selectById(id);
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getReviewStatus, Task::getStatus, Task::getVersion)
+                .eq(Task::getId, id)
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -170,7 +175,10 @@ public class AdminTaskServiceImpl implements IAdminTaskService {
     @Transactional(rollbackFor = Exception.class)
     public void rejectTask(Long id, TaskRejectRequest request, Long adminId) {
         // 1. 查询并校验任务状态
-        Task task = taskMapper.selectById(id);
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getReviewStatus, Task::getStatus, Task::getVersion)
+                .eq(Task::getId, id)
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -209,7 +217,10 @@ public class AdminTaskServiceImpl implements IAdminTaskService {
     @Transactional(rollbackFor = Exception.class)
     public void offlineTask(Long id, TaskOfflineRequest request, Long adminId) {
         // 1. 查询并校验任务状态
-        Task task = taskMapper.selectById(id);
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getStatus, Task::getVersion)
+                .eq(Task::getId, id)
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -229,10 +240,11 @@ public class AdminTaskServiceImpl implements IAdminTaskService {
      */
     @Override
     public List<TaskCategoryVO> listCategories() {
-        List<TaskCategory> categories = categoryMapper.selectList(
-                new LambdaQueryWrapper<TaskCategory>()
-                        .orderByAsc(TaskCategory::getSort)
-        );
+        List<TaskCategory> categories = new LambdaQueryChainWrapper<>(categoryMapper)
+                .select(TaskCategory::getId, TaskCategory::getName, TaskCategory::getCode,
+                        TaskCategory::getSort, TaskCategory::getStatus)
+                .orderByAsc(TaskCategory::getSort)
+                .list();
         return categoryMapstruct.toVOList(categories);
     }
 
@@ -246,11 +258,10 @@ public class AdminTaskServiceImpl implements IAdminTaskService {
     @Transactional(rollbackFor = Exception.class)
     public void createCategory(TaskCategoryRequest request) {
         // 1. 校验分类编码唯一性
-        Long count = categoryMapper.selectCount(
-                new LambdaQueryWrapper<TaskCategory>()
-                        .eq(TaskCategory::getCode, request.getCode())
-        );
-        if (count > 0) {
+        boolean codeExists = new LambdaQueryChainWrapper<>(categoryMapper)
+                .eq(TaskCategory::getCode, request.getCode())
+                .exists();
+        if (codeExists) {
             throw new BusinessException.DataAlreadyExistsException(ExceptionMessage.Formatter.recordAlreadyExists("分类编码"));
         }
 
@@ -274,18 +285,21 @@ public class AdminTaskServiceImpl implements IAdminTaskService {
     @Transactional(rollbackFor = Exception.class)
     public void updateCategory(Long id, TaskCategoryRequest request) {
         // 1. 校验分类是否存在
-        TaskCategory category = categoryMapper.selectById(id);
+        TaskCategory category = new LambdaQueryChainWrapper<>(categoryMapper)
+                .select(TaskCategory::getId, TaskCategory::getName, TaskCategory::getCode,
+                        TaskCategory::getSort, TaskCategory::getStatus)
+                .eq(TaskCategory::getId, id)
+                .one();
         if (category == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("分类"));
         }
 
         // 2. 校验分类编码唯一性（排除当前分类）
-        Long count = categoryMapper.selectCount(
-                new LambdaQueryWrapper<TaskCategory>()
-                        .eq(TaskCategory::getCode, request.getCode())
-                        .ne(TaskCategory::getId, id)
-        );
-        if (count > 0) {
+        boolean codeExists = new LambdaQueryChainWrapper<>(categoryMapper)
+                .eq(TaskCategory::getCode, request.getCode())
+                .ne(TaskCategory::getId, id)
+                .exists();
+        if (codeExists) {
             throw new BusinessException.DataAlreadyExistsException(ExceptionMessage.Formatter.recordAlreadyExists("分类编码"));
         }
 
@@ -313,17 +327,18 @@ public class AdminTaskServiceImpl implements IAdminTaskService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteCategory(Long id) {
         // 1. 校验分类是否存在
-        TaskCategory category = categoryMapper.selectById(id);
-        if (category == null) {
+        boolean categoryExists = new LambdaQueryChainWrapper<>(categoryMapper)
+                .eq(TaskCategory::getId, id)
+                .exists();
+        if (!categoryExists) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("分类"));
         }
 
         // 2. 校验分类下是否存在任务
-        Long taskCount = taskMapper.selectCount(
-                new LambdaQueryWrapper<Task>()
-                        .eq(Task::getCategoryId, id)
-        );
-        if (taskCount > 0) {
+        boolean hasTask = new LambdaQueryChainWrapper<>(taskMapper)
+                .eq(Task::getCategoryId, id)
+                .exists();
+        if (hasTask) {
             throw new BusinessException.OperationNotAllowedException("分类下存在任务，无法删除");
         }
 
@@ -332,3 +347,4 @@ public class AdminTaskServiceImpl implements IAdminTaskService {
     }
 
 }
+

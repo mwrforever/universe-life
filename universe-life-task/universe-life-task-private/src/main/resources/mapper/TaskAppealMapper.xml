@@ -99,13 +99,4 @@
         WHERE deleted = 0
     </select>
 
-    <!-- 检查是否存在待处理的申诉 -->
-    <select id="checkPendingAppeal" resultType="int">
-        SELECT COUNT(*)
-        FROM task_appeal
-        WHERE acceptance_id = #{acceptanceId} 
-          AND status = 0 
-          AND deleted = 0
-    </select>
-
 </mapper>

@@ -20,6 +20,7 @@ import com.universe.life.trade.privacy.mapper.TradeOrderMapper;
 import com.universe.life.trade.privacy.mapstruct.JsonConvertMapstruct;
 import com.universe.life.trade.privacy.mapstruct.TradeOrderMapstruct;
 import com.universe.life.trade.privacy.service.ITradeOrderService;
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -68,8 +69,12 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
         }
 
         // 5. 校验是否已存在未完结的订单
-        int existingCount = orderMapper.checkUserAccepted(taskId, acceptorId);
-        if (existingCount > 0) {
+        boolean hasExisting = new LambdaQueryChainWrapper<>(orderMapper)
+                .eq(TradeOrder::getTaskId, taskId)
+                .eq(TradeOrder::getAcceptorId, acceptorId)
+                .notIn(TradeOrder::getStatus, TradeOrderStatus.REJECTED, TradeOrderStatus.ABANDONED, TradeOrderStatus.COMPLETED)
+                .exists();
+        if (hasExisting) {
             throw new BusinessException.DataAlreadyExistsException("您已对该需求提交过接单申请");
         }
 
@@ -83,7 +88,7 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
         order.setAppliedAt(LocalDateTime.now());
         orderMapper.insert(order);
 
-        // 7. 更新任务状态为待审批
+        // 7. 更新任务状态为待审�?
         taskClient.updateTaskStatus(taskId, TaskStatus.PENDING);
 
         log.info("创建交易订单成功: orderId={}, taskId={}, acceptorId={}", order.getId(), taskId, acceptorId);
@@ -94,7 +99,11 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void approveOrder(Long orderId, Long publisherId) {
         // 1. 查询订单
-        TradeOrder order = orderMapper.selectById(orderId);
+        TradeOrder order = new LambdaQueryChainWrapper<>(orderMapper)
+                .select(TradeOrder::getId, TradeOrder::getPublisherId, TradeOrder::getStatus,
+                        TradeOrder::getTaskId, TradeOrder::getVersion)
+                .eq(TradeOrder::getId, orderId)
+                .one();
         if (order == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("订单"));
         }
@@ -125,7 +134,11 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void rejectOrder(Long orderId, TradeRejectRequest request, Long publisherId) {
         // 1. 查询订单
-        TradeOrder order = orderMapper.selectById(orderId);
+        TradeOrder order = new LambdaQueryChainWrapper<>(orderMapper)
+                .select(TradeOrder::getId, TradeOrder::getPublisherId, TradeOrder::getStatus,
+                        TradeOrder::getTaskId, TradeOrder::getVersion)
+                .eq(TradeOrder::getId, orderId)
+                .one();
         if (order == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("订单"));
         }
@@ -146,7 +159,10 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
         orderMapper.updateById(order);
 
         // 5. 检查是否还有其他待审批订单，如果没有则恢复任务状态为招募中
-        int pendingCount = orderMapper.countByTaskIdAndStatus(order.getTaskId(), TradeOrderStatus.PENDING.getCode());
+        long pendingCount = new LambdaQueryChainWrapper<>(orderMapper)
+                .eq(TradeOrder::getTaskId, order.getTaskId())
+                .eq(TradeOrder::getStatus, TradeOrderStatus.PENDING)
+                .count();
         if (pendingCount == 0) {
             taskClient.updateTaskStatus(order.getTaskId(), TaskStatus.RECRUITING);
         }
@@ -158,7 +174,11 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void submitResult(Long orderId, TradeSubmitRequest request, Long acceptorId) {
         // 1. 查询订单
-        TradeOrder order = orderMapper.selectById(orderId);
+        TradeOrder order = new LambdaQueryChainWrapper<>(orderMapper)
+                .select(TradeOrder::getId, TradeOrder::getAcceptorId, TradeOrder::getStatus,
+                        TradeOrder::getTaskId, TradeOrder::getVersion)
+                .eq(TradeOrder::getId, orderId)
+                .one();
         if (order == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("订单"));
         }
@@ -192,7 +212,11 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void confirmResult(Long orderId, TradeConfirmRequest request, Long publisherId) {
         // 1. 查询订单
-        TradeOrder order = orderMapper.selectById(orderId);
+        TradeOrder order = new LambdaQueryChainWrapper<>(orderMapper)
+                .select(TradeOrder::getId, TradeOrder::getPublisherId, TradeOrder::getStatus,
+                        TradeOrder::getTaskId, TradeOrder::getVersion)
+                .eq(TradeOrder::getId, orderId)
+                .one();
         if (order == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("订单"));
         }
@@ -225,7 +249,11 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void abandonOrder(Long orderId, Long acceptorId) {
         // 1. 查询订单
-        TradeOrder order = orderMapper.selectById(orderId);
+        TradeOrder order = new LambdaQueryChainWrapper<>(orderMapper)
+                .select(TradeOrder::getId, TradeOrder::getAcceptorId, TradeOrder::getStatus,
+                        TradeOrder::getTaskId, TradeOrder::getVersion)
+                .eq(TradeOrder::getId, orderId)
+                .one();
         if (order == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("订单"));
         }
@@ -248,7 +276,10 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
         taskClient.decreaseAcceptors(order.getTaskId());
 
         // 6. 检查是否还有其他进行中的订单，如果没有则恢复任务状态为招募中
-        int progressCount = orderMapper.countByTaskIdAndStatus(order.getTaskId(), TradeOrderStatus.PROGRESS.getCode());
+        long progressCount = new LambdaQueryChainWrapper<>(orderMapper)
+                .eq(TradeOrder::getTaskId, order.getTaskId())
+                .eq(TradeOrder::getStatus, TradeOrderStatus.PROGRESS)
+                .count();
         if (progressCount == 0) {
             taskClient.updateTaskStatus(order.getTaskId(), TaskStatus.RECRUITING);
         }
@@ -260,7 +291,11 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
     @Transactional(rollbackFor = Exception.class)
     public Long initiateAppeal(Long orderId, TradeAppealRequest request, Long userId) {
         // 1. 查询订单
-        TradeOrder order = orderMapper.selectById(orderId);
+        TradeOrder order = new LambdaQueryChainWrapper<>(orderMapper)
+                .select(TradeOrder::getId, TradeOrder::getAcceptorId, TradeOrder::getPublisherId,
+                        TradeOrder::getStatus, TradeOrder::getTaskId, TradeOrder::getVersion)
+                .eq(TradeOrder::getId, orderId)
+                .one();
         if (order == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("订单"));
         }
@@ -278,8 +313,11 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
         }
 
         // 4. 检查是否已存在待处理的申诉
-        int pendingAppeal = appealMapper.checkPendingAppeal(orderId);
-        if (pendingAppeal > 0) {
+        boolean hasPendingAppeal = new LambdaQueryChainWrapper<>(appealMapper)
+                .eq(TradeAppeal::getOrderId, orderId)
+                .eq(TradeAppeal::getStatus, TradeAppealStatus.PENDING)
+                .exists();
+        if (hasPendingAppeal) {
             throw new BusinessException.DataAlreadyExistsException("已存在待处理的申诉");
         }
 
@@ -350,3 +388,4 @@ public class TradeOrderServiceImpl implements ITradeOrderService {
     // TODO: 支付结算功能待后续与Pay_Service集成实现
     // public void completePayment(Long orderId) { ... }
 }
+

@@ -20,15 +20,15 @@ public enum TaskAppealType {
     private final String desc;
 
     @JsonValue
-    public String getValue() {
-        return this.name();
+    public Integer getValue() {
+        return this.code;
     }
 
     @JsonCreator
-    public static TaskAppealType of(String name) {
-        if (name == null) return null;
+    public static TaskAppealType of(Integer code) {
+        if (code == null) return null;
         for (TaskAppealType e : values()) {
-            if (e.name().equals(name)) return e;
+            if (e.code.equals(code)) return e;
         }
         return null;
     }

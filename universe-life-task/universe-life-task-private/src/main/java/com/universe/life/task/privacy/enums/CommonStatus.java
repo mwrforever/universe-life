@@ -20,15 +20,15 @@ public enum CommonStatus {
     private final String desc;
 
     @JsonValue
-    public String getValue() {
-        return this.name();
+    public Integer getValue() {
+        return this.code;
     }
 
     @JsonCreator
-    public static CommonStatus of(String name) {
-        if (name == null) return null;
+    public static CommonStatus of(Integer code) {
+        if (code == null) return null;
         for (CommonStatus e : values()) {
-            if (e.name().equals(name)) return e;
+            if (e.code.equals(code)) return e;
         }
         return null;
     }

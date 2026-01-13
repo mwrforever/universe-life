@@ -37,8 +37,6 @@ public class UserCreateRequest {
     @Schema(description = "认证信息列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<UserAuthRequest> userAuthList;
 
-    @Schema(description = "角色列表")
-    private List<UserRoleRequest> roles;
 
     @Schema(description = "创建时间", example = "2025-12-02 12:00:00")
     @NotNull(message = "创建时间不能为空")

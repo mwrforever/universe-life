@@ -7,7 +7,6 @@ import com.universe.life.user.privacy.domain.dto.request.*;
 import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.vo.AdminUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.AdminUserListVO;
-import com.universe.life.user.privacy.domain.vo.AdminUserUpdateVO;
 import com.universe.life.user.privacy.domain.vo.UserStatusVO;
 import jakarta.validation.Valid;
 
@@ -45,14 +44,14 @@ public interface IAdminUserService extends IService<User> {
      * @param query 查询条件
      * @return 分页结果
      */
-    PageResult<AdminUserListVO> pageUsers(AdminUserListQuery query);
+    PageResult<User> pageUsers(AdminUserListQuery query);
 
     /**
      * 更新用户信息
      *
      * @param request 更新请求
      */
-    void updateUser(UserUpdateRequest request);
+    void updateUser(Long id, UserUpdateRequest request);
 
     /**
      * 删除用户（软删除）

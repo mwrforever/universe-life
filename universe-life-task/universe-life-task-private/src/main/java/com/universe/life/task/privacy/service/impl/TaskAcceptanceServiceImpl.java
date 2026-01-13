@@ -1,5 +1,6 @@
 package com.universe.life.task.privacy.service.impl;
 
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.universe.life.common.domain.PageResult;
 import com.universe.life.task.privacy.domain.dao.query.TaskAcceptanceQuery;
 import com.universe.life.task.privacy.domain.dto.TaskAcceptanceDTO;
@@ -61,7 +62,11 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
     @Transactional(rollbackFor = Exception.class)
     public Long acceptTask(Long taskId, Long userId) {
         // 1. 查询并校验任务
-        Task task = taskMapper.selectById(taskId);
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getPublisherId, Task::getStatus,
+                        Task::getCurrentAcceptors, Task::getMaxAcceptors)
+                .eq(Task::getId, taskId)
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -75,9 +80,13 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
             throw new BusinessException.OperationNotAllowedException("任务接受人数已满");
         }
 
-        // 2. 校验用户是否已接受过此任务
-        int count = acceptanceMapper.checkUserAccepted(taskId, userId);
-        if (count > 0) {
+        // 2. 校验用户是否已接受过此任务（排除已拒绝和已放弃状态）
+        boolean hasAccepted = new LambdaQueryChainWrapper<>(acceptanceMapper)
+                .eq(TaskAcceptance::getTaskId, taskId)
+                .eq(TaskAcceptance::getAcceptorId, userId)
+                .notIn(TaskAcceptance::getStatus, TaskAcceptanceStatus.REJECTED, TaskAcceptanceStatus.ABANDONED)
+                .exists();
+        if (hasAccepted) {
             throw new BusinessException.DataAlreadyExistsException("已接受过此任务");
         }
 
@@ -130,7 +139,10 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
     @Override
     public PageResult<TaskAcceptanceVO> pageTaskAcceptances(Long taskId, TaskAcceptanceQuery query, Long userId) {
         // 1. 校验任务和权限
-        Task task = taskMapper.selectById(taskId);
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getPublisherId)
+                .eq(Task::getId, taskId)
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -192,7 +204,11 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
     @Transactional(rollbackFor = Exception.class)
     public void submitTask(Long id, TaskSubmitRequest request, Long userId) {
         // 1. 查询并校验接受记录
-        TaskAcceptance acceptance = acceptanceMapper.selectById(id);
+        TaskAcceptance acceptance = new LambdaQueryChainWrapper<>(acceptanceMapper)
+                .select(TaskAcceptance::getId, TaskAcceptance::getAcceptorId, TaskAcceptance::getStatus,
+                        TaskAcceptance::getTaskId, TaskAcceptance::getVersion)
+                .eq(TaskAcceptance::getId, id)
+                .one();
         if (acceptance == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("接受记录"));
         }
@@ -231,13 +247,20 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
     @Transactional(rollbackFor = Exception.class)
     public void confirmTask(Long id, TaskConfirmRequest request, Long userId) {
         // 1. 查询接受记录
-        TaskAcceptance acceptance = acceptanceMapper.selectById(id);
+        TaskAcceptance acceptance = new LambdaQueryChainWrapper<>(acceptanceMapper)
+                .select(TaskAcceptance::getId, TaskAcceptance::getTaskId, TaskAcceptance::getStatus,
+                        TaskAcceptance::getVersion)
+                .eq(TaskAcceptance::getId, id)
+                .one();
         if (acceptance == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("接受记录"));
         }
 
         // 2. 校验操作权限（仅发布者可确认）
-        Task task = taskMapper.selectById(acceptance.getTaskId());
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getPublisherId)
+                .eq(Task::getId, acceptance.getTaskId())
+                .one();
         if (!task.getPublisherId().equals(userId)) {
             throw new BusinessException.OperationNotAllowedException(ExceptionMessage.ACCESS_DENIED);
         }
@@ -269,7 +292,11 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
     @Transactional(rollbackFor = Exception.class)
     public void abandonTask(Long id, TaskAbandonRequest request, Long userId) {
         // 1. 查询并校验接受记录
-        TaskAcceptance acceptance = acceptanceMapper.selectById(id);
+        TaskAcceptance acceptance = new LambdaQueryChainWrapper<>(acceptanceMapper)
+                .select(TaskAcceptance::getId, TaskAcceptance::getAcceptorId, TaskAcceptance::getStatus,
+                        TaskAcceptance::getTaskId, TaskAcceptance::getVersion)
+                .eq(TaskAcceptance::getId, id)
+                .one();
         if (acceptance == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("接受记录"));
         }
@@ -285,7 +312,10 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
         acceptanceMapper.updateById(acceptance);
 
         // 3. 更新任务当前接受人数
-        Task task = taskMapper.selectById(acceptance.getTaskId());
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getCurrentAcceptors, Task::getVersion)
+                .eq(Task::getId, acceptance.getTaskId())
+                .one();
         task.setCurrentAcceptors(task.getCurrentAcceptors() - 1);
         taskMapper.updateById(task);
     }
@@ -308,13 +338,20 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
     @Transactional(rollbackFor = Exception.class)
     public Long initiateAppeal(Long id, TaskAppealRequest request, Long userId) {
         // 1. 查询接受记录
-        TaskAcceptance acceptance = acceptanceMapper.selectById(id);
+        TaskAcceptance acceptance = new LambdaQueryChainWrapper<>(acceptanceMapper)
+                .select(TaskAcceptance::getId, TaskAcceptance::getAcceptorId, TaskAcceptance::getStatus,
+                        TaskAcceptance::getTaskId, TaskAcceptance::getVersion)
+                .eq(TaskAcceptance::getId, id)
+                .one();
         if (acceptance == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("接受记录"));
         }
 
         // 2. 校验申诉权限（仅接受者或发布者可申诉）
-        Task task = taskMapper.selectById(acceptance.getTaskId());
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getPublisherId)
+                .eq(Task::getId, acceptance.getTaskId())
+                .one();
         boolean isAcceptor = acceptance.getAcceptorId().equals(userId);
         boolean isPublisher = task.getPublisherId().equals(userId);
         if (!isAcceptor && !isPublisher) {
@@ -328,8 +365,11 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
         }
 
         // 4. 校验是否已存在待处理的申诉
-        int existingAppeal = appealMapper.checkPendingAppeal(id);
-        if (existingAppeal > 0) {
+        boolean existingAppeal = new LambdaQueryChainWrapper<>(appealMapper)
+                .eq(TaskAppeal::getAcceptanceId, id)
+                .eq(TaskAppeal::getStatus, TaskAppealStatus.PENDING)
+                .exists();
+        if (existingAppeal) {
             throw new BusinessException.DataAlreadyExistsException("已存在待处理的申诉");
         }
 
@@ -367,13 +407,21 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
     @Transactional(rollbackFor = Exception.class)
     public void approveAcceptance(Long id, Long userId) {
         // 1. 查询接受记录
-        TaskAcceptance acceptance = acceptanceMapper.selectById(id);
+        TaskAcceptance acceptance = new LambdaQueryChainWrapper<>(acceptanceMapper)
+                .select(TaskAcceptance::getId, TaskAcceptance::getTaskId, TaskAcceptance::getStatus,
+                        TaskAcceptance::getVersion)
+                .eq(TaskAcceptance::getId, id)
+                .one();
         if (acceptance == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("接受记录"));
         }
 
         // 2. 校验操作权限（仅发布者可同意）
-        Task task = taskMapper.selectById(acceptance.getTaskId());
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getPublisherId, Task::getCurrentAcceptors,
+                        Task::getMaxAcceptors, Task::getVersion)
+                .eq(Task::getId, acceptance.getTaskId())
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -416,13 +464,20 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
     @Transactional(rollbackFor = Exception.class)
     public void rejectAcceptance(Long id, TaskRejectRequest request, Long userId) {
         // 1. 查询接受记录
-        TaskAcceptance acceptance = acceptanceMapper.selectById(id);
+        TaskAcceptance acceptance = new LambdaQueryChainWrapper<>(acceptanceMapper)
+                .select(TaskAcceptance::getId, TaskAcceptance::getTaskId, TaskAcceptance::getStatus,
+                        TaskAcceptance::getVersion)
+                .eq(TaskAcceptance::getId, id)
+                .one();
         if (acceptance == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("接受记录"));
         }
 
         // 2. 校验操作权限（仅发布者可拒绝）
-        Task task = taskMapper.selectById(acceptance.getTaskId());
+        Task task = new LambdaQueryChainWrapper<>(taskMapper)
+                .select(Task::getId, Task::getPublisherId)
+                .eq(Task::getId, acceptance.getTaskId())
+                .one();
         if (task == null) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.recordNotFound("任务"));
         }
@@ -442,3 +497,4 @@ public class TaskAcceptanceServiceImpl implements ITaskAcceptanceService {
     }
 
 }
+

@@ -42,9 +42,10 @@ public class AdminResourceController {
     @PostMapping
     @Operation(summary = "创建资源", description = "创建新的资源")
     @PreAuthorize("@pm.match('sys:admin:resource:add')")
-    public Result<ResourceDetailVO> createResource(@Valid @RequestBody ResourceCreateRequest request) {
+    public Result<Void> createResource(@Valid @RequestBody ResourceCreateRequest request) {
         log.info("创建资源，资源编码：{}", request.getResourceCode());
-        return Result.success(resourceService.createResource(request));
+        resourceService.createResource(request);
+        return Result.success();
     }
 
     @GetMapping("/{id}")

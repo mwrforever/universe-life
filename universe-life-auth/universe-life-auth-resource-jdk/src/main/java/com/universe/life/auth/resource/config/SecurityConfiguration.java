@@ -49,7 +49,7 @@ public class SecurityConfiguration {
     private final AntRequestMatchUtil antRequestMatchUtil;
 
     /**
-     * 默认安全过滤器链 - 优先级为2
+     * 默认安全过滤器链 - 优先级为3
      * 处理非OAuth2授权服务器的其他HTTP请求
      */
     @Bean

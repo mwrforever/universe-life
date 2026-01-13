@@ -5,6 +5,7 @@ import com.universe.life.common.domain.PageResult;
 import com.universe.life.user.privacy.domain.dao.query.AdminUserListQuery;
 import com.universe.life.user.privacy.domain.dao.query.UserStatusQuery;
 import com.universe.life.user.privacy.domain.dto.request.*;
+import com.universe.life.user.privacy.domain.po.User;
 import com.universe.life.user.privacy.domain.vo.AdminUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.AdminUserListVO;
 import com.universe.life.user.privacy.domain.vo.UserStatusVO;
@@ -55,7 +56,7 @@ public class AdminUserController {
 
     @GetMapping("/list")
     @Operation(summary = "分页查询用户列表", description = "管理员根据条件分页查询用户列表")
-    public Result<PageResult<AdminUserListVO>> pageUsers(@Valid AdminUserListQuery query) {
+    public Result<PageResult<User>> pageUsers(@Valid AdminUserListQuery query) {
         log.info("管理员分页查询用户列表，查询条件：{}", query);
         return Result.success(adminUserService.pageUsers(query));
     }
@@ -67,8 +68,7 @@ public class AdminUserController {
             @PathVariable Long id,
             @Valid @RequestBody UserUpdateRequest request) {
         log.info("管理员更新用户信息，用户ID：{}", id);
-        request.setId(id);
-        adminUserService.updateUser(request);
+        adminUserService.updateUser(id, request);
         return Result.success();
     }
 
@@ -125,7 +125,7 @@ public class AdminUserController {
     public Result<Void> batchDeleteUsers(
             @RequestParam("ids") List<Long> ids,
             @RequestBody @Validated PasswordUserRequest request
-            ) {
+    ) {
         log.info("管理员批量删除用户，用户ID列表：{}", ids);
         adminUserService.batchDeleteUsers(ids, request);
         return Result.success();
