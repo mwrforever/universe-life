@@ -14,6 +14,9 @@ import lombok.Data;
 @Data
 @Schema(description = "资源更新请求")
 public class ResourceUpdateRequest {
+    @Schema(description = "资源编码", example = "user:create")
+    @Size(max = 100, message = "资源编码长度不能超过100")
+    private String resourceCode;
 
     @Schema(description = "资源名称", example = "创建用户接口")
     @Size(max = 100, message = "资源名称长度不能超过100")

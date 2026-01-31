@@ -6,6 +6,7 @@ import com.universe.life.user.privacy.domain.dto.request.SysUserUpdateRequest;
 import com.universe.life.user.privacy.domain.po.SysUser;
 import com.universe.life.user.privacy.domain.vo.SysUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.SysUserOptionVO;
+import com.universe.life.user.privacy.domain.vo.SysUserPersonProfileVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
@@ -47,6 +48,13 @@ public interface SysUserMapstruct {
      */
     SysUserDetailVO toDetailVO(SysUser sysUser);
 
+    /**
+     * PO转个人资料VO
+     *
+     * @param sysUser PO对象
+     * @return 个人资料VO
+     */
+    SysUserPersonProfileVO toPersonProfileVO(SysUser sysUser);
 
     /**
      * PO列表转选项VO列表

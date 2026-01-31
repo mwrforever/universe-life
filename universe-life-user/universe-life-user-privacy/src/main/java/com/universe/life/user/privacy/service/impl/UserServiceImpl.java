@@ -10,6 +10,7 @@ import com.universe.life.auth.common.message.ExceptionMessage;
 import com.universe.life.auth.resource.util.VerifyCaptchaUtil;
 import com.universe.life.model.domain.dto.UserStatusDTO;
 import com.universe.life.model.enums.UserAuthType;
+import com.universe.life.user.privacy.constants.RedisConstants;
 import com.universe.life.user.privacy.domain.dto.request.RegisterFormRequest;
 import com.universe.life.user.privacy.domain.dto.request.UserProfileUpdateRequest;
 import com.universe.life.user.privacy.domain.po.User;
@@ -19,6 +20,7 @@ import com.universe.life.user.privacy.mapper.UserMapper;
 import com.universe.life.user.privacy.mapstruct.UserMapstruct;
 import com.universe.life.user.privacy.service.IUserAuthService;
 import com.universe.life.user.privacy.service.IUserService;
+import com.universe.life.common.util.CacheUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -44,6 +46,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     private final VerifyCaptchaUtil verifyCaptchaUtil;
     private final PasswordEncoder bcryptPasswordEncoder;
     private final StringRedisTemplate stringRedisTemplate;
+    private final CacheUtil cacheUtil;
 
 
     @Override
@@ -98,11 +101,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Override
     public UserInfoVO getUserById(Long userId) {
+        // 1. 尝试从缓存获取
+        String cacheKey = RedisConstants.USER_INFO_KEY + userId;
+        UserInfoVO cached = cacheUtil.get(cacheKey, UserInfoVO.class);
+        if (cached != null) {
+            return cached;
+        }
+        
+        // 2. 缓存未命中，查询数据库
         User user = getById(userId);
         if (ObjectUtil.isNull(user)) {
             throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
         }
-        return userMapstruct.toUserInfoVO(user);
+        
+        // 3. 转换为 VO
+        UserInfoVO userInfoVO = userMapstruct.toUserInfoVO(user);
+        
+        // 4. 写入缓存
+        cacheUtil.set(cacheKey, userInfoVO, RedisConstants.getUserInfoExpire());
+        
+        return userInfoVO;
     }
 
     @Override
@@ -138,6 +156,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (!updated) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("用户信息更新"));
         }
+        
+        // 删除缓存
+        String cacheKey = RedisConstants.USER_INFO_KEY + userId;
+        cacheUtil.delete(cacheKey);
 
         log.info("更新用户个人信息成功，用户ID：{}", userId);
         return getUserById(userId);

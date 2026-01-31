@@ -61,4 +61,7 @@ public class SysUserCreateRequest {
 
     @Schema(description = "主部门ID")
     private Long primaryDepartmentId;
+
+    @Schema(description = "主部门编码")
+    private String primaryDepartmentCode;
 }

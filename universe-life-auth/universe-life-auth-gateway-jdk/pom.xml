@@ -18,10 +18,6 @@
             <artifactId>universe-life-auth-common</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
 
         <!-- Spring Security 资源服务器（JWT 自验证） -->
         <dependency>

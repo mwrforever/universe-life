@@ -17,5 +17,17 @@
         FROM sys_role_department
         WHERE department_id = #{departmentId}
     </select>
+    <select id="selectRoleOptionVoList" resultType="com.universe.life.user.privacy.domain.vo.RoleOptionVO">
+        select r.id, r.role_code, r.role_name
+        from sys_user_department sud
+                 inner join sys_role_department srd
+                            on sud.department_id = srd.department_id
+                 inner join role r
+                            on r.id = srd.role_id
+        where sud.user_id = #{userId}
+          and r.deleted = 0
+          and r.status = 1
+        order by r.sort_order
+    </select>
 
 </mapper>

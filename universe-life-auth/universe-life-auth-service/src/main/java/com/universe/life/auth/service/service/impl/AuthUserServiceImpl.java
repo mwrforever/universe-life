@@ -68,12 +68,12 @@ public class AuthUserServiceImpl implements IAuthUserService {
 
 
     @Override
-    public UserLoginVO employeeLogin(EmployeeLoginRequest request) {
+    public UserLoginVO employeeLogin(EmployeeLoginRequest request, String loginIp) {
         log.info("员工登录请求 - 用户名: {}", request.getIdentification());
-
         try {
             // 1. 使用 AuthenticationManager 进行认证
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(request.getIdentification(), request.getPassword(), JwtConstants.EMPLOYEE_LOGIN);
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    request.getIdentification(), request.getPassword(), JwtConstants.EMPLOYEE_LOGIN, loginIp);
             Authentication authentication = loginAuthenticationManager.authenticate(authenticationToken);
 
             // 2. 生成 Token 并保存授权记录
@@ -89,10 +89,12 @@ public class AuthUserServiceImpl implements IAuthUserService {
     }
 
     @Override
-    public UserLoginVO employeeCaptchaLogin(EmployeeCaptchaLoginRequest request) {
+    public UserLoginVO employeeCaptchaLogin(EmployeeCaptchaLoginRequest request, String loginIp) {
         log.info("员工验证码登录请求 - 用户标识: {}", request.getIdentification());
 
-        SmsAuthenticationToken authenticationToken = new SmsAuthenticationToken(request.getIdentification(), request.getCaptcha(), request.getCaptchaUsageType(), JwtConstants.EMPLOYEE_LOGIN);
+        SmsAuthenticationToken authenticationToken = new SmsAuthenticationToken(
+                request.getIdentification(), request.getCaptcha(), request.getCaptchaUsageType(), 
+                JwtConstants.EMPLOYEE_LOGIN, loginIp);
         Authentication authentication = loginAuthenticationManager.authenticate(authenticationToken);
 
         // 4. 生成 Token 并保存授权记录

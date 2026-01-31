@@ -66,5 +66,19 @@
           and r.deleted = 0;
     </select>
 
+    <select id="selectAssignedRolesByUserId" resultType="com.universe.life.user.privacy.domain.vo.AssignedRoleVO">
+        SELECT
+            r.id,
+            r.role_code AS roleCode,
+            r.role_name AS roleName,
+            ur.created_at AS assignedAt,
+            su.username AS assignedBy
+        FROM user_role ur
+        INNER JOIN role r ON ur.role_id = r.id AND r.deleted = 0 AND r.status = 1
+        LEFT JOIN sys_user su ON ur.granted_by = su.id AND su.deleted = 0
+        WHERE ur.user_id = #{userId}
+        ORDER BY ur.created_at DESC
+    </select>
+
 
 </mapper>

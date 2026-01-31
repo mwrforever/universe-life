@@ -5,8 +5,8 @@ import com.universe.life.auth.common.constants.JwtConstants;
 import com.universe.life.auth.common.exception.AuthException;
 import com.universe.life.auth.common.message.ExceptionMessage;
 import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
+import com.universe.life.auth.service.util.AuthUtil;
 import com.universe.life.common.server.model.domain.domain.enums.CaptchaUsageType;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -15,8 +15,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
-import java.io.IOException;
 
 /**
  * SMS验证码认证过滤器
@@ -32,14 +30,18 @@ public class SmsAuthenticationFilter extends AbstractAuthenticationProcessingFil
     private static final String VERIFY_CODE = "verifyCode";
     private static final String USAGE_TYPE = "usageType";
 
-    public SmsAuthenticationFilter(AuthenticationManager authenticationManager) {
+    private final AuthUtil authUtil;
+
+
+    public SmsAuthenticationFilter(AuthenticationManager authenticationManager, AuthUtil authUtil) {
         super(new AntPathRequestMatcher("/login/code", "POST"));
         setAuthenticationManager(authenticationManager);
+        this.authUtil = authUtil;
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
-            throws AuthenticationException, IOException, ServletException {
+            throws AuthenticationException {
 
         String identification = obtainIdentification(request);
         String verifyCode = obtainVerifyCode(request);
@@ -53,14 +55,13 @@ public class SmsAuthenticationFilter extends AbstractAuthenticationProcessingFil
         // 去除标识首尾空格
         identification = identification.trim();
 
-        // 如果标识包含@符号，认为是邮箱，转换为小写
-        if (identification.contains("@")) {
-            identification = identification.toLowerCase();
-        }
+        // 提取客户端IP地址
+        String loginIp = authUtil.extractClientIp(request);
+
 
         // 封装认证Token，默认使用登录用途类型
         SmsAuthenticationToken authenticationToken = new SmsAuthenticationToken(
-            identification, verifyCode, CaptchaUsageType.of(Integer.valueOf(usageType)), JwtConstants.USER_LOGIN);
+                identification, verifyCode, CaptchaUsageType.of(Integer.valueOf(usageType)), JwtConstants.USER_LOGIN, loginIp);
 
         // 设置详细信息
         authenticationToken.setDetails(this.authenticationDetailsSource.buildDetails(request));
@@ -90,4 +91,5 @@ public class SmsAuthenticationFilter extends AbstractAuthenticationProcessingFil
         // 默认为登录（1）
         return StrUtil.isBlank(usageType) ? "1" : usageType;
     }
+
 }

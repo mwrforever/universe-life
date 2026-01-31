@@ -2,6 +2,7 @@ package com.universe.life.auth.service.security.provider;
 
 import com.universe.life.auth.common.constants.JwtConstants;
 import com.universe.life.auth.service.security.token.UsernamePasswordAuthenticationToken;
+import com.universe.life.auth.service.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -26,6 +27,7 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
 
     private final Map<String, UserDetailsService> userDetailsServices;
     private final PasswordEncoder passwordEncoder;
+    private final AuthUtil authUtil;
 
 
     @Override
@@ -35,6 +37,7 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
         String username = String.valueOf(authToken.getPrincipal());
         String password = String.valueOf(authToken.getCredentials());
         String loginType = String.valueOf(authToken.getLoginType());
+        String loginIp = authToken.getLoginIp() != null ? String.valueOf(authToken.getLoginIp()) : null;
 
         log.debug("开始用户名密码认证 - 用户名: {}", username);
 
@@ -83,6 +86,9 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
             }
 
             log.info("用户认证成功: {}", username);
+
+            // 通过 mq异步保存用户登录信息
+            authUtil.sendLoginInfoAsync(userDetails, loginType, loginIp);
 
             // 创建认证成功的Authentication
             UsernamePasswordAuthenticationToken authenticatedToken =

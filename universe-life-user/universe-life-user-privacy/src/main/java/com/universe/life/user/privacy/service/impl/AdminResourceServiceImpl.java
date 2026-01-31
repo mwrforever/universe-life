@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.message.ExceptionMessage;
 import com.universe.life.common.domain.PageResult;
+import com.universe.life.user.privacy.constants.RedisConstants;
 import com.universe.life.user.privacy.domain.dao.query.ResourceListQuery;
 import com.universe.life.user.privacy.domain.dto.request.ResourceCreateRequest;
 import com.universe.life.user.privacy.domain.dto.request.ResourceStatusUpdateRequest;
@@ -23,6 +24,8 @@ import com.universe.life.user.privacy.enums.ResourceType;
 import com.universe.life.user.privacy.mapper.AdminResourceMapper;
 import com.universe.life.user.privacy.mapstruct.ResourceMapstruct;
 import com.universe.life.user.privacy.service.IAdminResourceService;
+import com.universe.life.common.util.CacheUtil;
+import com.universe.life.user.privacy.util.ValidationHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,76 +48,116 @@ public class AdminResourceServiceImpl extends ServiceImpl<AdminResourceMapper, R
         implements IAdminResourceService {
 
     private final ResourceMapstruct resourceMapstruct;
+    private final CacheUtil cacheUtil;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void createResource(ResourceCreateRequest request) {
         log.info("创建资源，资源编码：{}", request.getResourceCode());
-        // 如果有父资源，检查父资源是否存在
-        if (ObjectUtil.isNotNull(request.getParentId())) {
-            boolean exists = lambdaQuery()
-                    .eq(Resource::getId, request.getParentId())
-                    .exists();
-            if (!exists) {
-                throw new BusinessException.DataNotFoundException(ExceptionMessage.PARENT_RESOURCE_NOT_FOUND);
-            }
-        }
 
-        // 创建资源
+        validateResourceCreation(request);
+
         Resource resource = resourceMapstruct.toPo(request);
         boolean saved = save(resource);
         if (!saved) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.OPERATION_FAILED);
         }
+
+        invalidateResourceCaches(null);
+
         log.info("创建资源成功，资源ID：{}", resource.getId());
+    }
+
+    private void validateResourceCreation(ResourceCreateRequest request) {
+        if (request.getParentId() == 0) {
+            throw new BusinessException.OperationFailedException(
+                    ExceptionMessage.Formatter.operationFailed("请关联正确的父资源")
+            );
+        }
+
+        boolean existsResourceCode = lambdaQuery()
+                .eq(Resource::getResourceCode, request.getResourceCode())
+                .exists();
+        ValidationHelper.validateNotExists(existsResourceCode, "资源编码");
+
+        if (ObjectUtil.isNotNull(request.getParentId())) {
+            boolean parentExists = lambdaQuery()
+                    .eq(Resource::getId, request.getParentId())
+                    .exists();
+            ValidationHelper.validateExists(parentExists, "父资源");
+        }
+    }
+
+    private void invalidateResourceCaches(Long resourceId) {
+        List<String> keys = new ArrayList<>(RedisConstants.getAllResourceTreeKeys());
+        if (resourceId != null) {
+            keys.add(RedisConstants.buildResourceKey(resourceId, "info"));
+        }
+        cacheUtil.deleteAll(keys);
     }
 
     @Override
     public ResourceDetailVO getResourceById(Long id) {
+        String cacheKey = RedisConstants.RESOURCE_INFO_KEY + id;
+        return cacheUtil.getOrCompute(
+                cacheKey,
+                ResourceDetailVO.class,
+                () -> fetchAndConvertResource(id),
+                RedisConstants.getResourceInfoExpire()
+        );
+    }
+
+    private ResourceDetailVO fetchAndConvertResource(Long id) {
         Resource resource = getById(id);
-        if (ObjectUtil.isNull(resource)) {
-            throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
-        }
+        ValidationHelper.validateNotNull(resource, "资源");
         return resourceMapstruct.toDetailVO(resource);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void updateResource(Long id, ResourceUpdateRequest request) {
         log.info("更新资源，资源ID：{}", id);
-        // 如果有父资源，检查父资源是否存在且不能是自己
-        if (ObjectUtil.isNotNull(request.getParentId())) {
-            if (request.getParentId().equals(id)) {
-                throw new BusinessException.OperationNotAllowedException(ExceptionMessage.PARENT_RESOURCE_NOT_BE_SELF);
-            }
-            boolean exists = lambdaQuery()
-                    .eq(Resource::getId, request.getParentId())
-                    .exists();
-            if (!exists) {
-                throw new BusinessException.DataNotFoundException(ExceptionMessage.PARENT_RESOURCE_NOT_FOUND);
-            }
-        }
 
-        // 更新资源
+        validateResourceUpdate(id, request);
+
         Resource resource = resourceMapstruct.toPo(request);
         resource.setId(id);
         updateById(resource);
 
+        invalidateResourceCaches(id);
+
         log.info("更新资源成功，资源ID：{}", id);
+    }
+
+    private void validateResourceUpdate(Long id, ResourceUpdateRequest request) {
+        if (request.getParentId() == 0) {
+            throw new BusinessException.OperationFailedException(
+                    ExceptionMessage.Formatter.operationFailed("请关联正确的父资源")
+            );
+        }
+
+        if (ObjectUtil.isNotNull(request.getParentId())) {
+            ValidationHelper.validateParentNotSelf(request.getParentId(), id, "资源");
+
+            boolean parentExists = lambdaQuery()
+                    .eq(Resource::getId, request.getParentId())
+                    .exists();
+            ValidationHelper.validateExists(parentExists, "父资源");
+        }
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteResource(Long id) {
         log.info("删除资源，资源ID：{}", id);
-        // 检查是否有子资源
+
         boolean hasChildren = lambdaQuery()
                 .eq(Resource::getParentId, id)
                 .exists();
-        if (hasChildren) {
-            throw new BusinessException.OperationNotAllowedException("不能删除有子资源的资源");
-        }
+        ValidationHelper.validateNoChildren(hasChildren, "资源");
+
         removeById(id);
+        invalidateResourceCaches(id);
+
         log.info("删除资源成功，资源ID：{}", id);
     }
 
@@ -150,7 +193,18 @@ public class AdminResourceServiceImpl extends ServiceImpl<AdminResourceMapper, R
 
     @Override
     public List<ResourceTreeVO> getResourceTree(String serviceName, ResourceType resourceType) {
-        // 查询所有资源
+        Integer typeValue = resourceType == null ? null : resourceType.getCode();
+        String cacheKey = RedisConstants.buildResourceTreeKey(serviceName, typeValue);
+
+        return cacheUtil.getListOrCompute(
+                cacheKey,
+                ResourceTreeVO.class,
+                () -> fetchAndBuildResourceTree(serviceName, resourceType),
+                RedisConstants.getResourceTreeExpire()
+        );
+    }
+
+    private List<ResourceTreeVO> fetchAndBuildResourceTree(String serviceName, ResourceType resourceType) {
         List<Resource> resources = lambdaQuery()
                 .eq(StrUtil.isNotBlank(serviceName), Resource::getServiceName, serviceName)
                 .eq(ObjectUtil.isNotNull(resourceType), Resource::getResourceType, resourceType)
@@ -162,12 +216,11 @@ public class AdminResourceServiceImpl extends ServiceImpl<AdminResourceMapper, R
             return new ArrayList<>();
         }
 
-        // 构建树形结构
-        return buildTree(resources, null);
+        return buildTree(resources, 0L);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional
     public void updateResourceStatus(Long id, ResourceStatusUpdateRequest request) {
         log.info("更新资源状态，资源ID：{}，状态：{}", id, request.getStatus());
 
@@ -175,18 +228,16 @@ public class AdminResourceServiceImpl extends ServiceImpl<AdminResourceMapper, R
                 .select(Resource::getStatus)
                 .eq(Resource::getId, id)
                 .one();
-        if (ObjectUtil.isNull(resource)) {
-            throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
-        }
+        ValidationHelper.validateNotNull(resource, "资源");
 
-        // 转换状态
-        ResourceStatus status = request.getStatus().isEnable() ? ResourceStatus.ENABLED
-                : ResourceStatus.DISABLED;
+        ResourceStatus status = request.getStatus().isEnable() ? ResourceStatus.ENABLED : ResourceStatus.DISABLED;
 
         lambdaUpdate()
                 .set(Resource::getStatus, status)
                 .eq(Resource::getId, id)
                 .update();
+
+        invalidateResourceCaches(id);
 
         log.info("更新资源状态成功，资源ID：{}", id);
     }

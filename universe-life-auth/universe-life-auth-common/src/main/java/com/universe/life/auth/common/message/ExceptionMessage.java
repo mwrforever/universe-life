@@ -113,6 +113,7 @@ public interface ExceptionMessage {
     String ROLE_NOT_FOUND = "角色不存在";
     String RESOURCE_NOT_FOUND = "部分资源不存在";
     String PART_OF_ROLE_NOT_FOUND = "部分角色不存在";
+    String USER_INFO_CAN_NOT_BE_EMPTY = "用户信息不能为空";
 
     /**
      * 消息格式化工具类

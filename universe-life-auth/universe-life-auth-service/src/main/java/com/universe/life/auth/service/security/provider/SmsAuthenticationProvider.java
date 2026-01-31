@@ -4,6 +4,7 @@ import com.universe.life.auth.common.constants.JwtConstants;
 import com.universe.life.auth.common.exception.AuthException;
 import com.universe.life.auth.resource.util.VerifyCaptchaUtil;
 import com.universe.life.auth.service.security.token.SmsAuthenticationToken;
+import com.universe.life.auth.service.util.AuthUtil;
 import com.universe.life.common.server.model.domain.domain.enums.CaptchaUsageType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ public class SmsAuthenticationProvider implements AuthenticationProvider {
 
     private final Map<String, UserDetailsService> userDetailsServices;
     private final VerifyCaptchaUtil verifyCaptchaUtil;
+    private final AuthUtil authUtil;
 
 
     @Override
@@ -36,6 +38,8 @@ public class SmsAuthenticationProvider implements AuthenticationProvider {
         String captcha = String.valueOf(smsAuthenticationToken.getCredentials());
         CaptchaUsageType usageType = (CaptchaUsageType) smsAuthenticationToken.getUsageType();
         String loginType = String.valueOf(smsAuthenticationToken.getLoginType());
+        String loginIp = smsAuthenticationToken.getLoginIp() != null ? String.valueOf(smsAuthenticationToken.getLoginIp()) : null;
+
         // 校验验证码
         log.debug("短信验证码认证 - 邮箱: {}", email);
         boolean verified = verifyCaptchaUtil.verifyCaptcha(usageType, email, captcha);
@@ -50,6 +54,10 @@ public class SmsAuthenticationProvider implements AuthenticationProvider {
             throw new BadCredentialsException("用户信息加载服务不存在");
         }
         UserDetails details = userDetailsService.loadUserByUsername(email);
+
+        // 通过 mq异步保存用户登录信息
+        authUtil.sendLoginInfoAsync(details, loginType, loginIp);
+
         // 创建认证成功的authentication
         SmsAuthenticationToken smsAuthenticationTokenResult = new SmsAuthenticationToken(details, details.getAuthorities());
         smsAuthenticationTokenResult.setDetails(details);
@@ -69,4 +77,5 @@ public class SmsAuthenticationProvider implements AuthenticationProvider {
         }
         return userDetailsServices.getOrDefault(key, null);
     }
+
 }

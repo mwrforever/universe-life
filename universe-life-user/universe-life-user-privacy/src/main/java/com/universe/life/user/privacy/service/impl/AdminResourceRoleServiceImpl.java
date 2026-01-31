@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.universe.life.auth.resource.util.SecurityUtil;
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.message.ExceptionMessage;
+import com.universe.life.user.privacy.constants.RedisConstants;
 import com.universe.life.user.privacy.domain.dto.request.ResourceIdsRequest;
 import com.universe.life.user.privacy.domain.dto.request.ResourceRoleAssignRequest;
 import com.universe.life.user.privacy.domain.dto.request.ResourceRoleBatchAssignRequest;
@@ -20,6 +21,7 @@ import com.universe.life.user.privacy.mapper.AdminResourceRoleMapper;
 import com.universe.life.user.privacy.service.IAdminResourceRoleService;
 import com.universe.life.user.privacy.service.IAdminResourceService;
 import com.universe.life.user.privacy.service.IAdminRoleService;
+import com.universe.life.common.util.CacheUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,7 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
     private final IAdminRoleService roleService;
     private final IAdminResourceService resourceService;
     private final AdminResourceRoleMapper resourceRoleMapper;
+    private final CacheUtil cacheUtil;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -80,17 +83,33 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
                 .collect(Collectors.toList());
 
         saveBatch(resourceRoles);
+        
+        // 批量删除缓存
+        List<String> keysToDelete = new ArrayList<>();
+        keysToDelete.add(RedisConstants.ROLE_RESOURCES_KEY + request.getRoleId());
+        cacheUtil.deleteAll(keysToDelete);
 
         log.info("为角色分配资源权限成功，角色ID：{}", request.getRoleId());
     }
 
     @Override
     public List<ResourceRoleVO> getRoleResources(Long roleId) {
-        // 查询角色资源关联
+        // 1. 尝试从缓存获取
+        String cacheKey = RedisConstants.ROLE_RESOURCES_KEY + roleId;
+        List<ResourceRoleVO> cached = cacheUtil.getList(cacheKey, ResourceRoleVO.class);
+        if (cached != null) {
+            return cached;
+        }
+        
+        // 2. 缓存未命中，查询数据库
         List<ResourceRoleVO> resourceRoleVOS = resourceRoleMapper.selectRoleResources(roleId);
         if (CollUtil.isEmpty(resourceRoleVOS)) {
-            return new ArrayList<>();
+            resourceRoleVOS = new ArrayList<>();
         }
+        
+        // 3. 写入缓存
+        cacheUtil.set(cacheKey, resourceRoleVOS, RedisConstants.getRoleResourcesExpire());
+        
         return resourceRoleVOS;
     }
 
@@ -106,6 +125,11 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
         if (!removed) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("删除角色"));
         }
+        
+        // 批量删除缓存
+        List<String> keysToDelete = new ArrayList<>();
+        keysToDelete.add(RedisConstants.ROLE_RESOURCES_KEY + roleId);
+        cacheUtil.deleteAll(keysToDelete);
 
         log.info("移除角色资源权限成功");
     }
@@ -122,6 +146,12 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
         if (!removed) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("批量删除角色"));
         }
+        
+        // 批量删除缓存
+        List<String> keysToDelete = new ArrayList<>();
+        keysToDelete.add(RedisConstants.ROLE_RESOURCES_KEY + roleId);
+        cacheUtil.deleteAll(keysToDelete);
+        
         log.info("批量移除角色资源权限成功，移除数量：{}", request.getResourceIds().size());
     }
 
@@ -148,6 +178,11 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
 
             saveBatch(resourceRoles);
         }
+        
+        // 批量删除缓存
+        List<String> keysToDelete = new ArrayList<>();
+        keysToDelete.add(RedisConstants.ROLE_RESOURCES_KEY + roleId);
+        cacheUtil.deleteAll(keysToDelete);
 
         log.info("更新角色资源权限成功");
     }
@@ -191,7 +226,7 @@ public class AdminResourceRoleServiceImpl extends ServiceImpl<AdminResourceRoleM
                 .collect(Collectors.toSet());
 
         // 构建树形结构
-        return buildTree(allResources, null, grantedResourceIds);
+        return buildTree(allResources, 0L, grantedResourceIds);
     }
 
     @Override

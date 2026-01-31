@@ -8,7 +8,6 @@ import com.universe.life.user.privacy.domain.dto.request.SysDepartmentStatusUpda
 import com.universe.life.user.privacy.domain.dto.request.SysDepartmentUpdateRequest;
 import com.universe.life.user.privacy.domain.vo.SysDepartmentDetailVO;
 import com.universe.life.user.privacy.domain.vo.SysDepartmentListVO;
-import com.universe.life.user.privacy.domain.vo.SysDepartmentSimpleVO;
 import com.universe.life.user.privacy.domain.vo.SysDepartmentTreeVO;
 import com.universe.life.user.privacy.service.ISysDepartmentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,8 +15,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -102,13 +101,5 @@ public class AdminSysDepartmentController {
     public Result<List<SysDepartmentTreeVO>> getDepartmentTree() {
         log.info("获取部门树形结构");
         return Result.success(departmentService.getDepartmentTree());
-    }
-
-    @GetMapping("/options")
-    @Operation(summary = "获取部门选项", description = "获取所有启用的部门选项（用于下拉列表）")
-    @PreAuthorize("@pm.match('sys:admin:department:options:read')")
-    public Result<List<SysDepartmentSimpleVO>> getDepartmentOptions() {
-        log.info("获取部门选项列表");
-        return Result.success(departmentService.getDepartmentOptions());
     }
 }

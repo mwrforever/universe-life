@@ -42,9 +42,10 @@ public class AdminRoleController {
     @PostMapping
     @Operation(summary = "创建角色", description = "创建新的角色")
     @PreAuthorize("@pm.match('sys:admin:role:add')")
-    public Result<RoleDetailVO> createRole(@Valid @RequestBody RoleCreateRequest request) {
+    public Result<Void> createRole(@Valid @RequestBody RoleCreateRequest request) {
         log.info("创建角色，角色编码：{}", request.getRoleCode());
-        return Result.success(roleService.createRole(request));
+        roleService.createRole(request);
+        return Result.success();
     }
 
     @GetMapping("/{id}")

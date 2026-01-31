@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.message.ExceptionMessage;
 import com.universe.life.common.domain.PageResult;
+import com.universe.life.user.privacy.constants.RedisConstants;
 import com.universe.life.user.privacy.domain.dao.query.RoleListQuery;
 import com.universe.life.user.privacy.domain.dto.request.RoleCreateRequest;
 import com.universe.life.user.privacy.domain.dto.request.RoleStatusUpdateRequest;
@@ -30,6 +31,8 @@ import com.universe.life.user.privacy.mapstruct.RoleMapstruct;
 import com.universe.life.user.privacy.service.IAdminResourceService;
 import com.universe.life.user.privacy.service.IAdminRoleService;
 import com.universe.life.user.privacy.service.IAdminUserRoleService;
+import com.universe.life.common.util.CacheUtil;
+import com.universe.life.user.privacy.util.ValidationHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -52,44 +55,70 @@ import java.util.stream.Collectors;
 public class AdminRoleServiceImpl extends ServiceImpl<AdminRoleMapper, Role> implements IAdminRoleService {
 
     private final AdminResourceRoleMapper resourceRoleMapper;
-
     private final IAdminResourceService resourceService;
-
     private final IAdminUserRoleService userRoleService;
-
     private final RoleMapstruct roleMapstruct;
+    private final CacheUtil cacheUtil;
 
     @Override
-    public RoleDetailVO createRole(RoleCreateRequest request) {
+    public void createRole(RoleCreateRequest request) {
         log.info("创建角色，角色编码：{}", request.getRoleCode());
-        // 创建角色
+        
+        boolean existsRoleCode = lambdaQuery()
+                .eq(Role::getRoleCode, request.getRoleCode())
+                .exists();
+        ValidationHelper.validateNotExists(existsRoleCode, "角色编码");
+        
         Role role = roleMapstruct.toPo(request);
         boolean saved = save(role);
         if (!saved) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("角色新增"));
         }
+        
+        invalidateRoleCaches(null);
+        
         log.info("创建角色成功，角色ID：{}", role.getId());
-        return roleMapstruct.toDetailVO(role);
+    }
+
+    private void invalidateRoleCaches(Long roleId) {
+        List<String> keysToDelete = new ArrayList<>();
+        if (roleId != null) {
+            keysToDelete.add(RedisConstants.buildRoleKey(roleId, "info"));
+            keysToDelete.add(RedisConstants.buildRoleKey(roleId, "resources"));
+        }
+        keysToDelete.add(RedisConstants.ROLE_OPTIONS_KEY);
+        cacheUtil.deleteAll(keysToDelete);
     }
 
     @Override
     public RoleDetailVO getRoleById(Long id) {
+        String cacheKey = RedisConstants.ROLE_INFO_KEY + id;
+        return cacheUtil.getOrCompute(
+                cacheKey,
+                RoleDetailVO.class,
+                () -> fetchAndConvertRole(id),
+                RedisConstants.getRoleInfoExpire()
+        );
+    }
+
+    private RoleDetailVO fetchAndConvertRole(Long id) {
         Role role = getById(id);
-        if (ObjectUtil.isNull(role)) {
-            throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
-        }
+        ValidationHelper.validateNotNull(role, "角色");
         return roleMapstruct.toDetailVO(role);
     }
 
     @Override
     public void updateRole(Long id, RoleUpdateRequest request) {
         log.info("更新角色，角色ID：{}", id);
-        // 更新角色
+        
         Role role = roleMapstruct.toPo(request);
         boolean updated = updateById(role);
         if (!updated) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("角色更新"));
         }
+        
+        invalidateRoleCaches(id);
+        
         log.info("更新角色成功，角色ID：{}", id);
     }
 
@@ -98,25 +127,22 @@ public class AdminRoleServiceImpl extends ServiceImpl<AdminRoleMapper, Role> imp
     public void deleteRole(Long id) {
         log.info("删除角色，角色ID：{}", id);
 
-        // 检查角色是否是系统角色
-        boolean exists = lambdaQuery()
+        boolean isSystemRole = lambdaQuery()
                 .eq(Role::getId, id)
                 .eq(Role::getRoleType, RoleType.SYSTEM)
                 .exists();
-        if (exists) {
-            throw new BusinessException.OperationNotAllowedException(ExceptionMessage.Formatter.operationFailed("系统角色不允许删除"));
-        }
-        // 检查是否有用户关联该角色
-        Long count = userRoleService.lambdaQuery()
+        ValidationHelper.validateNotSystemEntity(isSystemRole, "角色");
+        
+        Long userCount = userRoleService.lambdaQuery()
                 .eq(UserRole::getRoleId, id)
                 .count();
-
-        if (count > 0) {
-            throw new BusinessException.OperationNotAllowedException(ExceptionMessage.Formatter.operationFailed("角色已关联用户，不允许删除"));
-        }
-        // 删除角色关联的资源权限
+        ValidationHelper.validateNoAssociations(userCount, "角色", "用户");
+        
         resourceRoleMapper.delete(new LambdaQueryWrapper<ResourceRole>().eq(ResourceRole::getRoleId, id));
         removeById(id);
+        
+        invalidateRoleCaches(id);
+        
         log.info("删除角色成功，角色ID：{}", id);
     }
 
@@ -163,6 +189,8 @@ public class AdminRoleServiceImpl extends ServiceImpl<AdminRoleMapper, Role> imp
         if (!updated) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("角色状态更新"));
         }
+        
+        invalidateRoleCaches(id);
 
         log.info("更新角色状态成功，角色ID：{}", id);
     }
@@ -197,6 +225,16 @@ public class AdminRoleServiceImpl extends ServiceImpl<AdminRoleMapper, Role> imp
 
     @Override
     public List<RoleOptionVO> getRoleOptions() {
+        String cacheKey = RedisConstants.ROLE_OPTIONS_KEY;
+        return cacheUtil.getListOrCompute(
+                cacheKey,
+                RoleOptionVO.class,
+                this::fetchRoleOptions,
+                RedisConstants.getRoleOptionsExpire()
+        );
+    }
+
+    private List<RoleOptionVO> fetchRoleOptions() {
         List<Role> roles = lambdaQuery()
                 .select(Role::getId, Role::getRoleCode, Role::getRoleName)
                 .eq(Role::getStatus, CommonStatus.ENABLE)

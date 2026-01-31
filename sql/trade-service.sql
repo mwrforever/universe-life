@@ -18,7 +18,7 @@ CREATE TABLE `trade_order`
     `publisher_id`   BIGINT          NOT NULL COMMENT '发布者ID（冗余存储，避免跨服务查询）',
     `acceptor_id`    BIGINT          NOT NULL COMMENT '接单者ID',
     `reward_amount`  BIGINT          NOT NULL COMMENT '悬赏金额（分，冗余存储）',
-    `status`         TINYINT         NOT NULL DEFAULT 0 COMMENT '状态：0待审批 1进行中 2待确认 3待收款 4争议中 5已完成 6已拒绝 7已放弃 8待评价',
+    `status`         TINYINT         NOT NULL DEFAULT 0 COMMENT '状态：0待审批 1进行中 2待确认 3待收款 4争议中 5付款中 6已完成 7已拒绝 8已放弃 9待评价',
     `submit_content` TEXT COMMENT '提交内容',
     `submit_images`  VARCHAR(1000) COMMENT '提交图片URL（JSON数组）',
     `reject_reason`  VARCHAR(500) COMMENT '拒绝原因',

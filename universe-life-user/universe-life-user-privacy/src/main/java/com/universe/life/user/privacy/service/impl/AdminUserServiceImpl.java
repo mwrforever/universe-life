@@ -63,6 +63,15 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, User> imp
     @Transactional(rollbackFor = Exception.class)
     public AdminUserListVO createUser(UserCreateRequest request) {
         log.info("创建用户开始，用户名：{}", request.getUsername());
+        
+        // 检查用户名是否已存在
+        boolean existsUsername = lambdaQuery()
+                .eq(User::getUsername, request.getUsername())
+                .exists();
+        if (existsUsername) {
+            throw new BusinessException.DataAlreadyExistsException(ExceptionMessage.Formatter.dataAlreadyExist("用户名"));
+        }
+        
         // 直接保存用户数据
         User po = userMapstruct.toPO(request);
         // 保存用户信息

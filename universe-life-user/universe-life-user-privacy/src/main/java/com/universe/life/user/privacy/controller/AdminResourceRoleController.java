@@ -98,16 +98,6 @@ public class AdminResourceRoleController {
         return Result.success(resourceRoleService.getResourceRoles(resourceId));
     }
 
-    @GetMapping("/roles/{roleId}/resources/{resourceId}/check")
-    @Operation(summary = "检查角色是否拥有某资源权限", description = "检查角色是否拥有指定资源权限")
-    @PreAuthorize("@pm.match('sys:admin:resource-role:check:read')")
-    public Result<Map<String, Boolean>> checkRoleResource(
-            @Parameter(description = "角色ID", required = true) @PathVariable Long roleId,
-            @Parameter(description = "资源ID", required = true) @PathVariable Long resourceId) {
-        log.info("检查角色资源权限，角色ID：{}，资源ID：{}", roleId, resourceId);
-        Boolean hasPermission = resourceRoleService.checkRoleResource(roleId, resourceId);
-        return Result.success(Map.of("hasPermission", hasPermission));
-    }
 
     @GetMapping("/roles/{roleId}/resources/tree")
     @Operation(summary = "获取角色的资源权限树", description = "获取角色的资源权限树（带checked状态）")

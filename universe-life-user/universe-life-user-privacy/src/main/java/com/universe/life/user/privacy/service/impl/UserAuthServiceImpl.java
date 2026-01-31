@@ -9,6 +9,7 @@ import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.exception.SecurityException;
 import com.universe.life.auth.common.message.ExceptionMessage;
 import com.universe.life.model.domain.dto.UserInfoDTO;
+import com.universe.life.user.privacy.constants.RedisConstants;
 import com.universe.life.user.privacy.domain.dto.request.DeleteUserAuthRequest;
 import com.universe.life.user.privacy.domain.dto.request.UserAuthCreateRequest;
 import com.universe.life.user.privacy.domain.dto.request.UserAuthUpdateRequest;
@@ -18,7 +19,10 @@ import com.universe.life.user.privacy.domain.vo.UserAuthListVO;
 import com.universe.life.user.privacy.mapper.UserAuthMapper;
 import com.universe.life.user.privacy.mapstruct.UserAuthMapstruct;
 import com.universe.life.user.privacy.service.IUserAuthService;
+import com.universe.life.common.util.CacheUtil;
 import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -40,15 +44,37 @@ public class UserAuthServiceImpl extends ServiceImpl<UserAuthMapper, UserAuth> i
     private final UserAuthMapstruct userAuthMapstruct;
     private final VerifyCaptchaUtil verifyCaptchaUtil;
     private final PasswordEncoder bcryptPasswordEncoder;
+    private final CacheUtil cacheUtil;
 
     @Override
     public UserInfoDTO getUserInfo(String username) {
+        // 尝试从缓存获取（根据username类型判断是手机号还是邮箱）
+        String cacheKey = null;
+        if (username.contains("@")) {
+            cacheKey = RedisConstants.USER_AUTH_EMAIL_KEY + username;
+        } else if (username.matches("\\d+")) {
+            cacheKey = RedisConstants.USER_AUTH_PHONE_KEY + username;
+        }
+        
+        if (cacheKey != null) {
+            UserInfoDTO cached = cacheUtil.get(cacheKey, UserInfoDTO.class);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        
+        // 缓存未命中，查询数据库
         UserInfoDTO dto = userAuthMapper.getUserInfo(username);
         // 判断账号是否存在
         if (ObjectUtil.isNull(dto)) {
             return null;
         }
-        // 直接返回DTO，不再进行VO转换
+        
+        // 写入缓存
+        if (cacheKey != null) {
+            cacheUtil.set(cacheKey, dto, RedisConstants.getUserAuthExpire());
+        }
+        
         return dto;
     }
 
@@ -118,6 +144,12 @@ public class UserAuthServiceImpl extends ServiceImpl<UserAuthMapper, UserAuth> i
         if (!updated) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.OPERATION_FAILED);
         }
+        
+        // 批量删除缓存
+        List<String> keysToDelete = new ArrayList<>();
+        keysToDelete.add(RedisConstants.USER_AUTH_PHONE_KEY + userAuth.getIdentification());
+        keysToDelete.add(RedisConstants.USER_AUTH_EMAIL_KEY + userAuth.getIdentification());
+        cacheUtil.deleteAll(keysToDelete);
     }
 
     @Override
@@ -148,5 +180,11 @@ public class UserAuthServiceImpl extends ServiceImpl<UserAuthMapper, UserAuth> i
         if (!removed) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.OPERATION_FAILED);
         }
+        
+        // 批量删除缓存
+        List<String> keysToDelete = new ArrayList<>();
+        keysToDelete.add(RedisConstants.USER_AUTH_PHONE_KEY + userAuth.getIdentification());
+        keysToDelete.add(RedisConstants.USER_AUTH_EMAIL_KEY + userAuth.getIdentification());
+        cacheUtil.deleteAll(keysToDelete);
     }
 }

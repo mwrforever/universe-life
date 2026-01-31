@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.universe.life.user.privacy.domain.dto.AdminUserDetailRoleDTO;
 import com.universe.life.user.privacy.domain.dto.AdminUserRoleListDTO;
 import com.universe.life.user.privacy.domain.po.UserRole;
+import com.universe.life.user.privacy.domain.vo.AssignedRoleVO;
 import com.universe.life.user.privacy.domain.vo.RoleOptionVO;
 import com.universe.life.user.privacy.domain.vo.UserRoleDetailVO;
 
@@ -57,4 +58,11 @@ public interface AdminUserRoleMapper extends BaseMapper<UserRole> {
      * @return 角色选项VO
      */
     List<RoleOptionVO> getRoleOptionVOList(Long userId);
+
+    /**
+     * 获取用户已分配的角色列表
+     * @param userId 用户 id
+     * @return 已分配角色列表
+     */
+    List<AssignedRoleVO> selectAssignedRolesByUserId(@Param("userId") Long userId);
 }

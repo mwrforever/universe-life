@@ -32,12 +32,4 @@ public enum CommonStatus {
         }
         return null;
     }
-
-    public static CommonStatus ofCode(Integer code) {
-        if (code == null) return null;
-        for (CommonStatus e : values()) {
-            if (e.code.equals(code)) return e;
-        }
-        return null;
-    }
 }

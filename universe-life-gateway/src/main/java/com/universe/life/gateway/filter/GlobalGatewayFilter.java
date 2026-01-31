@@ -83,7 +83,8 @@ public class GlobalGatewayFilter implements GlobalFilter, Ordered {
             // 构建修改后的请求
             Consumer<HttpHeaders> headersMapper = headers -> {
                 if (authentication != null && authentication.isAuthenticated()) {
-                    log.info("GlobalGatewayFilter: 检测到已认证用户: {}", authentication.getName());
+                    String username = authentication.getName();
+                    log.info("GlobalGatewayFilter: 检测到已认证用户: {}", username);
                     // 根据认证类型处理用户信息
                     if (!(authentication instanceof JwtAuthenticationToken jwtAuthenticationToken)) {
                         throw new AuthException.AuthenticationException(ExceptionMessage.LOGIN_REQUIRED);
@@ -100,6 +101,7 @@ public class GlobalGatewayFilter implements GlobalFilter, Ordered {
                     }
                     // 将用户信息添加到请求头，确保参数不为null
                     headers.add(JwtConstants.USER_INFO, String.valueOf(userId));
+                    headers.add(JwtConstants.USER_NAME,  username);
                 }
             };
             ServerHttpRequest.Builder mutate = request.mutate();

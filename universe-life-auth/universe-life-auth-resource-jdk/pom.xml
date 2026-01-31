@@ -11,7 +11,14 @@
 
     <artifactId>universe-life-auth-resource-jdk</artifactId>
 
+
+
     <dependencies>
+
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.universe.life</groupId>
@@ -24,6 +31,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.universe.life</groupId>
             <artifactId>universe-life-user-common-api</artifactId>
         </dependency>
@@ -32,6 +44,8 @@
             <groupId>com.universe.life</groupId>
             <artifactId>universe-life-user-common-model</artifactId>
         </dependency>
+
+
 
         <dependency>
             <groupId>com.universe.life</groupId>

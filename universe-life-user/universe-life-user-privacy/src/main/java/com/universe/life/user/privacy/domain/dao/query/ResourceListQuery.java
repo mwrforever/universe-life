@@ -21,7 +21,7 @@ public class ResourceListQuery {
 
     @Schema(description = "每页大小", example = "10")
     @Min(value = 1, message = "每页大小不能小于1")
-    @Max(value = 100, message = "每页大小不能超过100")
+    @Max(value = 110, message = "每页大小不能超过100")
     private Integer size = 10;
 
     @Schema(description = "资源类型筛选: 0-菜单, 1-按钮, 2-接口, 3-数据权限")

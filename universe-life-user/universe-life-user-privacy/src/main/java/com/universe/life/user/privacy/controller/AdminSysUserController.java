@@ -4,14 +4,11 @@ import com.universe.life.auth.common.domain.Result;
 import com.universe.life.common.domain.PageResult;
 import com.universe.life.model.domain.dto.AdminUserInfoDTO;
 import com.universe.life.user.privacy.domain.dao.query.SysUserListQuery;
-import com.universe.life.user.privacy.domain.dto.request.SysUserCreateRequest;
-import com.universe.life.user.privacy.domain.dto.request.SysUserPasswordResetRequest;
-import com.universe.life.user.privacy.domain.dto.request.SysUserStatusUpdateRequest;
-import com.universe.life.user.privacy.domain.dto.request.SysUserUpdateRequest;
-import com.universe.life.user.privacy.domain.vo.AdminSysUserProfileVO;
+import com.universe.life.user.privacy.domain.dto.request.*;
 import com.universe.life.user.privacy.domain.vo.SysUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.SysUserListVO;
 import com.universe.life.user.privacy.domain.vo.SysUserOptionVO;
+import com.universe.life.user.privacy.domain.vo.SysUserPersonProfileVO;
 import com.universe.life.user.privacy.service.ISysUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -42,7 +39,7 @@ public class AdminSysUserController {
     private final ISysUserService sysUserService;
 
     @GetMapping("/login")
-    @Operation(summary = "员工登录", description = "员工页面")
+    @Operation(summary = "员工登录", description = "员工页面, 内部服务调用")
     public AdminUserInfoDTO login(String username) {
         log.info("员工：{}正在登录", username);
         return sysUserService.login(username);
@@ -51,9 +48,10 @@ public class AdminSysUserController {
     @PostMapping
     @Operation(summary = "创建员工", description = "创建新的平台员工")
     @PreAuthorize("@pm.match('sys:admin:sys-user:add')")
-    public Result<SysUserDetailVO> createSysUser(@Valid @RequestBody SysUserCreateRequest request) {
+    public Result<Void> createSysUser(@Valid @RequestBody SysUserCreateRequest request) {
         log.info("创建员工，工号：{}", request.getEmployeeNo());
-        return Result.success(sysUserService.createSysUser(request));
+        sysUserService.createSysUser(request);
+        return Result.success();
     }
 
 
@@ -121,9 +119,9 @@ public class AdminSysUserController {
     @GetMapping("/options")
     @Operation(summary = "获取员工选项", description = "获取所有启用的员工选项（用于下拉列表）")
     @PreAuthorize("@pm.match('sys:admin:sys-user:options:read')")
-    public Result<List<SysUserOptionVO>> getSysUserOptions() {
+    public Result<List<SysUserOptionVO>> getSysUserOptions(String keyword) {
         log.info("获取员工选项列表");
-        return Result.success(sysUserService.getSysUserOptions());
+        return Result.success(sysUserService.getSysUserOptions(keyword));
     }
 
     @GetMapping("/{sysUserId}/permissions")
@@ -134,10 +132,26 @@ public class AdminSysUserController {
         return sysUserService.getSysUserPermissions(sysUserId);
     }
 
-    @GetMapping("/profile")
-    @Operation(summary = "获取当前登录用户的信息", description = "获取当前登录用户的信息")
-    public Result<AdminSysUserProfileVO> profile() {
-        log.info("获取当前登录用户信息");
-        return Result.success(sysUserService.profile());
+    @GetMapping("/person/profile")
+    @Operation(summary = "获取当前用户个人资料", description = "获取当前登录用户的个人资料信息，用于个人资料页面展示和编辑")
+    public Result<SysUserPersonProfileVO> getPersonProfile() {
+        log.info("获取当前用户个人资料");
+        return Result.success(sysUserService.getPersonProfile());
+    }
+
+    @PutMapping("/person/profile")
+    @Operation(summary = "更新当前用户个人资料", description = "当前登录用户更新自己的个人资料（不需要传递用户ID，后端从Token中获取）")
+    public Result<Void> updatePersonProfile(@Valid @RequestBody SysUserPersonProfileUpdateRequest request) {
+        log.info("更新当前用户个人资料");
+        sysUserService.updatePersonProfile(request);
+        return Result.success();
+    }
+
+    @PutMapping("/person/profile/password")
+    @Operation(summary = "当前用户修改密码", description = "当前登录用户修改自己的密码，支持三种验证方式：原密码验证、邮箱验证码、手机号验证码")
+    public Result<Void> updatePersonPassword(@Valid @RequestBody SysUserPersonPasswordUpdateRequest request) {
+        log.info("当前用户修改密码，验证方式：{}", request.getVerificationType());
+        sysUserService.updatePersonPassword(request);
+        return Result.success();
     }
 }

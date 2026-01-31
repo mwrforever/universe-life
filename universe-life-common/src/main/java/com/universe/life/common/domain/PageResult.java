@@ -14,8 +14,7 @@ import java.util.List;
 /**
  * 分页响应结果封装
  *
- * @author Claude
- * @since 2025-12-02
+ * @author universe-life
  */
 @Data
 @NoArgsConstructor

@@ -4,7 +4,7 @@ spring:
   profiles:
     active: dev
   application:
-    name: universe-life-trade
+    name: trade-service
   cloud:
     nacos:
       config:
@@ -31,22 +31,5 @@ spring:
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
 
-# springdoc-openapi 项目配置
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: alpha
-  api-docs:
-    path: /v3/api-docs
-  group-configs:
-    - group: 'default'
-      paths-to-match: '/**'
-      packages-to-scan:
-        - com.universe.life.trade.privacy.controller
-
-knife4j:
-  enable: true
-  setting:
-    language: zh_cn
+# springdoc-openapi 项目配置 (moved to application.yml)
 

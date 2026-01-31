@@ -72,14 +72,6 @@ public class AdminUserController {
         return Result.success();
     }
 
-    @PostMapping("/check/password")
-    @Operation(summary = "检查密码", description = "管理员检查密码")
-    public Result<Boolean> checkPassword(
-            @Valid @RequestBody PasswordUserRequest request) {
-        log.info("管理员检查密码");
-        return Result.success(adminUserService.checkPassword(request));
-    }
-
     @PostMapping("/{id}")
     @Operation(summary = "删除用户", description = "管理员软删除指定用户")
     public Result<Void> deleteUser(

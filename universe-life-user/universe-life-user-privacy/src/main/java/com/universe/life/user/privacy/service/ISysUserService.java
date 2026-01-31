@@ -6,10 +6,10 @@ import com.universe.life.model.domain.dto.AdminUserInfoDTO;
 import com.universe.life.user.privacy.domain.dao.query.SysUserListQuery;
 import com.universe.life.user.privacy.domain.dto.request.*;
 import com.universe.life.user.privacy.domain.po.SysUser;
-import com.universe.life.user.privacy.domain.vo.AdminSysUserProfileVO;
 import com.universe.life.user.privacy.domain.vo.SysUserDetailVO;
 import com.universe.life.user.privacy.domain.vo.SysUserListVO;
 import com.universe.life.user.privacy.domain.vo.SysUserOptionVO;
+import com.universe.life.user.privacy.domain.vo.SysUserPersonProfileVO;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ public interface ISysUserService extends IService<SysUser> {
      * @param request 创建请求
      * @return 员工详情
      */
-    SysUserDetailVO createSysUser(SysUserCreateRequest request);
+    void createSysUser(SysUserCreateRequest request);
 
     /**
      * 获取员工详情
@@ -81,7 +81,7 @@ public interface ISysUserService extends IService<SysUser> {
      *
      * @return 员工选项列表
      */
-    List<SysUserOptionVO> getSysUserOptions();
+    List<SysUserOptionVO> getSysUserOptions(String keyword);
 
     /**
      * 更新个人信息
@@ -116,11 +116,26 @@ public interface ISysUserService extends IService<SysUser> {
      */
     List<String> getSysUserPermissions(Long sysUserId);
 
+
     /**
-     * 获取当前登录用户信息
+     * 获取当前用户个人资料
      *
-     * @return 用户信息
+     * @return 个人资料信息
      */
-    AdminSysUserProfileVO profile();
+    SysUserPersonProfileVO getPersonProfile();
+
+    /**
+     * 更新当前用户个人资料
+     *
+     * @param request 更新请求
+     */
+    void updatePersonProfile(SysUserPersonProfileUpdateRequest request);
+
+    /**
+     * 当前用户修改密码
+     *
+     * @param request 密码修改请求
+     */
+    void updatePersonPassword(SysUserPersonPasswordUpdateRequest request);
 
 }

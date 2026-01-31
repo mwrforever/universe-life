@@ -7,6 +7,7 @@ import com.universe.life.auth.service.security.filter.SmsAuthenticationFilter;
 import com.universe.life.auth.service.security.handler.JsonAuthenticationFailureHandler;
 import com.universe.life.auth.service.security.provider.SmsAuthenticationProvider;
 import com.universe.life.auth.service.security.provider.UsernamePasswordAuthenticationProvider;
+import com.universe.life.auth.service.util.AuthUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +23,6 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 
 import java.util.Map;
@@ -84,11 +84,12 @@ public class LoginSecurityConfiguration {
     public AuthenticationManager loginAuthenticationManager(
             Map<String, UserDetailsService> userAuthInfoServices,
             PasswordEncoder bCryptPasswordEncoder,
+            AuthUtil authUtil,
             VerifyCaptchaUtil verifyCaptchaUtil) {
         // 注册自定义 Provider
-        SmsAuthenticationProvider smsProvider = new SmsAuthenticationProvider(userAuthInfoServices, verifyCaptchaUtil);
+        SmsAuthenticationProvider smsProvider = new SmsAuthenticationProvider(userAuthInfoServices, verifyCaptchaUtil, authUtil);
         UsernamePasswordAuthenticationProvider usernamePasswordProvider =
-                new UsernamePasswordAuthenticationProvider(userAuthInfoServices, bCryptPasswordEncoder);
+                new UsernamePasswordAuthenticationProvider(userAuthInfoServices, bCryptPasswordEncoder, authUtil);
 
 
         return new ProviderManager(smsProvider, usernamePasswordProvider);
@@ -103,13 +104,15 @@ public class LoginSecurityConfiguration {
     public SecurityFilterChain authenficationSecurityFilterChain(
             HttpSecurity http,
             AuthenticationManager authenticationManager,
-            JsonAuthenticationFailureHandler authenticationFailureHandler) throws Exception {
+            JsonAuthenticationFailureHandler authenticationFailureHandler,
+            AuthUtil authUtil
+    ) throws Exception {
         log.info("配置用户认证安全过滤器链");
 
         // 配置 Filter
-        SmsAuthenticationFilter smsFilter = new SmsAuthenticationFilter(authenticationManager);
+        SmsAuthenticationFilter smsFilter = new SmsAuthenticationFilter(authenticationManager, authUtil);
         MyUsernamePasswordAuthenticationFilter usernamePasswordFilter =
-                new MyUsernamePasswordAuthenticationFilter(authenticationManager);
+                new MyUsernamePasswordAuthenticationFilter(authenticationManager, authUtil);
 
         // 登录成功后，重定向回之前的请求（例如 /oauth2/authorize）
         SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
@@ -144,8 +147,6 @@ public class LoginSecurityConfiguration {
                 .addFilterBefore(smsFilter, UsernamePasswordAuthenticationFilter.class)
                 // 添加我们自定义的用户名密码过滤器（同时支持表单和JSON提交）
                 .addFilterBefore(usernamePasswordFilter, UsernamePasswordAuthenticationFilter.class)
-                // 禁用CSRF保护：网关已提供安全防护，内部服务之间不需要CSRF
-                .csrf(csrf -> csrf.disable())
                 .cors(AbstractHttpConfigurer::disable)
                 .headers(CommonSecurityConfigUtil::getPermissionsPolicyConfig);
 

@@ -3,6 +3,7 @@ package com.universe.life.user.privacy.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.universe.life.user.privacy.domain.po.SysUserDepartment;
 import com.universe.life.user.privacy.domain.vo.SysDepartmentSimpleVO;
+import com.universe.life.user.privacy.domain.vo.SysUserSimpleVO;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -30,4 +31,12 @@ public interface SysUserDepartmentMapper extends BaseMapper<SysUserDepartment> {
      * @return 主部门
      */
     SysDepartmentSimpleVO selectPrimaryDepartmentByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 查询部门的所有用户
+     *
+     * @param departmentId 部门ID
+     * @return 用户列表
+     */
+    List<SysUserSimpleVO> selectUsersByDepartmentId(@Param("departmentId") Long departmentId);
 }

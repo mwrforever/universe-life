@@ -1,7 +1,7 @@
 package com.universe.life.auth.resource.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.universe.life.api.client.UserClient;
+import com.universe.life.user.common.api.client.UserClient;
 import com.universe.life.auth.common.properties.AuthPathProperties;
 import com.universe.life.auth.common.util.AntRequestMatchUtil;
 import com.universe.life.auth.resource.filter.LoginFilter;
@@ -54,7 +54,12 @@ public class SecurityConfiguration {
      */
     @Bean
     @Order(3)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, AccessDeniedHandler jwtAccessDeniedHandler, AuthenticationEntryPoint jwtAuthenticationExceptionHandler) throws Exception {
+    public SecurityFilterChain defaultSecurityFilterChain(
+            HttpSecurity http,
+            AccessDeniedHandler jwtAccessDeniedHandler,
+            AuthenticationEntryPoint jwtAuthenticationExceptionHandler,
+            UserDetailsService adminAuthInfoService
+    ) throws Exception {
         log.info("配置默认安全过滤器链");
         return http
                 // 排除登录、注册和静态资源路径，避免与authenficationSecurityFilterChain冲突
@@ -78,7 +83,7 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // 配置异常处理 - 设置认证失败和权限不足的处理逻辑
-                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(jwtAuthenticationExceptionHandler).accessDeniedHandler(jwtAccessDeniedHandler)).addFilterBefore(new LoginFilter(stringRedisTemplate, authPathProperties, antRequestMatchUtil), UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(jwtAuthenticationExceptionHandler).accessDeniedHandler(jwtAccessDeniedHandler)).addFilterBefore(new LoginFilter(stringRedisTemplate, authPathProperties, antRequestMatchUtil,adminAuthInfoService  ), UsernamePasswordAuthenticationFilter.class)
                 // 配置HTTP安全头 - 开发阶段简化配置
                 .headers(CommonSecurityConfigUtil::getPermissionsPolicyConfig)
                 .build();  // 构建并返回安全过滤器链对象
@@ -100,14 +105,17 @@ public class SecurityConfiguration {
         return new JwtAccessDeniedHandler(objectMapper);
     }
 
+
     @Bean
-    public UserDetailsService userAuthInfoService(UserClient userClient) {
+    public UserDetailsService userAuthInfoService(UserClient userClient, StringRedisTemplate stringRedisTemplate) {
         return new UserAuthInfoService(userClient, stringRedisTemplate);
     }
 
     @Bean
-    public UserDetailsService adminAuthInfoService(UserClient userClient) {
+    public UserDetailsService adminAuthInfoService(UserClient userClient, StringRedisTemplate stringRedisTemplate) {
         return new AdminAuthInfoService(userClient, stringRedisTemplate);
     }
+
+
 
 }

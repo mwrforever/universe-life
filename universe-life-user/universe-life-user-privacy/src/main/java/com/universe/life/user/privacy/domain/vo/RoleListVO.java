@@ -36,6 +36,9 @@ public class RoleListVO {
     @Schema(description = "状态")
     private CommonStatus status;
 
+    @Schema(description = "排序字段")
+    private Integer sortOrder;
+
     @Schema(description = "创建时间")
     private LocalDateTime createdAt;
 }

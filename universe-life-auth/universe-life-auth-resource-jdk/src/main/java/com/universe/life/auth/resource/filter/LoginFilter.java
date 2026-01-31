@@ -24,6 +24,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -40,6 +41,7 @@ public class LoginFilter extends OncePerRequestFilter {
     private final StringRedisTemplate stringRedisTemplate;
     private final AuthPathProperties authPathProperties;
     private final AntRequestMatchUtil antRequestMatchUtil;
+    private final UserDetailsService adminAuthInfoService;
 
 
     @Override
@@ -47,6 +49,7 @@ public class LoginFilter extends OncePerRequestFilter {
         log.info("LoginFilter.doFilterInternal - 开始处理请求: {} {}", request.getMethod(), request.getRequestURL());
         // 1. 从请求头中获取用户信息
         String userId = request.getHeader(JwtConstants.USER_INFO);
+        String username = request.getHeader(JwtConstants.USER_NAME);
         if (StrUtil.isBlank(userId)) {
             log.info("{}：用户未登录", request.getRequestURL());
             throw new AuthException.AuthorizationException(ExceptionMessage.LOGIN_REQUIRED);
@@ -54,9 +57,22 @@ public class LoginFilter extends OncePerRequestFilter {
         // 2. 设置用户以及认证完毕
         String key = RedisConstants.USER_AUTH_UID_KEY + userId;
         Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries(key);
+        UserDetails userDetails;
         if (CollUtil.isEmpty(entries)) {
-            // TODO 从数据库中加载相关数据
+            userDetails = adminAuthInfoService.loadUserByUsername(username);
+        } else {
+            userDetails = getUserDetails(entries, userId);
         }
+        if (ObjectUtil.isNull(userDetails)) {
+            throw new AuthException.AuthenticationException(ExceptionMessage.AUTH_FAILED);
+        }
+        // 创建认证对象并存入spring security context 中
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        filterChain.doFilter(request, response);
+    }
+
+    private static UserDetails getUserDetails(Map<Object, Object> entries, String userId) {
         Object info = entries.get(RedisConstants.AUTH_USER_DATA);
         Object type = entries.get(RedisConstants.AUTH_USER_TYPE);
         if (ObjectUtil.isNull(info) || ObjectUtil.isNull(type)) {
@@ -74,10 +90,7 @@ public class LoginFilter extends OncePerRequestFilter {
             log.warn("用户：{}登录异常", userId);
             throw new AuthException.AuthenticationException(ExceptionMessage.AUTH_FAILED);
         }
-        // 创建认证对象并存入spring security context 中
-        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        filterChain.doFilter(request, response);
+        return userDetails;
     }
 
     @Override

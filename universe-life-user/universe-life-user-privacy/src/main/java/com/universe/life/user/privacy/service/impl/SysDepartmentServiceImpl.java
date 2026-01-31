@@ -1,13 +1,13 @@
 package com.universe.life.user.privacy.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.message.ExceptionMessage;
 import com.universe.life.common.domain.PageResult;
+import com.universe.life.user.privacy.constants.RedisConstants;
 import com.universe.life.user.privacy.domain.dao.query.SysDepartmentListQuery;
 import com.universe.life.user.privacy.domain.dto.request.SysDepartmentCreateRequest;
 import com.universe.life.user.privacy.domain.dto.request.SysDepartmentStatusUpdateRequest;
@@ -25,6 +25,8 @@ import com.universe.life.user.privacy.mapstruct.SysDepartmentMapstruct;
 import com.universe.life.user.privacy.service.ISysDepartmentService;
 import com.universe.life.user.privacy.service.ISysUserDepartmentService;
 import com.universe.life.user.privacy.service.ISysUserService;
+import com.universe.life.common.util.CacheUtil;
+import com.universe.life.user.privacy.util.ValidationHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -47,15 +49,16 @@ import java.util.stream.Collectors;
 public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, SysDepartment> implements ISysDepartmentService {
 
     private final SysDepartmentMapstruct departmentMapstruct;
-
     private final ISysUserDepartmentService userDepartmentService;
-
+    private final CacheUtil cacheUtil;
     private ISysUserService sysUserService;
 
     public SysDepartmentServiceImpl(SysDepartmentMapstruct departmentMapstruct,
-                                    ISysUserDepartmentService userDepartmentService) {
+                                    ISysUserDepartmentService userDepartmentService,
+                                    CacheUtil cacheUtil) {
         this.departmentMapstruct = departmentMapstruct;
         this.userDepartmentService = userDepartmentService;
+        this.cacheUtil = cacheUtil;
     }
 
     @Lazy
@@ -69,25 +72,8 @@ public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, S
     public SysDepartmentDetailVO createDepartment(SysDepartmentCreateRequest request) {
         log.info("创建部门，部门编码：{}", request.getDeptCode());
 
-        // 检查部门编码是否已存在
-        boolean existsDeptCode = lambdaQuery()
-                .eq(SysDepartment::getDeptCode, request.getDeptCode())
-                .exists();
-        if (existsDeptCode) {
-            throw new BusinessException.DataAlreadyExistsException(ExceptionMessage.Formatter.dataAlreadyExist("部门编码"));
-        }
+        validateDepartmentCreation(request);
 
-        // 检查父部门是否存在
-        if (request.getParentId() != null && request.getParentId() > 0) {
-            boolean existsParent = lambdaQuery()
-                    .eq(SysDepartment::getId, request.getParentId())
-                    .exists();
-            if (!existsParent) {
-                throw new BusinessException.DataNotFoundException(ExceptionMessage.Formatter.dataNotFound("父部门"));
-            }
-        }
-
-        // 创建部门
         SysDepartment department = departmentMapstruct.toPo(request);
         if (department.getParentId() == null) {
             department.setParentId(0L);
@@ -96,37 +82,76 @@ public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, S
         if (!saved) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("部门新增"));
         }
+        
+        invalidateDepartmentCaches(null);
 
         log.info("创建部门成功，部门ID：{}", department.getId());
         return getDepartmentById(department.getId());
     }
 
+    private void validateDepartmentCreation(SysDepartmentCreateRequest request) {
+        boolean existsDeptCode = lambdaQuery()
+                .eq(SysDepartment::getDeptCode, request.getDeptCode())
+                .exists();
+        ValidationHelper.validateNotExists(existsDeptCode, "部门编码");
+
+        if (request.getParentId() != null && request.getParentId() > 0) {
+            boolean existsParent = lambdaQuery()
+                    .eq(SysDepartment::getId, request.getParentId())
+                    .exists();
+            ValidationHelper.validateExists(existsParent, "父部门");
+        }
+    }
+
+    private void invalidateDepartmentCaches(Long departmentId) {
+        List<String> keysToDelete = new ArrayList<>();
+        if (departmentId != null) {
+            keysToDelete.add(RedisConstants.buildDepartmentKey(departmentId, "info"));
+        }
+        keysToDelete.add(RedisConstants.DEPARTMENT_TREE_KEY);
+        keysToDelete.add(RedisConstants.DEPARTMENT_OPTIONS_KEY);
+        cacheUtil.deleteAll(keysToDelete);
+    }
+
     @Override
     public SysDepartmentDetailVO getDepartmentById(Long id) {
+        String cacheKey = RedisConstants.DEPARTMENT_INFO_KEY + id;
+        return cacheUtil.getOrCompute(
+                cacheKey,
+                SysDepartmentDetailVO.class,
+                () -> fetchAndEnrichDepartment(id),
+                RedisConstants.getDepartmentInfoExpire()
+        );
+    }
+
+    private SysDepartmentDetailVO fetchAndEnrichDepartment(Long id) {
         SysDepartment department = getById(id);
-        if (ObjectUtil.isNull(department)) {
-            throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
-        }
+        ValidationHelper.validateNotNull(department, "部门");
 
         SysDepartmentDetailVO detailVO = departmentMapstruct.toDetailVO(department);
 
-        // 查询父部门名称
+        enrichParentName(department, detailVO);
+        enrichLeaderName(department, detailVO);
+
+        return detailVO;
+    }
+
+    private void enrichParentName(SysDepartment department, SysDepartmentDetailVO detailVO) {
         if (department.getParentId() != null && department.getParentId() > 0) {
             SysDepartment parentDept = getById(department.getParentId());
             if (parentDept != null) {
                 detailVO.setParentName(parentDept.getDeptName());
             }
         }
+    }
 
-        // 查询负责人姓名
+    private void enrichLeaderName(SysDepartment department, SysDepartmentDetailVO detailVO) {
         if (department.getLeaderId() != null) {
             SysUser leader = sysUserService.getById(department.getLeaderId());
             if (leader != null) {
                 detailVO.setLeaderName(leader.getRealName());
             }
         }
-
-        return detailVO;
     }
 
     @Override
@@ -135,30 +160,32 @@ public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, S
         log.info("更新部门，部门ID：{}", id);
 
         SysDepartment existingDepartment = getById(id);
-        if (ObjectUtil.isNull(existingDepartment)) {
-            throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
-        }
+        ValidationHelper.validateNotNull(existingDepartment, "部门");
 
-        // 检查父部门不能是自己或自己的子部门
-        if (request.getParentId() != null && request.getParentId() > 0) {
-            if (request.getParentId().equals(id)) {
-                throw new BusinessException.OperationNotAllowedException(ExceptionMessage.Formatter.operationFailed("父部门不能是自己"));
-            }
-            // 检查是否是子部门
-            if (isChildDepartment(id, request.getParentId())) {
-                throw new BusinessException.OperationNotAllowedException(ExceptionMessage.Formatter.operationFailed("父部门不能是自己的子部门"));
-            }
-        }
+        validateDepartmentUpdate(id, request);
 
-        // 更新部门
         SysDepartment department = departmentMapstruct.toPo(request);
         department.setId(id);
         boolean updated = updateById(department);
         if (!updated) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("部门更新"));
         }
+        
+        invalidateDepartmentCaches(id);
 
         log.info("更新部门成功，部门ID：{}", id);
+    }
+
+    private void validateDepartmentUpdate(Long id, SysDepartmentUpdateRequest request) {
+        if (request.getParentId() != null && request.getParentId() > 0) {
+            ValidationHelper.validateParentNotSelf(request.getParentId(), id, "部门");
+            
+            if (isChildDepartment(id, request.getParentId())) {
+                throw new BusinessException.OperationNotAllowedException(
+                        ExceptionMessage.Formatter.operationFailed("父部门不能是自己的子部门")
+                );
+            }
+        }
     }
 
     @Override
@@ -167,28 +194,20 @@ public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, S
         log.info("删除部门，部门ID：{}", id);
 
         SysDepartment department = getById(id);
-        if (ObjectUtil.isNull(department)) {
-            throw new BusinessException.DataNotFoundException(ExceptionMessage.DATA_NOT_FOUND);
-        }
+        ValidationHelper.validateNotNull(department, "部门");
 
-        // 检查是否有子部门
         boolean hasChildren = lambdaQuery()
                 .eq(SysDepartment::getParentId, id)
                 .exists();
-        if (hasChildren) {
-            throw new BusinessException.OperationNotAllowedException(ExceptionMessage.Formatter.operationFailed("该部门下存在子部门，不允许删除"));
-        }
+        ValidationHelper.validateNoChildren(hasChildren, "部门");
 
-        // 检查是否有员工关联
         Long userCount = userDepartmentService.lambdaQuery()
                 .eq(SysUserDepartment::getDepartmentId, id)
                 .count();
-        if (userCount > 0) {
-            throw new BusinessException.OperationNotAllowedException(ExceptionMessage.Formatter.operationFailed("该部门下存在员工，不允许删除"));
-        }
+        ValidationHelper.validateNoAssociations(userCount, "部门", "员工");
 
-        // 软删除部门
         removeById(id);
+        invalidateDepartmentCaches(id);
 
         log.info("删除部门成功，部门ID：{}", id);
     }
@@ -218,12 +237,24 @@ public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, S
         if (!updated) {
             throw new BusinessException.OperationFailedException(ExceptionMessage.Formatter.operationFailed("部门状态更新"));
         }
+        
+        invalidateDepartmentCaches(id);
 
         log.info("更新部门状态成功，部门ID：{}", id);
     }
 
     @Override
     public List<SysDepartmentTreeVO> getDepartmentTree() {
+        String cacheKey = RedisConstants.DEPARTMENT_TREE_KEY;
+        return cacheUtil.getListOrCompute(
+                cacheKey,
+                SysDepartmentTreeVO.class,
+                this::fetchAndBuildDepartmentTree,
+                RedisConstants.getDepartmentTreeExpire()
+        );
+    }
+
+    private List<SysDepartmentTreeVO> fetchAndBuildDepartmentTree() {
         List<SysDepartment> allDepartments = lambdaQuery()
                 .eq(SysDepartment::getStatus, CommonStatus.ENABLE)
                 .orderByAsc(SysDepartment::getSortOrder)
@@ -234,13 +265,21 @@ public class SysDepartmentServiceImpl extends ServiceImpl<SysDepartmentMapper, S
         }
 
         List<SysDepartmentTreeVO> treeVOList = departmentMapstruct.toTreeVOList(allDepartments);
-
-        // 构建树形结构
         return buildTree(treeVOList);
     }
 
     @Override
     public List<SysDepartmentSimpleVO> getDepartmentOptions() {
+        String cacheKey = RedisConstants.DEPARTMENT_OPTIONS_KEY;
+        return cacheUtil.getListOrCompute(
+                cacheKey,
+                SysDepartmentSimpleVO.class,
+                this::fetchDepartmentOptions,
+                RedisConstants.getDepartmentOptionsExpire()
+        );
+    }
+
+    private List<SysDepartmentSimpleVO> fetchDepartmentOptions() {
         List<SysDepartment> departments = lambdaQuery()
                 .select(SysDepartment::getId, SysDepartment::getDeptCode, SysDepartment::getDeptName)
                 .eq(SysDepartment::getStatus, CommonStatus.ENABLE)

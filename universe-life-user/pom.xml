@@ -8,7 +8,6 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>universe-life-user</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <name>universe-life-user</name>
     <description>universe-life-user</description>
     <url/>

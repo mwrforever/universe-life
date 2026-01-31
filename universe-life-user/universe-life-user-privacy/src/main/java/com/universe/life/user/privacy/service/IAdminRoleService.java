@@ -28,7 +28,7 @@ public interface IAdminRoleService extends IService<Role> {
      * @param request 创建请求
      * @return 角色详情
      */
-    RoleDetailVO createRole(RoleCreateRequest request);
+    void createRole(RoleCreateRequest request);
 
     /**
      * 获取角色详情

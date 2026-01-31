@@ -5,8 +5,10 @@ import com.universe.life.auth.service.domain.dto.request.EmployeeCaptchaLoginReq
 import com.universe.life.auth.service.domain.dto.request.EmployeeLoginRequest;
 import com.universe.life.auth.service.domain.vo.UserLoginVO;
 import com.universe.life.auth.service.service.IAuthUserService;
+import com.universe.life.auth.service.util.AuthUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -29,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthUserController {
 
     private final IAuthUserService authUserService;
-
+    private final AuthUtil authUtil;
 
 
     @PostMapping("/employee/login/password")
@@ -37,10 +39,12 @@ public class AuthUserController {
             summary = "员工登录",
             description = "员工使用用户名和密码登录，基于 OAuth2 Password 模式下发令牌"
     )
-    public Result<UserLoginVO> employeeLogin(@Validated @RequestBody EmployeeLoginRequest request) {
+    public Result<UserLoginVO> employeeLogin(@Validated @RequestBody EmployeeLoginRequest request,
+                                             HttpServletRequest httpRequest) {
         log.info("收到员工登录请求，用户名: {}", request.getIdentification());
 
-        UserLoginVO loginResult = authUserService.employeeLogin(request);
+        String loginIp = authUtil.extractClientIp(httpRequest);
+        UserLoginVO loginResult = authUserService.employeeLogin(request, loginIp);
         log.info("员工登录成功，用户名: {}", request.getIdentification());
 
         return Result.success(loginResult);
@@ -51,14 +55,15 @@ public class AuthUserController {
             summary = "员工验证码登录",
             description = "员工使用验证码登录，基于 OAuth2 Password 模式下发令牌"
     )
-    public Result<UserLoginVO> employeeCaptchaLogin(@Validated @RequestBody EmployeeCaptchaLoginRequest request) {
+    public Result<UserLoginVO> employeeCaptchaLogin(@Validated @RequestBody EmployeeCaptchaLoginRequest request,
+                                                    HttpServletRequest httpRequest) {
         log.info("收到员工验证码登录请求，用户标识: {}", request.getIdentification());
 
-        UserLoginVO loginResult = authUserService.employeeCaptchaLogin(request);
+        String loginIp = authUtil.extractClientIp(httpRequest);
+        UserLoginVO loginResult = authUserService.employeeCaptchaLogin(request, loginIp);
         log.info("员工验证码登录成功，用户标识: {}", request.getIdentification());
 
         return Result.success(loginResult);
     }
-
 
 }

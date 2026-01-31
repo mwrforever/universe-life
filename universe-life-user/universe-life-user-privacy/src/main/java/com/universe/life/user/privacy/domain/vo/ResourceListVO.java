@@ -38,6 +38,9 @@ public class ResourceListVO {
     @Schema(description = "HTTP方法")
     private String httpMethod;
 
+    @Schema(description = "排序序号")
+    private Integer sortOrder;
+
     @Schema(description = "状态")
     private ResourceStatus status;
 

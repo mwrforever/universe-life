@@ -68,16 +68,6 @@ public class UserController {
     }
 
     /**
-     * 根据ID获取用户信息
-     */
-    @GetMapping("/user/{id}")
-    @Operation(summary = "获取用户信息", description = "根据用户ID获取用户基本信息")
-    public Result<UserInfoVO> getUserById(@PathVariable Long id) {
-        log.info("获取用户信息，用户ID：{}", id);
-        return Result.success(userService.getUserById(id));
-    }
-
-    /**
      * 更新当前用户个人信息
      */
     @PutMapping("/user/profile")

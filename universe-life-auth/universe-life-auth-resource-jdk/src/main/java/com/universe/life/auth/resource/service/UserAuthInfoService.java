@@ -2,7 +2,7 @@ package com.universe.life.auth.resource.service;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
-import com.universe.life.api.client.UserClient;
+import com.universe.life.user.common.api.client.UserClient;
 import com.universe.life.auth.common.constants.RedisConstants;
 import com.universe.life.auth.common.domain.dto.UserAuthInfo;
 import com.universe.life.model.domain.dto.UserInfoDTO;

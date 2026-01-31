@@ -43,17 +43,6 @@ public class UserDetailController {
     }
 
     /**
-     * 根据用户ID获取用户详情
-     */
-    @GetMapping("/{userId}")
-    @Operation(summary = "获取用户详情", description = "根据用户ID获取用户详细信息")
-    public Result<UserDetailVO> getUserDetailByUserId(
-            @Parameter(description = "用户ID", required = true) @PathVariable Long userId) {
-        log.info("获取用户详情，用户ID：{}", userId);
-        return Result.success(userDetailService.getUserDetailByUserId(userId));
-    }
-
-    /**
      * 更新当前用户详情
      */
     @PutMapping("/me")

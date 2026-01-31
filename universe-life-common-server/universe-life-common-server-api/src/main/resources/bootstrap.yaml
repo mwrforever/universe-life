@@ -16,13 +16,7 @@ spring:
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
         shared-configs:
-          - data-id: shared-datasource.yaml
-            refresh: true
           - data-id: shared-redis.yaml
-            refresh: true
-          - data-id: shared-mybatis-plus.yaml
-            refresh: true
-          - data-id: shared-powerjob.yaml
             refresh: true
           - data-id: shared-jackson.yaml
             refresh: true

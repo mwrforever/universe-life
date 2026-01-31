@@ -38,6 +38,12 @@
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
+        <!-- 认证公共模块（提供Result类） -->
+        <dependency>
+            <groupId>com.universe.life</groupId>
+            <artifactId>universe-life-auth-resource-jdk</artifactId>
+        </dependency>
+
         <!-- OpenFeign -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

@@ -2,6 +2,7 @@ package com.universe.life.user.privacy.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.universe.life.user.privacy.domain.po.SysRoleDepartment;
+import com.universe.life.user.privacy.domain.vo.RoleOptionVO;
 import com.universe.life.user.privacy.domain.vo.SysDepartmentSimpleVO;
 import org.apache.ibatis.annotations.Param;
 
@@ -30,4 +31,12 @@ public interface SysRoleDepartmentMapper extends BaseMapper<SysRoleDepartment> {
      * @return 角色ID列表
      */
     List<Long> selectRoleIdsByDepartmentId(@Param("departmentId") Long departmentId);
+
+    /**
+     * 获取角色选项列表
+     *
+     * @param userId 用户ID
+     * @return 角色选项列表
+     */
+    List<RoleOptionVO> selectRoleOptionVoList(Long userId);
 }

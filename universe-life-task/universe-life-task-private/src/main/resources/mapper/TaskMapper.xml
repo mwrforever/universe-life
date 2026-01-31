@@ -91,7 +91,6 @@
             AND t.created_at &lt; #{query.endDate}
         </if>
         ORDER BY t.created_at DESC
-        LIMIT #{offset}, #{limit}
     </select>
 
     <!-- 统计任务总数 -->

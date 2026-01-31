@@ -1,2 +1,2 @@
-com.universe.life.api.config.FallbackConfiguration
-com.universe.life.api.config.OpenFeignRequestConfiguration
+com.universe.life.user.common.api.config.FallbackConfiguration
+com.universe.life.user.common.api.config.OpenFeignRequestConfiguration
