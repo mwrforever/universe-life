@@ -1,7 +1,6 @@
 package com.universe.life.auth.resource.config;
 
 import com.universe.life.auth.resource.handler.GlobalExceptionHandler;
-import com.universe.life.auth.common.util.AntRequestMatchUtil;
 import com.universe.life.auth.resource.util.PermissionMatcher;
 import com.universe.life.auth.resource.util.VerifyCaptchaUtil;
 import org.springframework.context.annotation.Bean;
