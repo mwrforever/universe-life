@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    交易订单PO Mapper XML映射文件
+    
+    提供交易订单的复杂SQL查询实现，包括：
+    - 分页查询我的接单列表
+    - 分页查询任务的接单列表
+    - 统计查询
+    
+    @author universe-life
+    @since 1.0.0
+-->
+<mapper namespace="com.universe.life.trade.privacy.infrastructure.persistence.mapper.TradeOrderPOMapper">
+
+    <!-- 通用结果映射 -->
+    <resultMap id="BaseResultMap" type="com.universe.life.trade.privacy.infrastructure.persistence.po.TradeOrderPO">
+        <id column="id" property="id"/>
+        <result column="task_id" property="taskId"/>
+        <result column="publisher_id" property="publisherId"/>
+        <result column="acceptor_id" property="acceptorId"/>
+        <result column="reward_amount" property="rewardAmount"/>
+        <result column="status" property="status"/>
+        <result column="submit_content" property="submitContent"/>
+        <result column="submit_images" property="submitImages"/>
+        <result column="reject_reason" property="rejectReason"/>
+        <result column="applied_at" property="appliedAt"/>
+        <result column="approved_at" property="approvedAt"/>
+        <result column="submitted_at" property="submittedAt"/>
+        <result column="completed_at" property="completedAt"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+        <result column="version" property="version"/>
+    </resultMap>
+
+    <!-- 通用查询字段 -->
+    <sql id="Base_Column_List">
+        id, task_id, publisher_id, acceptor_id, reward_amount, status,
+        submit_content, submit_images, reject_reason,
+        applied_at, approved_at, submitted_at, completed_at,
+        created_at, updated_at, deleted, version
+    </sql>
+
+    <!-- 分页查询我的接单列表 -->
+    <select id="selectMyOrderPage" resultMap="BaseResultMap">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM trade_order
+        WHERE acceptor_id = #{acceptorId}
+          AND deleted = 0
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="taskId != null">
+            AND task_id = #{taskId}
+        </if>
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计我的接单数量 -->
+    <select id="countMyOrder" resultType="long">
+        SELECT COUNT(1)
+        FROM trade_order
+        WHERE acceptor_id = #{acceptorId}
+          AND deleted = 0
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="taskId != null">
+            AND task_id = #{taskId}
+        </if>
+    </select>
+
+    <!-- 分页查询任务的接单列表 -->
+    <select id="selectTaskOrderPage" resultMap="BaseResultMap">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM trade_order
+        WHERE task_id = #{taskId}
+          AND deleted = 0
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计任务的接单数量 -->
+    <select id="countTaskOrder" resultType="long">
+        SELECT COUNT(1)
+        FROM trade_order
+        WHERE task_id = #{taskId}
+          AND deleted = 0
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+</mapper>

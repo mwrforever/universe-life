@@ -1,0 +1,45 @@
+server:
+  port: 8093
+
+spring:
+  application:
+    name: task-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+# MyBatis Plus 配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.universe.life.task.privacy.domain.po
+
+# Knife4j API文档配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'task-service'
+      paths-to-match: '/**'
+      packages-to-scan:
+        - com.universe.life.task.privacy.interfaces.controller
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    swagger-model-name: 实体类列表
+
+# Feign 配置
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 5000
+        read-timeout: 10000
+  httpclient:
+    enabled: true
