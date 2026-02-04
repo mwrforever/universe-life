@@ -2,6 +2,7 @@ package com.universe.life.task.privacy.domain.repository;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.universe.life.task.privacy.domain.model.Task;
+import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 
 import java.util.List;
 import java.util.Optional;

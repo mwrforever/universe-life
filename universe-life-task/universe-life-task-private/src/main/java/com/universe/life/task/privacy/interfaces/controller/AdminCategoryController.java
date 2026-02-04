@@ -4,7 +4,7 @@ import com.universe.life.auth.common.domain.Result;
 import com.universe.life.task.privacy.application.assembler.TaskCategoryAssembler;
 import com.universe.life.task.privacy.application.dto.TaskCategoryDTO;
 import com.universe.life.task.privacy.application.service.TaskCategoryService;
-import com.universe.life.task.privacy.enums.CommonStatus;
+import com.universe.life.task.privacy.infrastructure.enums.CommonStatus;
 import com.universe.life.task.privacy.interfaces.dto.request.CreateCategoryRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.UpdateCategoryRequest;
 import com.universe.life.task.privacy.interfaces.vo.TaskCategoryVO;

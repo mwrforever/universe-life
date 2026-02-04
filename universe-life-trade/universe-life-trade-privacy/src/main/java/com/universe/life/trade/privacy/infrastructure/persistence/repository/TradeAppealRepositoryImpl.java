@@ -3,7 +3,7 @@ package com.universe.life.trade.privacy.infrastructure.persistence.repository;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.universe.life.trade.privacy.domain.repository.TradeAppealRepository;
-import com.universe.life.trade.privacy.enums.TradeAppealStatus;
+import com.universe.life.trade.privacy.infrastructure.enums.TradeAppealStatus;
 import com.universe.life.trade.privacy.infrastructure.persistence.mapper.TradeAppealPOMapper;
 import com.universe.life.trade.privacy.infrastructure.persistence.po.TradeAppealPO;
 import lombok.RequiredArgsConstructor;

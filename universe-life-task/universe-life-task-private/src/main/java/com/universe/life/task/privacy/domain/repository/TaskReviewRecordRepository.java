@@ -1,5 +1,6 @@
 package com.universe.life.task.privacy.domain.repository;
 
+import com.universe.life.task.privacy.infrastructure.enums.TaskReviewStatus;
 import com.universe.life.task.privacy.infrastructure.persistence.po.TaskReviewRecordPO;
 
 import java.time.LocalDateTime;

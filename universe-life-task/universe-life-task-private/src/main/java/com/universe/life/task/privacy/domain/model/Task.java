@@ -1,8 +1,8 @@
 package com.universe.life.task.privacy.domain.model;
 
-import com.universe.life.task.privacy.enums.TaskDepositStatus;
-import com.universe.life.task.privacy.enums.TaskReviewStatus;
-import com.universe.life.task.privacy.enums.TaskStatus;
+import com.universe.life.task.privacy.infrastructure.enums.TaskDepositStatus;
+import com.universe.life.task.privacy.infrastructure.enums.TaskReviewStatus;
+import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -224,7 +224,7 @@ public class Task {
      * 只有待审核或审核拒绝状态可以编辑
      */
     public boolean canEdit() {
-        return this.status.canEdit();
+        return this.status == TaskStatus.PENDING || this.status == TaskStatus.REJECTED;
     }
 
     /**
@@ -232,7 +232,9 @@ public class Task {
      * 招募中、待支付、支付中状态可以取消
      */
     public boolean canCancel() {
-        return this.status.canCancel();
+        return this.status == TaskStatus.RECRUITING
+                || this.status == TaskStatus.WAIT_PAY
+                || this.status == TaskStatus.PAYING;
     }
 
     /**

@@ -3,7 +3,7 @@ package com.universe.life.task.privacy.infrastructure.persistence.repository;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.universe.life.task.privacy.domain.model.TaskCategory;
 import com.universe.life.task.privacy.domain.repository.TaskCategoryRepository;
-import com.universe.life.task.privacy.enums.CommonStatus;
+import com.universe.life.task.privacy.infrastructure.enums.CommonStatus;
 import com.universe.life.task.privacy.infrastructure.persistence.mapper.TaskCategoryMapper;
 import com.universe.life.task.privacy.infrastructure.persistence.po.TaskCategoryPO;
 import lombok.RequiredArgsConstructor;

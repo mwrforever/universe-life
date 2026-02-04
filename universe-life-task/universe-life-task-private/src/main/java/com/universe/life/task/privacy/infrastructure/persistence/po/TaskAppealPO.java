@@ -1,9 +1,9 @@
 package com.universe.life.task.privacy.infrastructure.persistence.po;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.universe.life.task.privacy.enums.TaskAppealResult;
-import com.universe.life.task.privacy.enums.TaskAppealStatus;
-import com.universe.life.task.privacy.enums.TaskAppealType;
+import com.universe.life.task.privacy.infrastructure.enums.TaskAppealResult;
+import com.universe.life.task.privacy.infrastructure.enums.TaskAppealStatus;
+import com.universe.life.task.privacy.infrastructure.enums.TaskAppealType;
 import lombok.Data;
 
 import java.time.LocalDateTime;

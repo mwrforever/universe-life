@@ -1,13 +1,20 @@
 package com.universe.life.task.privacy.interfaces.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.universe.life.auth.resource.util.SecurityUtil;
+import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import com.universe.life.auth.common.domain.Result;
 import com.universe.life.common.domain.PageResult;
+import com.universe.life.task.privacy.application.command.CancelTaskCommand;
+import com.universe.life.task.privacy.application.command.CreateTaskCommand;
+import com.universe.life.task.privacy.application.command.UpdateTaskCommand;
+import com.universe.life.task.privacy.application.query.TaskHallQuery;
 import com.universe.life.task.privacy.application.assembler.TaskAssembler;
 import com.universe.life.task.privacy.application.dto.TaskCategoryDTO;
 import com.universe.life.task.privacy.application.dto.TaskDTO;
 import com.universe.life.task.privacy.application.service.TaskApplicationService;
 import com.universe.life.task.privacy.application.service.TaskCategoryService;
+import com.universe.life.task.privacy.interfaces.assembler.TaskRequestAssembler;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskCreateRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskHallQueryRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskUpdateRequest;
@@ -43,6 +50,7 @@ public class TaskController {
     private final TaskApplicationService taskApplicationService;
     private final TaskCategoryService taskCategoryService;
     private final TaskAssembler taskAssembler;
+    private final TaskRequestAssembler requestAssembler;
 
     /**
      * 任务大厅列表
@@ -50,15 +58,19 @@ public class TaskController {
     @GetMapping("/hall")
     @Operation(summary = "任务大厅列表", description = "分页查询任务大厅列表，只显示招募中的任务")
     public Result<PageResult<TaskHallSummaryVO>> getHallTasks(@Valid TaskHallQueryRequest request) {
-        log.info("查询任务大厅: categoryId={}, minReward={}, maxReward={}", 
+        log.info("查询任务大厅: categoryId={}, minReward={}, maxReward={}",
                 request.getCategoryId(), request.getMinReward(), request.getMaxReward());
 
-        Page<TaskDTO> page = taskApplicationService.pageHallTasks(request);
-        
+        // 1. Controller层负责Request到Query的转换
+        TaskHallQuery query = requestAssembler.toHallQuery(request);
+
+        // 2. 调用应用服务
+        Page<TaskDTO> page = taskApplicationService.pageHallTasks(query);
+
         List<TaskHallSummaryVO> voList = page.getRecords().stream()
                 .map(taskAssembler::toTaskHallSummaryVO)
                 .collect(Collectors.toList());
-        
+
         PageResult<TaskHallSummaryVO> result = PageResult.of(voList, page);
         return Result.success(result);
     }
@@ -91,9 +103,8 @@ public class TaskController {
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") Integer pageSize) {
         
-        // TODO: 从SecurityContext获取当前用户ID
-        Long publisherId = 1L; // 临时硬编码
-        
+        Long publisherId = SecurityUtil.getUserId();
+
         log.info("查询我发布的任务: publisherId={}, status={}", publisherId, status);
 
         TaskStatus taskStatus = status != null ? TaskStatus.of(status) : null;
@@ -113,12 +124,15 @@ public class TaskController {
     @PostMapping
     @Operation(summary = "创建任务", description = "发布新任务")
     public Result<Long> createTask(@Valid @RequestBody TaskCreateRequest request) {
-        // TODO: 从SecurityContext获取当前用户ID
-        Long publisherId = 1L; // 临时硬编码
-        
+        Long publisherId = SecurityUtil.getUserId();
+
         log.info("创建任务: publisherId={}, title={}", publisherId, request.getTitle());
 
-        Long taskId = taskApplicationService.createTask(request, publisherId);
+        // 1. Controller层负责Request到Command的转换
+        CreateTaskCommand command = requestAssembler.toCreateCommand(request);
+
+        // 2. 调用应用服务
+        Long taskId = taskApplicationService.createTask(command, publisherId);
         return Result.success(taskId);
     }
 
@@ -131,13 +145,16 @@ public class TaskController {
             @Parameter(description = "任务ID", required = true)
             @PathVariable @NotNull Long taskId,
             @Valid @RequestBody TaskUpdateRequest request) {
-        
-        // TODO: 从SecurityContext获取当前用户ID
-        Long userId = 1L; // 临时硬编码
-        
+
+        Long userId = SecurityUtil.getUserId();
+
         log.info("更新任务: taskId={}, userId={}", taskId, userId);
 
-        taskApplicationService.updateTask(taskId, request, userId);
+        // 1. Controller层负责Request到Command的转换
+        UpdateTaskCommand command = requestAssembler.toUpdateCommand(request);
+
+        // 2. 调用应用服务
+        taskApplicationService.updateTask(taskId, command, userId);
         return Result.success();
     }
 
@@ -149,13 +166,16 @@ public class TaskController {
     public Result<Void> cancelTask(
             @Parameter(description = "任务ID", required = true)
             @PathVariable @NotNull Long taskId) {
-        
-        // TODO: 从SecurityContext获取当前用户ID
-        Long userId = 1L; // 临时硬编码
-        
+
+        Long userId = SecurityUtil.getUserId();
+
         log.info("取消任务: taskId={}, userId={}", taskId, userId);
 
-        taskApplicationService.cancelTask(taskId, userId);
+        // 1. Controller层负责构建CancelTaskCommand
+        CancelTaskCommand command = requestAssembler.toCancelCommand(taskId, userId, null);
+
+        // 2. 调用应用服务
+        taskApplicationService.cancelTask(command);
         return Result.success();
     }
 

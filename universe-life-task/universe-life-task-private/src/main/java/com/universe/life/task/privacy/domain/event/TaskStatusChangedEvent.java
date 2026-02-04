@@ -1,5 +1,6 @@
 package com.universe.life.task.privacy.domain.event;
 
+import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

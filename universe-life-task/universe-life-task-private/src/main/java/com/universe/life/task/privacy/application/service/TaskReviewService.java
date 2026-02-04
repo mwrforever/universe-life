@@ -2,6 +2,9 @@ package com.universe.life.task.privacy.application.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.universe.life.common.util.CacheUtil;
+import com.universe.life.task.privacy.application.event.TaskEventPublisher;
+import com.universe.life.task.privacy.infrastructure.enums.TaskReviewStatus;
+import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import com.universe.life.task.privacy.domain.exception.TaskInvalidStatusException;
 import com.universe.life.task.privacy.domain.exception.TaskNotFoundException;
 import com.universe.life.task.privacy.domain.model.Task;
@@ -30,8 +33,7 @@ public class TaskReviewService {
     private final TaskRepository taskRepository;
     private final TaskReviewRecordRepository taskReviewRecordRepository;
     private final CacheUtil cacheUtil;
-    // TODO: 后续集成事件发布
-    // private final TaskEventPublisher taskEventPublisher;
+    private final TaskEventPublisher taskEventPublisher;
 
     /**
      * 审核通过
@@ -72,8 +74,8 @@ public class TaskReviewService {
         invalidateTaskCache(taskId);
         invalidateHallCache();
 
-        // TODO: 发布任务审核通过事件
-        // taskEventPublisher.publishTaskApproved(task);
+        // 发布任务审核通过事件
+        taskEventPublisher.publishTaskApproved(task, reviewerId);
     }
 
     /**
@@ -120,8 +122,8 @@ public class TaskReviewService {
         // 删除任务详情缓存
         invalidateTaskCache(taskId);
 
-        // TODO: 发布任务审核拒绝事件
-        // taskEventPublisher.publishTaskRejected(task, rejectReason);
+        // 发布任务审核拒绝事件
+        taskEventPublisher.publishTaskRejected(task, reviewerId, rejectReason);
     }
 
     /**
@@ -151,11 +153,10 @@ public class TaskReviewService {
     }
 
     /**
-     * 删除任务大厅列表缓存（模糊匹配）
+     * 删除任务大厅列表缓存（删除整个Hash）
      */
     private void invalidateHallCache() {
-        String pattern = RedisKeyConstants.TASK_HALL + "*";
-        long count = cacheUtil.deleteByPattern(pattern);
-        log.debug("删除任务大厅列表缓存: count={}", count);
+        cacheUtil.hDeleteAll(RedisKeyConstants.TASK_HALL);
+        log.debug("删除任务大厅列表缓存: key={}", RedisKeyConstants.TASK_HALL);
     }
 }

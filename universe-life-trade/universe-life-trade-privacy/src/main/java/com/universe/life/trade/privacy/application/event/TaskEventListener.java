@@ -113,20 +113,22 @@ public class TaskEventListener {
             List<TradeOrderAggregate> orders = orderRepository.findAllByTaskId(event.getTaskId());
             
             // 取消所有相关订单
+            int cancelledCount = 0;
             for (TradeOrderAggregate order : orders) {
                 // 只取消未完成的订单
                 if (!order.getStatus().isCompleted() && !order.getStatus().isCancelled()) {
-                    // TODO: 实现订单取消逻辑
-                    // order.cancel("任务已取消");
-                    // orderRepository.save(order);
-                    
+                    // 取消订单
+                    order.cancel(event.getCancelReason());
+                    orderRepository.save(order);
+                    cancelledCount++;
+
                     // 删除订单详情缓存
                     invalidateOrderCache(order.getIdValue());
                 }
             }
 
-            log.info("取消任务相关订单: taskId={}, orderCount={}", 
-                    event.getTaskId(), orders.size());
+            log.info("取消任务相关订单: taskId={}, totalOrders={}, cancelledCount={}",
+                    event.getTaskId(), orders.size(), cancelledCount);
 
         } catch (Exception e) {
             log.error("处理任务取消事件失败: taskId={}", event.getTaskId(), e);

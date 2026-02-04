@@ -7,7 +7,7 @@ import com.universe.life.task.privacy.domain.exception.TaskBusinessException;
 import com.universe.life.task.privacy.domain.exception.TaskErrorCode;
 import com.universe.life.task.privacy.domain.model.TaskCategory;
 import com.universe.life.task.privacy.domain.repository.TaskCategoryRepository;
-import com.universe.life.task.privacy.enums.CommonStatus;
+import com.universe.life.task.privacy.infrastructure.enums.CommonStatus;
 import com.universe.life.task.privacy.infrastructure.constants.RedisKeyConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

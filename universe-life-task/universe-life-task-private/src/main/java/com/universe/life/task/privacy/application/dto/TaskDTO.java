@@ -1,5 +1,8 @@
 package com.universe.life.task.privacy.application.dto;
 
+import com.universe.life.task.privacy.infrastructure.enums.TaskDepositStatus;
+import com.universe.life.task.privacy.infrastructure.enums.TaskReviewStatus;
+import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

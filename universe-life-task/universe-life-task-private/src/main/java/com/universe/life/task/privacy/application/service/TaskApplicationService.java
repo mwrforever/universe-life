@@ -2,6 +2,8 @@ package com.universe.life.task.privacy.application.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.universe.life.common.util.CacheUtil;
+import com.universe.life.task.privacy.application.event.TaskEventPublisher;
+import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import com.universe.life.task.privacy.application.assembler.TaskAssembler;
 import com.universe.life.task.privacy.application.dto.TaskDTO;
 import com.universe.life.task.privacy.domain.exception.TaskAccessDeniedException;
@@ -9,10 +11,11 @@ import com.universe.life.task.privacy.domain.exception.TaskInvalidStatusExceptio
 import com.universe.life.task.privacy.domain.exception.TaskNotFoundException;
 import com.universe.life.task.privacy.domain.model.Task;
 import com.universe.life.task.privacy.domain.repository.TaskRepository;
+import com.universe.life.task.privacy.application.command.CancelTaskCommand;
+import com.universe.life.task.privacy.application.command.CreateTaskCommand;
+import com.universe.life.task.privacy.application.command.UpdateTaskCommand;
+import com.universe.life.task.privacy.application.query.TaskHallQuery;
 import com.universe.life.task.privacy.infrastructure.constants.RedisKeyConstants;
-import com.universe.life.task.privacy.interfaces.dto.request.TaskCreateRequest;
-import com.universe.life.task.privacy.interfaces.dto.request.TaskHallQueryRequest;
-import com.universe.life.task.privacy.interfaces.dto.request.TaskUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,28 +39,27 @@ public class TaskApplicationService {
     private final TaskRepository taskRepository;
     private final TaskAssembler taskAssembler;
     private final CacheUtil cacheUtil;
-    // TODO: 后续集成事件发布
-    // private final TaskEventPublisher taskEventPublisher;
+    private final TaskEventPublisher taskEventPublisher;
 
     /**
      * 创建任务
-     * 
-     * @param request 创建任务请求
+     *
+     * @param command 创建任务命令
      * @param publisherId 发布者ID
      * @return 任务ID
      */
     @Transactional(rollbackFor = Exception.class)
-    public Long createTask(TaskCreateRequest request, Long publisherId) {
-        log.info("创建任务: publisherId={}, title={}", publisherId, request.getTitle());
+    public Long createTask(CreateTaskCommand command, Long publisherId) {
+        log.info("创建任务: publisherId={}, title={}", publisherId, command.getTitle());
 
         // 创建任务领域模型
         Task task = Task.create(
-                request.getTitle(),
-                request.getDescription(),
-                request.getRewardAmount(),
-                request.getCategoryId(),
-                request.getDeadline(),
-                request.getMaxAcceptors(),
+                command.getTitle(),
+                command.getDescription(),
+                command.getRewardAmount(),
+                command.getCategoryId(),
+                command.getDeadline(),
+                command.getMaxAcceptors(),
                 publisherId
         );
 
@@ -65,23 +67,23 @@ public class TaskApplicationService {
         Task savedTask = taskRepository.save(task);
         
         log.info("任务创建成功: taskId={}", savedTask.getTaskId());
-        
-        // TODO: 发布任务创建事件
-        // taskEventPublisher.publishTaskCreated(savedTask);
-        
+
+        // 发布任务创建事件
+        taskEventPublisher.publishTaskCreated(savedTask);
+
         return savedTask.getTaskId();
     }
 
     /**
      * 更新任务
      * 只有待审核或审核拒绝状态的任务可以编辑
-     * 
+     *
      * @param taskId 任务ID
-     * @param request 更新任务请求
+     * @param command 更新任务命令
      * @param userId 用户ID
      */
     @Transactional(rollbackFor = Exception.class)
-    public void updateTask(Long taskId, TaskUpdateRequest request, Long userId) {
+    public void updateTask(Long taskId, UpdateTaskCommand command, Long userId) {
         log.info("更新任务: taskId={}, userId={}", taskId, userId);
 
         // 查询任务
@@ -97,32 +99,32 @@ public class TaskApplicationService {
         }
 
         // 更新字段
-        if (request.getTitle() != null) {
-            task.setTitle(request.getTitle());
+        if (command.getTitle() != null) {
+            task.setTitle(command.getTitle());
         }
-        if (request.getDescription() != null) {
-            task.setDescription(request.getDescription());
+        if (command.getDescription() != null) {
+            task.setDescription(command.getDescription());
         }
-        if (request.getRewardAmount() != null) {
-            task.setRewardAmount(request.getRewardAmount());
+        if (command.getRewardAmount() != null) {
+            task.setRewardAmount(command.getRewardAmount());
             // 重新计算保证金
-            task.setDepositAmount(request.getRewardAmount() / 2);
+            task.setDepositAmount(command.getRewardAmount() / 2);
         }
-        if (request.getCategoryId() != null) {
-            task.setCategoryId(request.getCategoryId());
+        if (command.getCategoryId() != null) {
+            task.setCategoryId(command.getCategoryId());
         }
-        if (request.getDeadline() != null) {
-            task.setDeadline(request.getDeadline());
+        if (command.getDeadline() != null) {
+            task.setDeadline(command.getDeadline());
         }
-        if (request.getMaxAcceptors() != null) {
-            task.setMaxAcceptors(request.getMaxAcceptors());
+        if (command.getMaxAcceptors() != null) {
+            task.setMaxAcceptors(command.getMaxAcceptors());
         }
 
         // 保存更新
         taskRepository.save(task);
-        
+
         log.info("任务更新成功: taskId={}", taskId);
-        
+
         // 删除任务详情缓存
         invalidateTaskCache(taskId);
     }
@@ -130,21 +132,20 @@ public class TaskApplicationService {
     /**
      * 取消任务
      * 只有招募中、待支付、支付中状态的任务可以取消
-     * 
-     * @param taskId 任务ID
-     * @param userId 用户ID
+     *
+     * @param command 取消任务命令
      */
     @Transactional(rollbackFor = Exception.class)
-    public void cancelTask(Long taskId, Long userId) {
-        log.info("取消任务: taskId={}, userId={}", taskId, userId);
+    public void cancelTask(CancelTaskCommand command) {
+        log.info("取消任务: taskId={}, userId={}", command.getTaskId(), command.getOperatorId());
 
         // 查询任务
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new TaskNotFoundException(taskId));
+        Task task = taskRepository.findById(command.getTaskId())
+                .orElseThrow(() -> new TaskNotFoundException(command.getTaskId()));
 
         // 验证权限
-        if (!task.canBeCancelledBy(userId)) {
-            if (!task.getPublisherId().equals(userId)) {
+        if (!task.canBeCancelledBy(command.getOperatorId())) {
+            if (!task.getPublisherId().equals(command.getOperatorId())) {
                 throw new TaskAccessDeniedException("无权取消该任务");
             }
             throw new TaskInvalidStatusException("当前任务状态不允许取消");
@@ -153,15 +154,16 @@ public class TaskApplicationService {
         // 取消任务
         task.cancel();
         taskRepository.save(task);
-        
-        log.info("任务取消成功: taskId={}", taskId);
-        
+
+        log.info("任务取消成功: taskId={}", command.getTaskId());
+
         // 删除任务详情缓存和大厅列表缓存
-        invalidateTaskCache(taskId);
+        invalidateTaskCache(command.getTaskId());
         invalidateHallCache();
-        
-        // TODO: 发布任务取消事件
-        // taskEventPublisher.publishTaskCancelled(task);
+
+        // 发布任务取消事件
+        String reason = command.getReason() != null ? command.getReason() : "用户主动取消";
+        taskEventPublisher.publishTaskCancelled(task, reason);
     }
 
     /**
@@ -192,54 +194,72 @@ public class TaskApplicationService {
     /**
      * 分页查询任务大厅列表
      * 只返回招募中状态的任务
-     * 缓存策略：5分钟 + 10-30分钟随机过期时间
-     * 
-     * @param request 查询请求
+     * 缓存策略：使用Hash结构，key为task:hall，field为查询条件组合
+     *
+     * @param query 查询对象
      * @return 任务列表
      */
-    public Page<TaskDTO> pageHallTasks(TaskHallQueryRequest request) {
-        log.debug("查询任务大厅: categoryId={}, minReward={}, maxReward={}", 
-                request.getCategoryId(), request.getMinReward(), request.getMaxReward());
-
-        // 构建缓存键
-        String cacheKey = String.format("%s:%s:%s:%s:%s:%s:%s",
-                RedisKeyConstants.TASK_HALL,
-                request.getCategoryId() != null ? request.getCategoryId() : "all",
-                request.getMinReward() != null ? request.getMinReward() : "0",
-                request.getMaxReward() != null ? request.getMaxReward() : "max",
-                request.getSortBy() != null ? request.getSortBy() : "created",
-                request.getSortOrder() != null ? request.getSortOrder() : "desc",
-                request.getPageNum());
+    public Page<TaskDTO> pageHallTasks(TaskHallQuery query) {
+        log.debug("查询任务大厅: categoryId={}, minReward={}, maxReward={}",
+                query.getCategoryId(), query.getMinReward(), query.getMaxReward());
 
         // 注意：MyBatis Plus 的 Page 对象不能直接序列化到 Redis
         // 这里我们只缓存第一页的数据，其他页直接查询数据库
-        if (request.getPageNum() > 1) {
-            return queryHallTasksFromDb(request);
+        if (query.getPageNum() != null && query.getPageNum() > 1) {
+            return queryHallTasksFromDb(query);
         }
 
-        // 使用缓存（5分钟 + 10-30分钟随机）
-        return cacheUtil.getOrComputeWithRandomExpire(
-                cacheKey,
-                Page.class,
-                () -> queryHallTasksFromDb(request),
-                5
+        // 构建Hash的field
+        String hashField = buildHallCacheField(query);
+
+        // 使用Hash缓存（5分钟 + 10-30分钟随机）
+        Page<?> cachedPage = cacheUtil.hGet(
+                RedisKeyConstants.TASK_HALL,
+                hashField,
+                Page.class
         );
+
+        if (cachedPage != null) {
+            @SuppressWarnings("unchecked")
+            Page<TaskDTO> result = (Page<TaskDTO>) cachedPage;
+            return result;
+        }
+
+        Page<TaskDTO> computed = queryHallTasksFromDb(query);
+        if (computed != null) {
+            // 添加10-30分钟的随机过期时间
+            int randomMinutes = 10 + (int) (Math.random() * 21);
+            cacheUtil.hSet(RedisKeyConstants.TASK_HALL, hashField, computed, 5 + randomMinutes);
+        }
+        return computed;
+    }
+
+    /**
+     * 构建任务大厅缓存的Hash field
+     */
+    private String buildHallCacheField(TaskHallQuery query) {
+        return String.format("%s:%s:%s:%s:%s:1",
+                query.getCategoryId() != null ? query.getCategoryId() : "all",
+                query.getMinReward() != null ? query.getMinReward() : "0",
+                query.getMaxReward() != null ? query.getMaxReward() : "max",
+                query.getSortBy() != null ? query.getSortBy() : "created",
+                query.getSortOrder() != null ? query.getSortOrder() : "desc");
     }
 
     /**
      * 从数据库查询任务大厅列表
      */
-    private Page<TaskDTO> queryHallTasksFromDb(TaskHallQueryRequest request) {
+    private Page<TaskDTO> queryHallTasksFromDb(TaskHallQuery query) {
         // 转换排序字段
-        String sortBy = convertSortBy(request.getSortBy());
-        String sortOrder = request.getSortOrder() != null ? request.getSortOrder() : "desc";
+        String sortBy = convertSortBy(query.getSortBy());
+        String sortOrder = query.getSortOrder() != null ? query.getSortOrder() : "desc";
 
         // 查询数据库
-        Page<Task> page = new Page<>(request.getPageNum(), request.getPageSize());
+        Page<Task> page = new Page<>(query.getPageNumOrDefault(), query.getPageSizeOrDefault());
         Page<Task> taskPage = taskRepository.findHallTasks(
-                request.getCategoryId(),
-                request.getMinReward(),
-                request.getMaxReward(),
+                query.getCategoryId(),
+                query.getMinReward(),
+                query.getMaxReward(),
                 sortBy,
                 sortOrder,
                 page
@@ -308,11 +328,10 @@ public class TaskApplicationService {
     }
 
     /**
-     * 删除任务大厅列表缓存（模糊匹配）
+     * 删除任务大厅列表缓存（删除整个Hash）
      */
     private void invalidateHallCache() {
-        String pattern = RedisKeyConstants.TASK_HALL + "*";
-        long count = cacheUtil.deleteByPattern(pattern);
-        log.debug("删除任务大厅列表缓存: count={}", count);
+        cacheUtil.hDeleteAll(RedisKeyConstants.TASK_HALL);
+        log.debug("删除任务大厅列表缓存: key={}", RedisKeyConstants.TASK_HALL);
     }
 }

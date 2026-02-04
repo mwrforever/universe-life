@@ -1,10 +1,10 @@
 package com.universe.life.task.privacy.application.event;
 
+import com.universe.life.common.util.RabbitMqSender;
 import com.universe.life.task.privacy.domain.event.*;
 import com.universe.life.task.privacy.domain.model.Task;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 /**
  * 任务事件发布器
  * 负责发布任务相关的领域事件到 RabbitMQ
- * 
+ *
  * @author Universe Life Team
  * @since 2025-01-18
  */
@@ -23,7 +23,7 @@ public class TaskEventPublisher {
 
     private static final String TASK_EXCHANGE = "task.exchange";
 
-    private final RabbitTemplate rabbitTemplate;
+    private final RabbitMqSender rabbitMqSender;
 
     /**
      * 发布任务创建事件
@@ -38,7 +38,10 @@ public class TaskEventPublisher {
                 .createdAt(task.getCreatedAt())
                 .build();
 
-        rabbitTemplate.convertAndSend(TASK_EXCHANGE, "task.created", event);
+        rabbitMqSender.builder()
+                .to(TASK_EXCHANGE, "task.created")
+                .persistent(true)
+                .send(event);
         log.info("发布任务创建事件: taskId={}, title={}", task.getTaskId(), task.getTitle());
     }
 
@@ -54,7 +57,10 @@ public class TaskEventPublisher {
                 .approvedAt(LocalDateTime.now())
                 .build();
 
-        rabbitTemplate.convertAndSend(TASK_EXCHANGE, "task.approved", event);
+        rabbitMqSender.builder()
+                .to(TASK_EXCHANGE, "task.approved")
+                .persistent(true)
+                .send(event);
         log.info("发布任务审核通过事件: taskId={}, reviewerId={}", task.getTaskId(), reviewerId);
     }
 
@@ -71,8 +77,11 @@ public class TaskEventPublisher {
                 .rejectedAt(LocalDateTime.now())
                 .build();
 
-        rabbitTemplate.convertAndSend(TASK_EXCHANGE, "task.rejected", event);
-        log.info("发布任务审核拒绝事件: taskId={}, reviewerId={}, reason={}", 
+        rabbitMqSender.builder()
+                .to(TASK_EXCHANGE, "task.rejected")
+                .persistent(true)
+                .send(event);
+        log.info("发布任务审核拒绝事件: taskId={}, reviewerId={}, reason={}",
                 task.getTaskId(), reviewerId, rejectReason);
     }
 
@@ -88,7 +97,10 @@ public class TaskEventPublisher {
                 .changedAt(LocalDateTime.now())
                 .build();
 
-        rabbitTemplate.convertAndSend(TASK_EXCHANGE, "task.status.changed", event);
+        rabbitMqSender.builder()
+                .to(TASK_EXCHANGE, "task.status.changed")
+                .persistent(true)
+                .send(event);
         log.info("发布任务状态变更事件: taskId={}, status={}", task.getTaskId(), task.getStatus());
     }
 
@@ -104,7 +116,10 @@ public class TaskEventPublisher {
                 .cancelledAt(LocalDateTime.now())
                 .build();
 
-        rabbitTemplate.convertAndSend(TASK_EXCHANGE, "task.cancelled", event);
+        rabbitMqSender.builder()
+                .to(TASK_EXCHANGE, "task.cancelled")
+                .persistent(true)
+                .send(event);
         log.info("发布任务取消事件: taskId={}, reason={}", task.getTaskId(), cancelReason);
     }
 
@@ -121,8 +136,11 @@ public class TaskEventPublisher {
                 .totalRewardAmount(task.getRewardAmount() * task.getCurrentAcceptors())
                 .build();
 
-        rabbitTemplate.convertAndSend(TASK_EXCHANGE, "task.completed", event);
-        log.info("发布任务完成事件: taskId={}, totalAcceptors={}", 
+        rabbitMqSender.builder()
+                .to(TASK_EXCHANGE, "task.completed")
+                .persistent(true)
+                .send(event);
+        log.info("发布任务完成事件: taskId={}, totalAcceptors={}",
                 task.getTaskId(), task.getCurrentAcceptors());
     }
 }

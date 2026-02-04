@@ -1,6 +1,7 @@
 package com.universe.life.task.privacy.infrastructure.persistence.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.universe.life.task.privacy.infrastructure.enums.TaskReviewStatus;
 import com.universe.life.task.privacy.domain.repository.TaskReviewRecordRepository;
 import com.universe.life.task.privacy.infrastructure.persistence.mapper.TaskReviewRecordMapper;
 import com.universe.life.task.privacy.infrastructure.persistence.po.TaskReviewRecordPO;

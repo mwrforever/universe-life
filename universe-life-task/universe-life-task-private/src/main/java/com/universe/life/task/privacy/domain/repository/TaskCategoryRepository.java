@@ -1,7 +1,7 @@
 package com.universe.life.task.privacy.domain.repository;
 
 import com.universe.life.task.privacy.domain.model.TaskCategory;
-import com.universe.life.task.privacy.enums.CommonStatus;
+import com.universe.life.task.privacy.infrastructure.enums.CommonStatus;
 
 import java.util.List;
 import java.util.Optional;

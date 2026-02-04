@@ -1,7 +1,7 @@
 package com.universe.life.task.privacy.infrastructure.persistence.po;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.universe.life.task.privacy.enums.TaskAcceptanceStatus;
+import com.universe.life.task.privacy.infrastructure.enums.TaskAcceptanceStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;

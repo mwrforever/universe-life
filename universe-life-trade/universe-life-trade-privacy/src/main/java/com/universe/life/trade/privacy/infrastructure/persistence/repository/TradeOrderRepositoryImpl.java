@@ -8,8 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.universe.life.trade.privacy.domain.model.aggregate.TradeOrderAggregate;
 import com.universe.life.trade.privacy.domain.model.valueobject.TradeOrderStatusEnum;
 import com.universe.life.trade.privacy.domain.repository.TradeOrderRepository;
-import com.universe.life.trade.privacy.enums.TradeOrderStatus;
-import com.universe.life.trade.privacy.infrastructure.persistence.mapper.TradeOrderMapper;
+import com.universe.life.trade.privacy.infrastructure.persistence.mapper.TradeOrderPOMapper;
 import com.universe.life.trade.privacy.infrastructure.persistence.po.TradeOrderPO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +33,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TradeOrderRepositoryImpl implements TradeOrderRepository {
 
-    private final TradeOrderMapper tradeOrderMapper;
+    private final TradeOrderPOMapper tradeOrderMapper;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -70,7 +69,7 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         LambdaQueryWrapper<TradeOrderPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(TradeOrderPO::getAcceptorId, acceptorId);
         if (status != null) {
-            wrapper.eq(TradeOrderPO::getStatus, toTradeOrderStatus(status));
+            wrapper.eq(TradeOrderPO::getStatus, status);
         }
         wrapper.orderByDesc(TradeOrderPO::getCreatedAt);
 
@@ -90,7 +89,7 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         LambdaQueryWrapper<TradeOrderPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(TradeOrderPO::getTaskId, taskId);
         if (status != null) {
-            wrapper.eq(TradeOrderPO::getStatus, toTradeOrderStatus(status));
+            wrapper.eq(TradeOrderPO::getStatus, status);
         }
         wrapper.orderByDesc(TradeOrderPO::getCreatedAt);
 
@@ -109,7 +108,7 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         LambdaQueryWrapper<TradeOrderPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(TradeOrderPO::getTaskId, taskId);
         if (status != null) {
-            wrapper.eq(TradeOrderPO::getStatus, toTradeOrderStatus(status));
+            wrapper.eq(TradeOrderPO::getStatus, status);
         }
         return tradeOrderMapper.selectCount(wrapper);
     }
@@ -128,8 +127,8 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
     public boolean updateStatus(Long orderId, TradeOrderStatusEnum oldStatus, TradeOrderStatusEnum newStatus) {
         LambdaUpdateWrapper<TradeOrderPO> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(TradeOrderPO::getId, orderId)
-                .eq(TradeOrderPO::getStatus, toTradeOrderStatus(oldStatus))
-                .set(TradeOrderPO::getStatus, toTradeOrderStatus(newStatus));
+                .eq(TradeOrderPO::getStatus, oldStatus)
+                .set(TradeOrderPO::getStatus, newStatus);
         return tradeOrderMapper.update(null, wrapper) > 0;
     }
 
@@ -150,7 +149,7 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         po.setPublisherId(aggregate.getPublisherId());
         po.setAcceptorId(aggregate.getAcceptorId());
         po.setRewardAmount(aggregate.getRewardAmountCents());
-        po.setStatus(toTradeOrderStatus(aggregate.getStatus()));
+        po.setStatus(aggregate.getStatus());
         
         // 提交成果
         if (aggregate.hasSubmitResult()) {
@@ -161,6 +160,8 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         // 拒绝信息
         if (aggregate.hasRejectInfo()) {
             po.setRejectReason(aggregate.getRejectInfo().getReason());
+            po.setRejectedAt(aggregate.getRejectInfo().getRejectedAt());
+            po.setRejectedBy(aggregate.getRejectInfo().getRejectedBy());
         }
         
         po.setAppliedAt(aggregate.getAppliedAt());
@@ -183,12 +184,12 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
                 po.getPublisherId(),
                 po.getAcceptorId(),
                 po.getRewardAmount(),
-                toTradeOrderStatusEnum(po.getStatus()),
+                po.getStatus(),
                 po.getSubmitContent(),
                 fromJson(po.getSubmitImages()),
                 po.getRejectReason(),
-                null, // rejectedAt - 从数据库字段获取
-                null, // rejectedBy - 从数据库字段获取
+                po.getRejectedAt(),
+                po.getRejectedBy(),
                 po.getAppliedAt(),
                 po.getApprovedAt(),
                 po.getSubmittedAt(),
@@ -197,26 +198,6 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
                 po.getUpdatedAt(),
                 po.getVersion()
         );
-    }
-
-    /**
-     * 领域层枚举 → 基础设施层枚举
-     */
-    private TradeOrderStatus toTradeOrderStatus(TradeOrderStatusEnum statusEnum) {
-        if (statusEnum == null) {
-            return null;
-        }
-        return TradeOrderStatus.of(statusEnum.getCode());
-    }
-
-    /**
-     * 基础设施层枚举 → 领域层枚举
-     */
-    private TradeOrderStatusEnum toTradeOrderStatusEnum(TradeOrderStatus status) {
-        if (status == null) {
-            return null;
-        }
-        return TradeOrderStatusEnum.of(status.getCode());
     }
 
     /**

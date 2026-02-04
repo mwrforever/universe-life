@@ -1,7 +1,7 @@
 package com.universe.life.trade.privacy.infrastructure.persistence.po;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.universe.life.trade.privacy.enums.TradeOrderStatus;
+import com.universe.life.trade.privacy.domain.model.valueobject.TradeOrderStatusEnum;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -53,7 +53,7 @@ public class TradeOrderPO {
      * 订单状态
      */
     @TableField("status")
-    private TradeOrderStatus status;
+    private TradeOrderStatusEnum status;
 
     /**
      * 提交内容
@@ -72,6 +72,18 @@ public class TradeOrderPO {
      */
     @TableField("reject_reason")
     private String rejectReason;
+
+    /**
+     * 拒绝时间
+     */
+    @TableField("rejected_at")
+    private LocalDateTime rejectedAt;
+
+    /**
+     * 拒绝人ID
+     */
+    @TableField("rejected_by")
+    private Long rejectedBy;
 
     /**
      * 申请时间

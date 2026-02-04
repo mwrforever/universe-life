@@ -1,6 +1,6 @@
 package com.universe.life.task.privacy.interfaces.vo;
 
-import com.universe.life.task.privacy.enums.CommonStatus;
+import com.universe.life.task.privacy.infrastructure.enums.CommonStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

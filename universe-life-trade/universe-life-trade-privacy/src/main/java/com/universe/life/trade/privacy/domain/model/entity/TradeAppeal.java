@@ -2,9 +2,9 @@ package com.universe.life.trade.privacy.domain.model.entity;
 
 import com.universe.life.auth.common.exception.BusinessException;
 import com.universe.life.auth.common.message.ExceptionMessage;
-import com.universe.life.trade.privacy.enums.TradeAppealStatus;
-import com.universe.life.trade.privacy.enums.TradeAppealType;
-import com.universe.life.trade.privacy.enums.TradeAppealResult;
+import com.universe.life.trade.privacy.infrastructure.enums.TradeAppealStatus;
+import com.universe.life.trade.privacy.infrastructure.enums.TradeAppealType;
+import com.universe.life.trade.privacy.infrastructure.enums.TradeAppealResult;
 import lombok.Getter;
 
 import java.time.LocalDateTime;

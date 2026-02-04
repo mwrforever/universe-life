@@ -16,10 +16,17 @@ public class RedisKeyConstants {
     public static final String TASK_DETAIL = "task:detail:";
 
     /**
-     * 任务大厅列表缓存键前缀
-     * 格式: task:hall:{categoryId}:{minReward}:{maxReward}:{sortBy}:{sortOrder}:{pageNum}
+     * 任务大厅列表缓存键（使用Hash结构）
+     * 格式: task:hall
+     * Hash的field格式: {categoryId}:{minReward}:{maxReward}:{sortBy}:{sortOrder}:{pageNum}
      */
     public static final String TASK_HALL = "task:hall";
+
+    /**
+     * 任务分类列表缓存键（使用Hash结构）
+     * 格式: task:categories
+     */
+    public static final String TASK_CATEGORIES_HASH = "task:categories";
 
     /**
      * 任务分类列表缓存键

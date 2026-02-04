@@ -8,6 +8,7 @@ import com.universe.life.task.privacy.domain.event.OrderRejectedEvent;
 import com.universe.life.task.privacy.domain.exception.TaskNotFoundException;
 import com.universe.life.task.privacy.domain.model.Task;
 import com.universe.life.task.privacy.domain.repository.TaskRepository;
+import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import com.universe.life.task.privacy.infrastructure.constants.RedisKeyConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -244,11 +245,10 @@ public class OrderEventListener {
     }
 
     /**
-     * 删除任务大厅列表缓存（模糊匹配）
+     * 删除任务大厅列表缓存（删除整个Hash）
      */
     private void invalidateHallCache() {
-        String pattern = RedisKeyConstants.TASK_HALL + "*";
-        long count = cacheUtil.deleteByPattern(pattern);
-        log.debug("删除任务大厅列表缓存: count={}", count);
+        cacheUtil.hDeleteAll(RedisKeyConstants.TASK_HALL);
+        log.debug("删除任务大厅列表缓存: key={}", RedisKeyConstants.TASK_HALL);
     }
 }

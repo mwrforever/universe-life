@@ -70,28 +70,42 @@ public enum TradeOrderStatusEnum {
      * <p>订单存在争议，等待平台介入处理</p>
      */
     DISPUTE(5, "争议中"),
-    
+
+    // ==================== 付款阶段 ====================
+
+    /**
+     * 付款中
+     * <p>系统正在处理付款（待收款→待评价的中间状态）</p>
+     */
+    PAYING(6, "付款中"),
+
     // ==================== 终态 ====================
-    
+
     /**
      * 已完成
      * <p>订单已完成，任务结束（终态）</p>
      */
-    COMPLETED(6, "已完成"),
-    
+    COMPLETED(7, "已完成"),
+
     /**
      * 已放弃
      * <p>接单者主动放弃了任务（终态）</p>
      */
-    ABANDONED(7, "已放弃"),
-    
+    ABANDONED(8, "已放弃"),
+
+    /**
+     * 已取消
+     * <p>任务被取消，订单随之取消（终态）</p>
+     */
+    CANCELLED(9, "已取消"),
+
     // ==================== 评价阶段 ====================
-    
+
     /**
      * 待评价
      * <p>任务已完成，等待双方评价</p>
      */
-    RATE(8, "待评价");
+    RATE(10, "待评价");
 
     /** 状态码 */
     private final Integer code;
@@ -114,32 +128,41 @@ public enum TradeOrderStatusEnum {
     private static final Map<TradeOrderStatusEnum, Set<TradeOrderStatusEnum>> TRANSITIONS = new EnumMap<>(TradeOrderStatusEnum.class);
 
     static {
-        // 待审批 → 进行中（同意）、已拒绝（拒绝）
-        TRANSITIONS.put(PENDING, EnumSet.of(PROGRESS, REJECTED));
+        // 待审批 → 进行中（同意）、已拒绝（拒绝）、已取消（任务取消）
+        TRANSITIONS.put(PENDING, EnumSet.of(PROGRESS, REJECTED, CANCELLED));
 
         // 已拒绝 → 终态，无转换
         TRANSITIONS.put(REJECTED, EnumSet.noneOf(TradeOrderStatusEnum.class));
 
-        // 进行中 → 待确认（提交成果）、已放弃（放弃任务）
-        TRANSITIONS.put(PROGRESS, EnumSet.of(SUBMIT, ABANDONED));
+        // 进行中 → 待确认（提交成果）、已放弃（放弃任务）、已取消（任务取消）
+        TRANSITIONS.put(PROGRESS, EnumSet.of(SUBMIT, ABANDONED, CANCELLED));
 
-        // 待确认 → 待收款（确认验收）、争议中（发起申诉）、进行中（打回修改）
-        TRANSITIONS.put(SUBMIT, EnumSet.of(PAYMENT, DISPUTE, PROGRESS));
+        // 待确认 → 待收款（确认验收）、争议中（发起申诉）、进行中（打回修改）、已取消（任务取消）
+        TRANSITIONS.put(SUBMIT, EnumSet.of(PAYMENT, DISPUTE, PROGRESS, CANCELLED));
 
-        // 待收款 → 已完成（收款完成）、待评价（收款并进入评价）
-        TRANSITIONS.put(PAYMENT, EnumSet.of(COMPLETED, RATE));
+        // 待收款 → 已完成（收款完成）、待评价（收款并进入评价）、已取消（任务取消）
+        TRANSITIONS.put(PAYMENT, EnumSet.of(COMPLETED, RATE, CANCELLED));
 
-        // 争议中 → 已完成（申诉处理完成）、待收款（申诉通过）、进行中（申诉驳回继续执行）
-        TRANSITIONS.put(DISPUTE, EnumSet.of(COMPLETED, PAYMENT, PROGRESS));
+        // 争议中 → 已完成（申诉处理完成）、待收款（申诉通过）、进行中（申诉驳回继续执行）、已取消（任务取消）
+        TRANSITIONS.put(DISPUTE, EnumSet.of(COMPLETED, PAYMENT, PROGRESS, CANCELLED));
+
+        // 付款中 → 已完成（收款完成）、待评价（进入评价）、已取消（任务取消）
+        TRANSITIONS.put(PAYING, EnumSet.of(COMPLETED, RATE, CANCELLED));
 
         // 已完成 → 终态，无转换
         TRANSITIONS.put(COMPLETED, EnumSet.noneOf(TradeOrderStatusEnum.class));
 
+        // 已拒绝 → 终态，无转换
+        TRANSITIONS.put(REJECTED, EnumSet.noneOf(TradeOrderStatusEnum.class));
+
         // 已放弃 → 终态，无转换
         TRANSITIONS.put(ABANDONED, EnumSet.noneOf(TradeOrderStatusEnum.class));
 
-        // 待评价 → 已完成（评价完成）
-        TRANSITIONS.put(RATE, EnumSet.of(COMPLETED));
+        // 待评价 → 已完成（评价完成）、已取消（任务取消）
+        TRANSITIONS.put(RATE, EnumSet.of(COMPLETED, CANCELLED));
+
+        // 已取消 → 终态，无转换（由任务取消触发）
+        TRANSITIONS.put(CANCELLED, EnumSet.noneOf(TradeOrderStatusEnum.class));
     }
 
     /**
@@ -171,7 +194,7 @@ public enum TradeOrderStatusEnum {
      * @return 如果是终态返回true
      */
     public boolean isFinalStatus() {
-        return this == COMPLETED || this == REJECTED || this == ABANDONED;
+        return this == COMPLETED || this == REJECTED || this == ABANDONED || this == CANCELLED;
     }
 
     /**
@@ -181,7 +204,7 @@ public enum TradeOrderStatusEnum {
      */
     public boolean isActiveStatus() {
         return this == PENDING || this == PROGRESS || this == SUBMIT ||
-                this == PAYMENT || this == DISPUTE || this == RATE;
+                this == PAYMENT || this == DISPUTE || this == PAYING || this == RATE;
     }
 
     /**
@@ -282,9 +305,16 @@ public enum TradeOrderStatusEnum {
     }
 
     /**
-     * 是否已取消
+     * 是否已取消（包括放弃、拒绝、任务取消）
      */
     public boolean isCancelled() {
-        return this == ABANDONED || this == REJECTED;
+        return this == ABANDONED || this == REJECTED || this == CANCELLED;
+    }
+
+    /**
+     * 是否因任务取消而取消
+     */
+    public boolean isTaskCancelled() {
+        return this == CANCELLED;
     }
 }

@@ -5,8 +5,10 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.universe.life.task.privacy.domain.model.Task;
 import com.universe.life.task.privacy.domain.repository.TaskRepository;
+import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import com.universe.life.task.privacy.infrastructure.persistence.mapper.TaskMapper;
 import com.universe.life.task.privacy.infrastructure.persistence.po.TaskPO;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -52,6 +54,11 @@ public class TaskRepositoryImpl implements TaskRepository {
         }
         wrapper.orderByDesc(TaskPO::getCreatedAt);
 
+        return getTaskPage(page, wrapper);
+    }
+
+    @NotNull
+    private Page<Task> getTaskPage(Page<Task> page, LambdaQueryWrapper<TaskPO> wrapper) {
         Page<TaskPO> poPage = new Page<>(page.getCurrent(), page.getSize());
         taskMapper.selectPage(poPage, wrapper);
 
@@ -87,14 +94,7 @@ public class TaskRepositoryImpl implements TaskRepository {
             wrapper.orderByDesc(TaskPO::getCreatedAt);
         }
 
-        Page<TaskPO> poPage = new Page<>(page.getCurrent(), page.getSize());
-        taskMapper.selectPage(poPage, wrapper);
-
-        Page<Task> result = new Page<>(poPage.getCurrent(), poPage.getSize(), poPage.getTotal());
-        result.setRecords(poPage.getRecords().stream()
-                .map(this::toTask)
-                .collect(Collectors.toList()));
-        return result;
+        return getTaskPage(page, wrapper);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class TaskRepositoryImpl implements TaskRepository {
         if (taskIds == null || taskIds.isEmpty()) {
             return List.of();
         }
-        List<TaskPO> poList = taskMapper.selectBatchIds(taskIds);
+        List<TaskPO> poList = taskMapper.selectByIds(taskIds);
         return poList.stream().map(this::toTask).collect(Collectors.toList());
     }
 
@@ -140,14 +140,7 @@ public class TaskRepositoryImpl implements TaskRepository {
         wrapper.eq(TaskPO::getStatus, status)
                 .orderByDesc(TaskPO::getCreatedAt);
 
-        Page<TaskPO> poPage = new Page<>(page.getCurrent(), page.getSize());
-        taskMapper.selectPage(poPage, wrapper);
-
-        Page<Task> result = new Page<>(poPage.getCurrent(), poPage.getSize(), poPage.getTotal());
-        result.setRecords(poPage.getRecords().stream()
-                .map(this::toTask)
-                .collect(Collectors.toList()));
-        return result;
+        return getTaskPage(page, wrapper);
     }
 
     // ==================== 对象转换 ====================

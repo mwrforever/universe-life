@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.universe.life.trade.privacy.infrastructure.persistence.po.TradeOrderPO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -79,4 +80,13 @@ public interface TradeOrderPOMapper extends BaseMapper<TradeOrderPO> {
             @Param("taskId") Long taskId,
             @Param("status") Integer status
     );
+
+    /**
+     * 根据任务ID查询所有订单
+     *
+     * @param taskId 任务ID
+     * @return 订单列表
+     */
+    @Select("SELECT * FROM trade_order WHERE task_id = #{taskId}")
+    List<TradeOrderPO> selectByTaskId(@Param("taskId") Long taskId);
 }

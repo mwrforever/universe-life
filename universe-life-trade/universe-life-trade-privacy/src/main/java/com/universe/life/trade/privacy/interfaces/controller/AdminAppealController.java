@@ -4,7 +4,7 @@ import com.universe.life.auth.common.domain.Result;
 import com.universe.life.auth.resource.util.SecurityUtil;
 import com.universe.life.common.domain.PageResult;
 import com.universe.life.trade.privacy.application.service.TradeAppealService;
-import com.universe.life.trade.privacy.enums.TradeAppealResult;
+import com.universe.life.trade.privacy.infrastructure.enums.TradeAppealResult;
 import com.universe.life.trade.privacy.interfaces.dto.request.HandleAppealRequest;
 import com.universe.life.trade.privacy.interfaces.vo.TradeAppealVO;
 import io.swagger.v3.oas.annotations.Operation;

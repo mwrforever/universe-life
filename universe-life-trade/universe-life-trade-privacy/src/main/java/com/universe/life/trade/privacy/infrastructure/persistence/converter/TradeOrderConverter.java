@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.universe.life.trade.privacy.domain.model.aggregate.TradeOrderAggregate;
-import com.universe.life.trade.privacy.domain.model.valueobject.TradeOrderStatusEnum;
-import com.universe.life.trade.privacy.enums.TradeOrderStatus;
 import com.universe.life.trade.privacy.infrastructure.persistence.po.TradeOrderPO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -48,7 +46,6 @@ public abstract class TradeOrderConverter {
      */
     @Mapping(target = "id", source = "idValue")
     @Mapping(target = "rewardAmount", source = "rewardAmountCents")
-    @Mapping(target = "status", source = "status", qualifiedByName = "domainStatusToPO")
     @Mapping(target = "submitContent", expression = "java(domain.hasSubmitResult() ? domain.getSubmitResult().getContent() : null)")
     @Mapping(target = "submitImages", expression = "java(domain.hasSubmitResult() ? serializeImages(domain.getSubmitResult().getImages()) : null)")
     @Mapping(target = "rejectReason", expression = "java(domain.hasRejectInfo() ? domain.getRejectInfo().getReason() : null)")
@@ -75,12 +72,12 @@ public abstract class TradeOrderConverter {
                 po.getPublisherId(),
                 po.getAcceptorId(),
                 po.getRewardAmount(),
-                poStatusToDomain(po.getStatus()),
+                po.getStatus(),
                 po.getSubmitContent(),
                 parseImages(po.getSubmitImages()),
                 po.getRejectReason(),
-                null, // rejectedAt - 需要从其他地方获取
-                po.getPublisherId(), // rejectedBy - 假设是发布者拒绝
+                po.getRejectedAt(),
+                po.getRejectedBy(),
                 po.getAppliedAt(),
                 po.getApprovedAt(),
                 po.getSubmittedAt(),
@@ -89,33 +86,6 @@ public abstract class TradeOrderConverter {
                 po.getUpdatedAt(),
                 po.getVersion()
         );
-    }
-
-    /**
-     * 领域状态枚举转PO状态枚举
-     *
-     * @param domainStatus 领域层状态枚举
-     * @return PO层状态枚举
-     */
-    @Named("domainStatusToPO")
-    protected TradeOrderStatus domainStatusToPO(TradeOrderStatusEnum domainStatus) {
-        if (domainStatus == null) {
-            return null;
-        }
-        return TradeOrderStatus.of(domainStatus.getCode());
-    }
-
-    /**
-     * PO状态枚举转领域状态枚举
-     *
-     * @param poStatus PO层状态枚举
-     * @return 领域层状态枚举
-     */
-    protected TradeOrderStatusEnum poStatusToDomain(TradeOrderStatus poStatus) {
-        if (poStatus == null) {
-            return null;
-        }
-        return TradeOrderStatusEnum.of(poStatus.getCode());
     }
 
     /**

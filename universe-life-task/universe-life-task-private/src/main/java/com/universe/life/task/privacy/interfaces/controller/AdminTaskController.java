@@ -2,9 +2,9 @@ package com.universe.life.task.privacy.interfaces.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.universe.life.auth.common.domain.Result;
+import com.universe.life.auth.resource.util.SecurityUtil;
 import com.universe.life.common.domain.PageResult;
 import com.universe.life.task.privacy.application.assembler.TaskAssembler;
-import com.universe.life.task.privacy.application.dto.TaskDTO;
 import com.universe.life.task.privacy.application.service.TaskReviewService;
 import com.universe.life.task.privacy.domain.model.Task;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskRejectRequest;
@@ -66,10 +66,9 @@ public class AdminTaskController {
     public Result<Void> approveTask(
             @Parameter(description = "任务ID", required = true)
             @PathVariable @NotNull Long taskId) {
-        
-        // TODO: 从SecurityContext获取当前管理员ID
-        Long reviewerId = 1L; // 临时硬编码
-        
+
+        Long reviewerId = SecurityUtil.getUserId();
+
         log.info("审核通过任务: taskId={}, reviewerId={}", taskId, reviewerId);
 
         taskReviewService.approveTask(taskId, reviewerId);
@@ -85,10 +84,9 @@ public class AdminTaskController {
             @Parameter(description = "任务ID", required = true)
             @PathVariable @NotNull Long taskId,
             @Valid @RequestBody TaskRejectRequest request) {
-        
-        // TODO: 从SecurityContext获取当前管理员ID
-        Long reviewerId = 1L; // 临时硬编码
-        
+
+        Long reviewerId = SecurityUtil.getUserId();
+
         log.info("审核拒绝任务: taskId={}, reviewerId={}, reason={}", taskId, reviewerId, request.getReason());
 
         taskReviewService.rejectTask(taskId, reviewerId, request.getReason());

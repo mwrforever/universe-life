@@ -1,7 +1,7 @@
 package com.universe.life.task.privacy.infrastructure.persistence.po;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.universe.life.task.privacy.enums.CommonStatus;
+import com.universe.life.task.privacy.infrastructure.enums.CommonStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

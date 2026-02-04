@@ -1,11 +1,11 @@
 package com.universe.life.trade.privacy.infrastructure.mq;
 
+import com.universe.life.common.util.RabbitMqSender;
 import com.universe.life.trade.privacy.domain.event.OrderCompletedEvent;
 import com.universe.life.trade.privacy.domain.event.OrderCreatedEvent;
 import com.universe.life.trade.privacy.domain.event.OrderStatusChangedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TradeEventPublisher {
 
-    private final RabbitTemplate rabbitTemplate;
+    private final RabbitMqSender rabbitMqSender;
 
     /**
      * 交易事件交换机
@@ -60,7 +60,10 @@ public class TradeEventPublisher {
      */
     private void publishOrderCreated(OrderCreatedEvent event) {
         try {
-            rabbitTemplate.convertAndSend(TRADE_EXCHANGE, ORDER_CREATED_ROUTING_KEY, event);
+            rabbitMqSender.builder()
+                    .to(TRADE_EXCHANGE, ORDER_CREATED_ROUTING_KEY)
+                    .persistent(true)
+                    .send(event);
             log.info("发布订单创建事件: orderId={}, taskId={}, acceptorId={}",
                     event.getOrderId(), event.getTaskId(), event.getAcceptorId());
         } catch (Exception e) {
@@ -73,7 +76,10 @@ public class TradeEventPublisher {
      */
     private void publishOrderStatusChanged(OrderStatusChangedEvent event) {
         try {
-            rabbitTemplate.convertAndSend(TRADE_EXCHANGE, ORDER_STATUS_CHANGED_ROUTING_KEY, event);
+            rabbitMqSender.builder()
+                    .to(TRADE_EXCHANGE, ORDER_STATUS_CHANGED_ROUTING_KEY)
+                    .persistent(true)
+                    .send(event);
             log.info("发布订单状态变更事件: orderId={}, from={}, to={}",
                     event.getOrderId(), event.getOldStatus(), event.getNewStatus());
         } catch (Exception e) {
@@ -86,7 +92,10 @@ public class TradeEventPublisher {
      */
     private void publishOrderCompleted(OrderCompletedEvent event) {
         try {
-            rabbitTemplate.convertAndSend(TRADE_EXCHANGE, ORDER_COMPLETED_ROUTING_KEY, event);
+            rabbitMqSender.builder()
+                    .to(TRADE_EXCHANGE, ORDER_COMPLETED_ROUTING_KEY)
+                    .persistent(true)
+                    .send(event);
             log.info("发布订单完成事件: orderId={}, taskId={}, acceptorId={}",
                     event.getOrderId(), event.getTaskId(), event.getAcceptorId());
         } catch (Exception e) {

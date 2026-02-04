@@ -317,6 +317,24 @@ public class TradeOrderAggregate {
     }
 
     /**
+     * 取消订单（任务被取消时调用）
+     */
+    public void cancel(String reason) {
+        validateStatusTransition(TradeOrderStatusEnum.CANCELLED);
+        TradeOrderStatusEnum oldStatus = this.status;
+        this.status = TradeOrderStatusEnum.CANCELLED;
+        this.updatedAt = LocalDateTime.now();
+        this.timeline = this.timeline.addEvent("CANCELLED", "任务已取消: " + reason);
+        domainEvents.add(OrderStatusChangedEvent.builder()
+                .orderId(getIdValue())
+                .taskId(this.taskId)
+                .oldStatus(oldStatus)
+                .newStatus(this.status)
+                .changedAt(LocalDateTime.now())
+                .build());
+    }
+
+    /**
      * 申诉处理完成 - 进入待收款
      */
     public void resolveDisputeToPayment() {
