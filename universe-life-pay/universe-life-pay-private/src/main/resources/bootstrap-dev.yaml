@@ -1,0 +1,74 @@
+universe-life:
+  datasource:
+    host: 43.142.103.248
+    port: 3306
+    username: root
+    password: 1010520mao
+    database: universe_life_pay
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      database: 0
+      host: 43.142.103.248
+      port: 6379
+      password: 1010520mao
+      timeout: 10000
+  redisson:
+    password: 1010520mao
+    connection-pool-size: 30
+    connect-timeout: 8000
+    timeout: 2500
+    retry-attempts: 2
+    retry-interval: 1000
+    read-mode: MASTER
+    subscription-mode: MASTER
+    single:
+      enabled: true
+      address: redis://43.142.103.248:6379
+      database: 0
+  mybatis-plus:
+    type-aliases-package: com.universe.life.pay.domain
+
+auth:
+  enable: true
+  exclude-path:
+    - /actuator/health
+    - /actuator/info
+    - /swagger-ui/**
+    - /doc.html
+    - /favicon.ico
+    - /v3/api-docs
+    - /webjars/**
+    - /v3/api-docs/**
+
+logging:
+  level:
+    org.springframework.amqp: INFO
+    com.rabbitmq.client: INFO
+    com.universe.life.pay: DEBUG
+
+pay:
+  wechat:
+    # 是否启用微信支付（启用后需要提供真实商户配置，否则会启动失败/下单失败）
+    enabled: false
+    # TODO 替换为你的微信支付 AppID（公众号/小程序的 appid）
+    app-id: wx_7b0c0e7b1c8b4a3a
+    # TODO 替换为你的微信支付商户号 mch_id
+    mch-id: 1900009001
+    # TODO 替换为你的商户证书序列号（商户API证书序列号）
+    mch-serial-no: 444B6B0B5F3B3C7A2E5D7E9C3A5B7C8D9E0F1A2B
+    # TODO 替换为你的 APIv3 Key（32字节）
+    api-v3-key: 3aXv5cZp9kQ7mN2rT8uY1iO6sL4hG0bD
+    # TODO 替换为你的商户私钥文件路径（PEM）。支持 classpath:/ 或 file:/
+    private-key-path: classpath:wechatpay/apiclient_key.pem
+    # TODO 替换为支付结果通知地址（需外网可访问）。建议指向 pay-service 的回调入口
+    notify-url: https://example.com/callbacks/0
+  alipay:
+    enabled: false
+    server-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do
+    app-id: 2021000XXXXXXX
+    merchant-private-key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDIxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    alipay-public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    notify-url: https://example.com/callbacks/alipay
+    charset: utf-8
+    sign-type: RSA2

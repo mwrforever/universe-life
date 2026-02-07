@@ -31,22 +31,11 @@ universe-life:
       address: redis://43.142.103.248:6379
       database: 0
   mybatis-plus:
-    type-aliases-package: com.universe.life.task.privacy.domain
-
-auth:
-  enable: true
-  exclude-path:
-    - /actuator/health
-    - /actuator/info
-    - /swagger-ui/**
-    - /doc.html
-    - /favicon.ico
-    - /v3/api-docs
-    - /webjars/**
-    - /v3/api-docs/**
-
+    type-aliases-package: com.universe.life.task.privacy.infrastructure.persistence.po
+  auth:
+    enable: true
 logging:
   level:
     org.springframework.amqp: INFO
     com.rabbitmq.client: INFO
-    com.universe.life.task.privacy: DEBUG
+    com.universe.life.user.privacy: DEBUG

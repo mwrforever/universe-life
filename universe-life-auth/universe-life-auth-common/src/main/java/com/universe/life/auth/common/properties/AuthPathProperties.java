@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -17,7 +18,7 @@ import java.util.Set;
 @ConfigurationProperties("universe-life.auth")
 public class AuthPathProperties {
 
-    private Set<String> excludePath;
+    private Set<String> excludePath = new HashSet<>();
 
     private Boolean enable;
 }

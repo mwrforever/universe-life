@@ -1,6 +1,9 @@
 package com.universe.life.trade.privacy.application.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.universe.life.aftercare.client.AftercareAppealClient;
+import com.universe.life.aftercare.model.dto.AppealSummaryDTO;
+import com.universe.life.aftercare.model.dto.CreateAppealDTO;
 import com.universe.life.auth.common.domain.Result;
 import com.universe.life.common.domain.PageResult;
 import com.universe.life.common.util.CacheUtil;
@@ -14,10 +17,10 @@ import com.universe.life.trade.privacy.application.query.OrderDetailQuery;
 import com.universe.life.trade.privacy.application.query.TaskOrdersQuery;
 import com.universe.life.trade.privacy.domain.model.aggregate.TradeOrderAggregate;
 import com.universe.life.trade.privacy.domain.model.valueobject.TradeOrderStatusEnum;
-import com.universe.life.trade.privacy.domain.repository.TradeAppealRepository;
 import com.universe.life.trade.privacy.domain.repository.TradeOrderRepository;
 import com.universe.life.trade.privacy.infrastructure.constants.RedisKeyConstants;
 import com.universe.life.trade.privacy.infrastructure.mq.TradeEventPublisher;
+import com.universe.life.trade.privacy.interfaces.vo.AppealSummaryVO;
 import com.universe.life.trade.privacy.interfaces.vo.TradeOrderFullDetailVO;
 import com.universe.life.trade.privacy.interfaces.vo.TradeOrderSummaryVO;
 import com.universe.life.trade.privacy.interfaces.vo.UserInfoVO;
@@ -26,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,9 +69,6 @@ public class TradeOrderApplicationService {
     /** 交易订单仓储 */
     private final TradeOrderRepository orderRepository;
     
-    /** 申诉仓储 */
-    private final TradeAppealRepository appealRepository;
-    
     /** 订单对象装配器 */
     private final TradeOrderAssembler orderAssembler;
     
@@ -79,6 +80,9 @@ public class TradeOrderApplicationService {
     
     /** 缓存工具 */
     private final CacheUtil cacheUtil;
+
+    /** 售后申诉Feign客户端 */
+    private final AftercareAppealClient aftercareAppealClient;
 
     /**
      * 申请接单
@@ -242,6 +246,8 @@ public class TradeOrderApplicationService {
         if (!order.isPublisher(cmd.getOperatorId())) {
             throw new IllegalStateException("无权操作此订单");
         }
+
+        assertNotAppealLocked(order);
         
         // 3. 同意接单（聚合根内部检查状态）
         order.approve();
@@ -277,6 +283,8 @@ public class TradeOrderApplicationService {
         if (!order.isPublisher(cmd.getOperatorId())) {
             throw new IllegalStateException("无权操作此订单");
         }
+
+        assertNotAppealLocked(order);
         
         // 3. 拒绝接单
         order.reject(cmd.getReason());
@@ -315,6 +323,8 @@ public class TradeOrderApplicationService {
         if (!order.isAcceptor(cmd.getOperatorId())) {
             throw new IllegalStateException("无权操作此订单");
         }
+
+        assertNotAppealLocked(order);
         
         // 3. 提交成果
         order.submit(cmd.getContent(), cmd.getImages());
@@ -349,6 +359,8 @@ public class TradeOrderApplicationService {
         if (!order.isPublisher(cmd.getOperatorId())) {
             throw new IllegalStateException("无权操作此订单");
         }
+
+        assertNotAppealLocked(order);
         
         // 3. 确认验收
         order.confirm();
@@ -385,6 +397,8 @@ public class TradeOrderApplicationService {
         if (!order.isAcceptor(cmd.getOperatorId())) {
             throw new IllegalStateException("无权操作此订单");
         }
+
+        assertNotAppealLocked(order);
         
         // 3. 放弃任务
         order.abandon();
@@ -423,25 +437,65 @@ public class TradeOrderApplicationService {
         if (!order.canOperate(cmd.getOperatorId())) {
             throw new IllegalStateException("无权操作此订单");
         }
-        
-        // 3. 检查是否已存在待处理的申诉
-        if (appealRepository.existsPendingByOrderId(cmd.getOrderId())) {
-            throw new IllegalStateException("已存在待处理的申诉");
+
+        assertNotAppealLocked(order);
+
+        if (!order.getStatus().canDispute()) {
+            throw new IllegalStateException("当前状态不可申诉");
+        }
+
+        // 3. 创建申诉记录（售后服务）
+        CreateAppealDTO createAppealDTO = new CreateAppealDTO();
+        createAppealDTO.setOrderId(cmd.getOrderId());
+        createAppealDTO.setTaskId(order.getTaskId());
+        createAppealDTO.setAppellantId(cmd.getOperatorId());
+        createAppealDTO.setAppealType(cmd.getAppealType());
+        createAppealDTO.setReason(cmd.getReason());
+        createAppealDTO.setEvidenceImages(cmd.getEvidenceImages() == null ? Collections.emptyList() : cmd.getEvidenceImages());
+
+        Result<Long> createResult = aftercareAppealClient.createAppeal(createAppealDTO);
+        if (createResult == null || createResult.code() == null || createResult.code() != 1 || createResult.data() == null) {
+            throw new IllegalStateException("创建申诉失败，请稍后重试");
+        }
+
+        try {
+            deleteOrderCache(cmd.getOrderId());
+        } catch (Exception e) {
+            log.warn("删除订单缓存失败: orderId={}", cmd.getOrderId(), e);
         }
         
-        // 4. 发起申诉
-        order.dispute();
-        
-        // 5. 保存订单
-        orderRepository.save(order);
-        
-        // 6. 删除订单详情缓存
-        deleteOrderCache(cmd.getOrderId());
-        
-        // 7. 发布领域事件
-        order.pullDomainEvents().forEach(eventPublisher::publish);
-        
         log.info("发起申诉成功: orderId={}", cmd.getOrderId());
+    }
+
+    @Transactional
+    public void disputeOrder(Long orderId, Long operatorId) {
+        TradeOrderAggregate order = getOrderById(orderId);
+        if (!order.canOperate(operatorId)) {
+            throw new IllegalStateException("无权操作此订单");
+        }
+        assertNotAppealLocked(order);
+        if (!orderRepository.lockForAppeal(orderId)) {
+            throw new IllegalStateException("订单申诉处理中");
+        }
+        deleteOrderCache(orderId);
+    }
+
+    /**
+     * 断言订单未处于申诉锁定状态
+     * <p>
+     * 如果订单处于申诉锁定状态或状态为争议中，则抛出异常。
+     * </p>
+     *
+     * @param order 订单聚合根
+     * @throws IllegalStateException 当订单处于申诉锁定状态或状态为争议中时抛出
+     */
+    private void assertNotAppealLocked(TradeOrderAggregate order) {
+        if (order.getAppealLocked() != null && order.getAppealLocked() == 1) {
+            throw new IllegalStateException("订单申诉处理中，禁止操作");
+        }
+        if (order.getStatus() != null && order.getStatus() == TradeOrderStatusEnum.DISPUTE) {
+            throw new IllegalStateException("订单申诉处理中，禁止操作");
+        }
     }
 
     /**
@@ -483,13 +537,35 @@ public class TradeOrderApplicationService {
                     // 获取用户信息（TODO: 调用用户服务）
                     UserInfoVO publisher = buildUserInfo(order.getPublisherId());
                     UserInfoVO acceptor = buildUserInfo(order.getAcceptorId());
+
+                    AppealSummaryVO appealSummary = buildAppealSummary(order.getIdValue());
                     
                     // 转换为VO
                     return orderAssembler.toDetailVO(order, "任务标题", "任务描述", null,
-                            publisher, acceptor, null, query.getCurrentUserId());
+                            publisher, acceptor, appealSummary, query.getCurrentUserId());
                 },
                 30 // 基础过期时间30分钟
         );
+    }
+
+    private AppealSummaryVO buildAppealSummary(Long orderId) {
+        Result<AppealSummaryDTO> result = aftercareAppealClient.getLatestAppealSummary(orderId);
+        if (result == null || result.code() == null || result.code() != 1) {
+            return null;
+        }
+        AppealSummaryDTO dto = result.data();
+        if (dto == null) {
+            return null;
+        }
+        AppealSummaryVO vo = new AppealSummaryVO();
+        vo.setAppealId(dto.getAppealId());
+        vo.setAppealType(dto.getAppealType());
+        vo.setAppealTypeText(dto.getAppealTypeText());
+        vo.setStatus(dto.getStatus());
+        vo.setStatusText(dto.getStatusText());
+        vo.setReason(dto.getReason());
+        vo.setCreatedAt(dto.getCreatedAt());
+        return vo;
     }
 
     /**

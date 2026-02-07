@@ -9,12 +9,13 @@ import com.universe.life.task.privacy.application.command.CancelTaskCommand;
 import com.universe.life.task.privacy.application.command.CreateTaskCommand;
 import com.universe.life.task.privacy.application.command.UpdateTaskCommand;
 import com.universe.life.task.privacy.application.query.TaskHallQuery;
-import com.universe.life.task.privacy.application.assembler.TaskAssembler;
 import com.universe.life.task.privacy.application.dto.TaskCategoryDTO;
 import com.universe.life.task.privacy.application.dto.TaskDTO;
 import com.universe.life.task.privacy.application.service.TaskApplicationService;
 import com.universe.life.task.privacy.application.service.TaskCategoryService;
+import com.universe.life.task.privacy.interfaces.assembler.TaskCategoryVOAssembler;
 import com.universe.life.task.privacy.interfaces.assembler.TaskRequestAssembler;
+import com.universe.life.task.privacy.interfaces.assembler.TaskVOAssembler;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskCreateRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskHallQueryRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskUpdateRequest;
@@ -30,7 +31,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,8 +49,9 @@ public class TaskController {
 
     private final TaskApplicationService taskApplicationService;
     private final TaskCategoryService taskCategoryService;
-    private final TaskAssembler taskAssembler;
+    private final TaskCategoryVOAssembler taskCategoryVOAssembler;
     private final TaskRequestAssembler requestAssembler;
+    private final TaskVOAssembler taskVOAssembler;
 
     /**
      * 任务大厅列表
@@ -68,7 +69,7 @@ public class TaskController {
         Page<TaskDTO> page = taskApplicationService.pageHallTasks(query);
 
         List<TaskHallSummaryVO> voList = page.getRecords().stream()
-                .map(taskAssembler::toTaskHallSummaryVO)
+                .map(taskVOAssembler::toTaskHallSummaryVO)
                 .collect(Collectors.toList());
 
         PageResult<TaskHallSummaryVO> result = PageResult.of(voList, page);
@@ -86,7 +87,7 @@ public class TaskController {
         log.info("获取任务详情: taskId={}", taskId);
 
         TaskDTO taskDTO = taskApplicationService.getTaskDetail(taskId);
-        TaskFullDetailVO vo = taskAssembler.toTaskFullDetailVO(taskDTO);
+        TaskFullDetailVO vo = taskVOAssembler.toTaskFullDetailVO(taskDTO);
         
         // TODO: 补充发布者信息、审核记录、权限判断等
         
@@ -111,7 +112,7 @@ public class TaskController {
         Page<TaskDTO> page = taskApplicationService.pagePublishedTasks(publisherId, taskStatus, pageNum, pageSize);
         
         List<TaskPublishedSummaryVO> voList = page.getRecords().stream()
-                .map(taskAssembler::toTaskPublishedSummaryVO)
+                .map(taskVOAssembler::toTaskPublishedSummaryVO)
                 .collect(Collectors.toList());
         
         PageResult<TaskPublishedSummaryVO> result = PageResult.of(voList, page);
@@ -188,17 +189,7 @@ public class TaskController {
         log.info("查询任务分类列表");
 
         List<TaskCategoryDTO> categories = taskCategoryService.listCategories();
-        List<TaskCategoryVO> voList = categories.stream()
-                .map(dto -> {
-                    TaskCategoryVO vo = new TaskCategoryVO();
-                    vo.setCategoryId(dto.getCategoryId());
-                    vo.setName(dto.getName());
-                    vo.setCode(dto.getCode());
-                    vo.setDescription(null); // TaskCategoryDTO doesn't have description field
-                    vo.setSortOrder(dto.getSort());
-                    return vo;
-                })
-                .collect(Collectors.toList());
+        List<TaskCategoryVO> voList = taskCategoryVOAssembler.toTaskCategoryVO(categories);
         
         return Result.success(voList);
     }

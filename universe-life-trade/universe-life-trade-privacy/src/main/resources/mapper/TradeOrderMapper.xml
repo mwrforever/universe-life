@@ -3,7 +3,7 @@
 <mapper namespace="com.universe.life.trade.privacy.mapper.TradeOrderMapper">
 
     <!-- 分页查询我的接单列表 -->
-    <select id="selectMyOrderPage" resultType="com.universe.life.trade.privacy.domain.dto.TradeOrderDTO">
+    <select id="selectMyOrderPage" resultType="com.universe.life.trade.privacy.infrastructure.persistence.po.TradeOrderPO">
         SELECT
             o.id,
             o.task_id,
@@ -12,7 +12,7 @@
             o.reward_amount,
             o.status,
             o.submit_content,
-            o.submit_images AS submitImagesJson,
+            o.submit_images,
             o.reject_reason,
             o.applied_at,
             o.approved_at,
@@ -47,7 +47,7 @@
     </select>
 
     <!-- 分页查询需求的接单列表 -->
-    <select id="selectTaskOrderPage" resultType="com.universe.life.trade.privacy.domain.dto.TradeOrderDTO">
+    <select id="selectTaskOrderPage" resultType="com.universe.life.trade.privacy.infrastructure.persistence.po.TradeOrderPO">
         SELECT
             o.id,
             o.task_id,
@@ -56,7 +56,7 @@
             o.reward_amount,
             o.status,
             o.submit_content,
-            o.submit_images AS submitImagesJson,
+            o.submit_images,
             o.reject_reason,
             o.applied_at,
             o.approved_at,
@@ -85,7 +85,7 @@
     </select>
 
     <!-- 查询订单详情 -->
-    <select id="selectOrderDetail" resultType="com.universe.life.trade.privacy.domain.dto.TradeOrderDTO">
+    <select id="selectOrderDetail" resultType="com.universe.life.trade.privacy.infrastructure.persistence.po.TradeOrderPO">
         SELECT
             o.id,
             o.task_id,
@@ -94,7 +94,7 @@
             o.reward_amount,
             o.status,
             o.submit_content,
-            o.submit_images AS submitImagesJson,
+            o.submit_images,
             o.reject_reason,
             o.applied_at,
             o.approved_at,

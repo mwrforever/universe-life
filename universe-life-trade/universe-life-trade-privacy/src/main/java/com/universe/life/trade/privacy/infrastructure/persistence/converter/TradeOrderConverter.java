@@ -46,6 +46,9 @@ public abstract class TradeOrderConverter {
      */
     @Mapping(target = "id", source = "idValue")
     @Mapping(target = "rewardAmount", source = "rewardAmountCents")
+    @Mapping(target = "payableAmount", source = "payableAmountCents")
+    @Mapping(target = "paidAmount", source = "paidAmountCents")
+    @Mapping(target = "preAppealStatus", source = "preAppealStatusCode")
     @Mapping(target = "submitContent", expression = "java(domain.hasSubmitResult() ? domain.getSubmitResult().getContent() : null)")
     @Mapping(target = "submitImages", expression = "java(domain.hasSubmitResult() ? serializeImages(domain.getSubmitResult().getImages()) : null)")
     @Mapping(target = "rejectReason", expression = "java(domain.hasRejectInfo() ? domain.getRejectInfo().getReason() : null)")
@@ -72,7 +75,11 @@ public abstract class TradeOrderConverter {
                 po.getPublisherId(),
                 po.getAcceptorId(),
                 po.getRewardAmount(),
+                po.getPayableAmount(),
+                po.getPaidAmount(),
                 po.getStatus(),
+                po.getPreAppealStatus(),
+                po.getAppealLocked(),
                 po.getSubmitContent(),
                 parseImages(po.getSubmitImages()),
                 po.getRejectReason(),

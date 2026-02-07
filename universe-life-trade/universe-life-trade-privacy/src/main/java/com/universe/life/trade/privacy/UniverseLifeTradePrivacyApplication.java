@@ -1,5 +1,6 @@
 package com.universe.life.trade.privacy;
 
+import org.apache.ibatis.annotations.Mapper;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,8 +19,11 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
         "com.universe.life.task.api"
 })
 @EnableDiscoveryClient
-@EnableFeignClients(basePackages = "com.universe.life.task.api.client")
-@MapperScan("com.universe.life.trade.privacy.mapper")
+@EnableFeignClients(basePackages = {
+        "com.universe.life.task.api.client",
+        "com.universe.life.aftercare.client"
+})
+@MapperScan(basePackages = "com.universe.life.trade.privacy.infrastructure.persistence.mapper", annotationClass = Mapper.class)
 public class UniverseLifeTradePrivacyApplication {
 
     public static void main(String[] args) {

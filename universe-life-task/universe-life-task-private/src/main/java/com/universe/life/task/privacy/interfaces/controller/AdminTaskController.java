@@ -7,6 +7,7 @@ import com.universe.life.common.domain.PageResult;
 import com.universe.life.task.privacy.application.assembler.TaskAssembler;
 import com.universe.life.task.privacy.application.service.TaskReviewService;
 import com.universe.life.task.privacy.domain.model.Task;
+import com.universe.life.task.privacy.interfaces.assembler.TaskVOAssembler;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskRejectRequest;
 import com.universe.life.task.privacy.interfaces.vo.TaskFullDetailVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +37,7 @@ public class AdminTaskController {
 
     private final TaskReviewService taskReviewService;
     private final TaskAssembler taskAssembler;
+    private final TaskVOAssembler taskVOAssembler;
 
     /**
      * 待审核任务列表
@@ -51,7 +53,7 @@ public class AdminTaskController {
         Page<Task> page = taskReviewService.pagePendingTasks(pageNum, pageSize);
         
         List<TaskFullDetailVO> voList = page.getRecords().stream()
-                .map(task -> taskAssembler.toTaskFullDetailVO(taskAssembler.toTaskDTO(task)))
+                .map(task -> taskVOAssembler.toTaskFullDetailVO(taskAssembler.toTaskDTO(task)))
                 .collect(Collectors.toList());
         
         PageResult<TaskFullDetailVO> result = PageResult.of(voList, page);

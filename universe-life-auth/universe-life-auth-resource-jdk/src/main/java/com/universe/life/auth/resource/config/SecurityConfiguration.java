@@ -31,6 +31,9 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * @author 毛伟然
  * @since 2025/11/1 17:24
@@ -66,9 +69,12 @@ public class SecurityConfiguration {
                 .securityMatcher("/**")
                 // 配置请求授权规则
                 .authorizeHttpRequests(authorize -> {
-                    if (authPathProperties.getEnable()) {
+                    if (Boolean.TRUE.equals(authPathProperties.getEnable())) {
+                        Set<String> excludePath = authPathProperties.getExcludePath() == null
+                                ? Collections.emptySet()
+                                : authPathProperties.getExcludePath();
                         // 应用配置文件中的排除路径
-                        authorize.requestMatchers(authPathProperties.getExcludePath().stream().map(AntPathRequestMatcher::new).toArray(AntPathRequestMatcher[]::new)).permitAll();
+                        authorize.requestMatchers(excludePath.stream().map(AntPathRequestMatcher::new).toArray(AntPathRequestMatcher[]::new)).permitAll();
 
                         authorize.anyRequest().authenticated();
                     } else {

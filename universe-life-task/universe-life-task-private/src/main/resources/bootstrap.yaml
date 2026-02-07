@@ -1,5 +1,5 @@
 server:
-  port: 8093
+  port: ${SERVER_PORT:8093}
 spring:
   profiles:
     active: dev
@@ -22,13 +22,9 @@ spring:
             refresh: true
           - data-id: shared-mybatis-plus.yaml
             refresh: true
-          - data-id: shared-powerjob.yaml
-            refresh: true
           - data-id: shared-jackson.yaml
             refresh: true
           - data-id: shared-rabbitmq.yaml
-            refresh: true
-          - data-id: shared-mail.yaml
             refresh: true
       discovery:
         server-addr: 43.142.103.248:8848          # Nacos 注册中心地址
@@ -36,7 +32,6 @@ spring:
         group: DEFAULT_GROUP
         username: ${NACOS_ACCOUNT:nacos}
         password: ${NACOS_PASSWORD:nacos}
-
 # springdoc-openapi 项目配置
 springdoc:
   swagger-ui:
@@ -49,11 +44,10 @@ springdoc:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan:
-        - com.universe.life.task.privacy.controller
+        - com.universe.life.trade.privacy.interfaces.controller
 
 knife4j:
   enable: true
   setting:
     language: zh_cn
-
 

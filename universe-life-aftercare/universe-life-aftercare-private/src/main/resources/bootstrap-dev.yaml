@@ -1,0 +1,47 @@
+universe-life:
+  datasource:
+    host: 43.142.103.248
+    port: 3306
+    username: root
+    password: 1010520mao
+    database: universe_life_aftercare
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      database: 0
+      host: 43.142.103.248
+      port: 6379
+      password: 1010520mao
+      timeout: 10000
+  auth:
+    enable: true
+    exclude-path:
+      - /actuator/health
+      - /actuator/info
+      - /swagger-ui/**
+      - /doc.html
+      - /favicon.ico
+      - /v3/api-docs
+      - /webjars/**
+      - /v3/api-docs/**
+  redisson:
+    password: 1010520mao
+    connection-pool-size: 30
+    connect-timeout: 8000
+    timeout: 2500
+    retry-attempts: 2
+    retry-interval: 1000
+    read-mode: MASTER
+    subscription-mode: MASTER
+    single:
+      enabled: true
+      address: redis://43.142.103.248:6379
+      database: 0
+  mybatis-plus:
+    type-aliases-package: com.universe.life.aftercare.domain
+
+logging:
+  level:
+    org.springframework.amqp: INFO
+    com.rabbitmq.client: INFO
+    com.universe.life.aftercare: DEBUG

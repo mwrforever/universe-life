@@ -137,6 +137,24 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         return tradeOrderMapper.deleteById(orderId) > 0;
     }
 
+    @Override
+    public boolean lockForAppeal(Long orderId) {
+        LambdaUpdateWrapper<TradeOrderPO> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(TradeOrderPO::getId, orderId)
+                .eq(TradeOrderPO::getAppealLocked, 0)
+                .set(TradeOrderPO::getAppealLocked, 1);
+        return tradeOrderMapper.update(null, wrapper) > 0;
+    }
+
+    @Override
+    public boolean unlockForAppeal(Long orderId) {
+        LambdaUpdateWrapper<TradeOrderPO> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(TradeOrderPO::getId, orderId)
+                .eq(TradeOrderPO::getAppealLocked, 1)
+                .set(TradeOrderPO::getAppealLocked, 0);
+        return tradeOrderMapper.update(null, wrapper) > 0;
+    }
+
     // ==================== 转换方法 ====================
 
     /**
@@ -149,7 +167,11 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         po.setPublisherId(aggregate.getPublisherId());
         po.setAcceptorId(aggregate.getAcceptorId());
         po.setRewardAmount(aggregate.getRewardAmountCents());
+        po.setPayableAmount(aggregate.getPayableAmountCents());
+        po.setPaidAmount(aggregate.getPaidAmountCents());
         po.setStatus(aggregate.getStatus());
+        po.setPreAppealStatus(aggregate.getPreAppealStatusCode());
+        po.setAppealLocked(aggregate.getAppealLocked());
         
         // 提交成果
         if (aggregate.hasSubmitResult()) {
@@ -184,7 +206,11 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
                 po.getPublisherId(),
                 po.getAcceptorId(),
                 po.getRewardAmount(),
+                po.getPayableAmount(),
+                po.getPaidAmount(),
                 po.getStatus(),
+                po.getPreAppealStatus(),
+                po.getAppealLocked(),
                 po.getSubmitContent(),
                 fromJson(po.getSubmitImages()),
                 po.getRejectReason(),

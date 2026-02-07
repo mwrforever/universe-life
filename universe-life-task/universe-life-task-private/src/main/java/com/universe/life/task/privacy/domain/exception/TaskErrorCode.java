@@ -39,13 +39,7 @@ public enum TaskErrorCode {
 
     // 任务审核相关错误码 5200-5299
     TASK_REVIEW_NOT_FOUND(5200, "审核记录不存在"),
-    TASK_REVIEW_ALREADY_PROCESSED(5201, "审核已处理"),
-
-    // 任务申诉相关错误码 5300-5399
-    TASK_APPEAL_NOT_FOUND(5300, "申诉记录不存在"),
-    TASK_APPEAL_ALREADY_EXISTS(5301, "已存在待处理的申诉"),
-    TASK_APPEAL_ALREADY_PROCESSED(5302, "申诉已处理"),
-    TASK_APPEAL_ACCESS_DENIED(5303, "无权发起申诉");
+    TASK_REVIEW_ALREADY_PROCESSED(5201, "审核已处理");
 
     /**
      * 错误码

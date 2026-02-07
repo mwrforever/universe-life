@@ -140,18 +140,4 @@ public class TaskBusinessException extends BusinessException {
     public static TaskBusinessException acceptanceAlreadyExists() {
         return new TaskBusinessException(TaskErrorCode.TASK_ACCEPTANCE_ALREADY_EXISTS);
     }
-
-    /**
-     * 申诉已存在
-     */
-    public static TaskBusinessException appealAlreadyExists() {
-        return new TaskBusinessException(TaskErrorCode.TASK_APPEAL_ALREADY_EXISTS);
-    }
-
-    /**
-     * 申诉不存在
-     */
-    public static TaskBusinessException appealNotFound() {
-        return new TaskBusinessException(TaskErrorCode.TASK_APPEAL_NOT_FOUND);
-    }
 }

@@ -20,7 +20,11 @@
         <result column="publisher_id" property="publisherId"/>
         <result column="acceptor_id" property="acceptorId"/>
         <result column="reward_amount" property="rewardAmount"/>
+        <result column="payable_amount" property="payableAmount"/>
+        <result column="paid_amount" property="paidAmount"/>
         <result column="status" property="status"/>
+        <result column="pre_appeal_status" property="preAppealStatus"/>
+        <result column="appeal_locked" property="appealLocked"/>
         <result column="submit_content" property="submitContent"/>
         <result column="submit_images" property="submitImages"/>
         <result column="reject_reason" property="rejectReason"/>
@@ -36,7 +40,7 @@
 
     <!-- 通用查询字段 -->
     <sql id="Base_Column_List">
-        id, task_id, publisher_id, acceptor_id, reward_amount, status,
+        id, task_id, publisher_id, acceptor_id, reward_amount, payable_amount, paid_amount, status, pre_appeal_status, appeal_locked,
         submit_content, submit_images, reject_reason,
         applied_at, approved_at, submitted_at, completed_at,
         created_at, updated_at, deleted, version

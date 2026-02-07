@@ -117,6 +117,10 @@ public class TaskEventListener {
             for (TradeOrderAggregate order : orders) {
                 // 只取消未完成的订单
                 if (!order.getStatus().isCompleted() && !order.getStatus().isCancelled()) {
+                    if (order.getAppealLocked() != null && order.getAppealLocked() == 1) {
+                        log.info("订单申诉锁定中，跳过取消: orderId={}, taskId={}", order.getIdValue(), event.getTaskId());
+                        continue;
+                    }
                     // 取消订单
                     order.cancel(event.getCancelReason());
                     orderRepository.save(order);

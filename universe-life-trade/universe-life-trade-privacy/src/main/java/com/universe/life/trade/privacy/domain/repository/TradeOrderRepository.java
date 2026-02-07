@@ -104,4 +104,8 @@ public interface TradeOrderRepository {
      * @return 是否删除成功
      */
     boolean deleteById(Long orderId);
+
+    boolean lockForAppeal(Long orderId);
+
+    boolean unlockForAppeal(Long orderId);
 }

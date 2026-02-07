@@ -24,7 +24,7 @@ public class RedissonProperties {
     /**
      * 连接池大小
      */
-    private Integer connectionPoolSize = 15;
+    private Integer connectionPoolSize = 30;
 
     /**
      * 连接超时时间（毫秒）

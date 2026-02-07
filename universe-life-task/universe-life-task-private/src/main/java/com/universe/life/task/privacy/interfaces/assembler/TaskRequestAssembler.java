@@ -8,8 +8,6 @@ import com.universe.life.task.privacy.interfaces.dto.request.TaskCreateRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskHallQueryRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskUpdateRequest;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
 /**
  * 请求对象转换器
@@ -23,8 +21,6 @@ import org.mapstruct.factory.Mappers;
  */
 @Mapper(componentModel = "spring")
 public interface TaskRequestAssembler {
-
-    TaskRequestAssembler INSTANCE = Mappers.getMapper(TaskRequestAssembler.class);
 
     /**
      * Request -> CreateTaskCommand

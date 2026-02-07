@@ -58,7 +58,17 @@ public class RabbitMqConstants {
         /**
          * 申诉创建事件队列
          */
-        public static final String APPEAL_CREATED_QUEUE = "appeal.created.queue";
+        public static final String APPEAL_CREATED_QUEUE = "trade.appeal.created.queue";
+        
+        /**
+         * 申诉处理事件队列（裁决回流）
+         */
+        public static final String APPEAL_HANDLED_QUEUE = "trade.appeal.handled.queue";
+        
+        /**
+         * 申诉撤销事件队列
+         */
+        public static final String APPEAL_CANCELLED_QUEUE = "trade.appeal.cancelled.queue";
         
         // ==================== 交易服务订阅的队列 ====================
         
@@ -108,6 +118,16 @@ public class RabbitMqConstants {
          * 申诉创建事件路由键
          */
         public static final String APPEAL_CREATED = "appeal.created";
+        
+        /**
+         * 申诉处理事件路由键（裁决回流）
+         */
+        public static final String APPEAL_HANDLED = "appeal.handled";
+        
+        /**
+         * 申诉撤销事件路由键
+         */
+        public static final String APPEAL_CANCELLED = "appeal.cancelled";
         
         // ==================== 交易服务订阅的路由键 ====================
         

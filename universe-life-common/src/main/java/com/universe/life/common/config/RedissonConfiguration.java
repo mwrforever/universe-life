@@ -11,6 +11,7 @@ import org.redisson.config.Config;
 import org.redisson.config.ReadMode;
 import org.redisson.config.SubscriptionMode;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,19 +25,21 @@ import org.springframework.context.annotation.Configuration;
  */
 @Slf4j
 @Configuration
+@ConditionalOnProperty(name = "universe-life.redisson.enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(RedissonProperties.class)
 @RequiredArgsConstructor
 public class RedissonConfiguration {
 
     private final RedissonProperties redissonProperties;
 
-
     @Bean
+    @ConditionalOnProperty(name = "universe-life.redisson.enabled", havingValue = "true", matchIfMissing = true)
     public LuaScriptPreloader luaScriptPreloader(RedissonClient redissonClient) {
         return new LuaScriptPreloader(redissonClient);
     }
 
     @Bean
+    @ConditionalOnProperty(name = "universe-life.redisson.enabled", havingValue = "true", matchIfMissing = true)
     public RedisScriptExecutor redisScriptExecutor(RedissonClient redissonClient, LuaScriptPreloader luaScriptPreloader) {
         return new RedisScriptExecutor(redissonClient, luaScriptPreloader);
     }
@@ -47,10 +50,12 @@ public class RedissonConfiguration {
      */
     @Bean(destroyMethod = "shutdown")
     @ConditionalOnMissingBean(RedissonClient.class)
+    @ConditionalOnProperty(name = "universe-life.redisson.enabled", havingValue = "true", matchIfMissing = true)
     public RedissonClient redissonClient() {
         log.info("开始初始化RedissonClient...");
 
         Config config = createConfig();
+
         RedissonClient client = Redisson.create(config);
 
         log.info("RedissonClient初始化完成，模式: {}", getActiveMode());

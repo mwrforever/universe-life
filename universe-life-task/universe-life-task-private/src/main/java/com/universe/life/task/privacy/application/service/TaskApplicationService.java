@@ -213,24 +213,20 @@ public class TaskApplicationService {
         String hashField = buildHallCacheField(query);
 
         // 使用Hash缓存（5分钟 + 10-30分钟随机）
-        Page<?> cachedPage = cacheUtil.hGet(
+        Page<TaskDTO> cachedPage = cacheUtil.hGet(
                 RedisKeyConstants.TASK_HALL,
                 hashField,
                 Page.class
         );
 
         if (cachedPage != null) {
-            @SuppressWarnings("unchecked")
-            Page<TaskDTO> result = (Page<TaskDTO>) cachedPage;
-            return result;
+            return cachedPage;
         }
 
         Page<TaskDTO> computed = queryHallTasksFromDb(query);
-        if (computed != null) {
-            // 添加10-30分钟的随机过期时间
-            int randomMinutes = 10 + (int) (Math.random() * 21);
-            cacheUtil.hSet(RedisKeyConstants.TASK_HALL, hashField, computed, 5 + randomMinutes);
-        }
+        // 添加10-30分钟的随机过期时间
+        int randomMinutes = 10 + (int) (Math.random() * 21);
+        cacheUtil.hSet(RedisKeyConstants.TASK_HALL, hashField, computed, 5 + randomMinutes);
         return computed;
     }
 

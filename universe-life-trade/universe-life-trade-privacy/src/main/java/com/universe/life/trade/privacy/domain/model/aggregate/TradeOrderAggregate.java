@@ -12,6 +12,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * 交易订单聚合根
@@ -50,7 +51,10 @@ public class TradeOrderAggregate {
     private Long publisherId;
     private Long acceptorId;
     private Money rewardAmount;
+    private Money payableAmount;
+    private Money paidAmount;
     private TradeOrderStatusEnum status;
+    private TradeOrderStatusEnum preAppealStatus;
     private SubmitResult submitResult;
     private RejectInfo rejectInfo;
     private OrderTimeline timeline;
@@ -61,6 +65,7 @@ public class TradeOrderAggregate {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long version;
+    private Integer appealLocked;
 
     /**
      * 领域事件列表
@@ -79,7 +84,10 @@ public class TradeOrderAggregate {
         order.publisherId = publisherId;
         order.acceptorId = acceptorId;
         order.rewardAmount = Money.ofCents(rewardAmount);
+        order.payableAmount = Money.ofCents(rewardAmount);
+        order.paidAmount = Money.ofCents(0L);
         order.status = TradeOrderStatusEnum.PENDING;
+        order.appealLocked = 0;
         order.timeline = OrderTimeline.empty().addEvent("APPLIED", "提交接单申请");
         order.appliedAt = LocalDateTime.now();
         order.createdAt = LocalDateTime.now();
@@ -95,12 +103,63 @@ public class TradeOrderAggregate {
         return order;
     }
 
+    public Integer getPreAppealStatusCode() {
+        return preAppealStatus == null ? null : preAppealStatus.getCode();
+    }
+
+    public Long getPayableAmountCents() {
+        return payableAmount == null ? null : payableAmount.getCents();
+    }
+
+    public Long getPaidAmountCents() {
+        return paidAmount == null ? null : paidAmount.getCents();
+    }
+
+    public void updatePayableAmountCents(Long payableAmountCents) {
+        if (payableAmountCents == null) {
+            return;
+        }
+        this.payableAmount = Money.ofCents(payableAmountCents);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updatePaidAmountCents(Long paidAmountCents) {
+        if (paidAmountCents == null) {
+            return;
+        }
+        this.paidAmount = Money.ofCents(paidAmountCents);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void recordPreAppealStatusIfAbsent() {
+        if (this.preAppealStatus == null) {
+            this.preAppealStatus = this.status;
+        }
+    }
+
+    public void restoreStatusFromPreAppeal() {
+        if (this.preAppealStatus == null) {
+            return;
+        }
+        TradeOrderStatusEnum oldStatus = this.status;
+        this.status = this.preAppealStatus;
+        this.updatedAt = LocalDateTime.now();
+        domainEvents.add(OrderStatusChangedEvent.builder()
+                .orderId(getIdValue())
+                .taskId(this.taskId)
+                .oldStatus(oldStatus)
+                .newStatus(this.status)
+                .changedAt(LocalDateTime.now())
+                .build());
+    }
+
     /**
      * 从持久化数据重建
      */
     public static TradeOrderAggregate reconstitute(
             Long id, Long taskId, Long publisherId, Long acceptorId, Long rewardAmount,
-            TradeOrderStatusEnum status, String submitContent, List<String> submitImages,
+            Long payableAmount, Long paidAmount,
+            TradeOrderStatusEnum status, Integer preAppealStatus, Integer appealLocked, String submitContent, List<String> submitImages,
             String rejectReason, LocalDateTime rejectedAt, Long rejectedBy,
             LocalDateTime appliedAt, LocalDateTime approvedAt, LocalDateTime submittedAt,
             LocalDateTime completedAt, LocalDateTime createdAt, LocalDateTime updatedAt, Long version) {
@@ -111,7 +170,11 @@ public class TradeOrderAggregate {
         order.publisherId = publisherId;
         order.acceptorId = acceptorId;
         order.rewardAmount = Money.ofCents(rewardAmount);
+        order.payableAmount = Money.ofCents(payableAmount == null ? rewardAmount : payableAmount);
+        order.paidAmount = Money.ofCents(paidAmount == null ? 0L : paidAmount);
         order.status = status;
+        order.preAppealStatus = TradeOrderStatusEnum.of(preAppealStatus);
+        order.appealLocked = appealLocked == null ? 0 : appealLocked;
         order.submitResult = SubmitResult.reconstitute(submitContent, submitImages, submittedAt);
         order.rejectInfo = RejectInfo.reconstitute(rejectReason, rejectedAt, rejectedBy);
         order.timeline = OrderTimeline.empty(); // 时间线需要从事件表重建
@@ -125,21 +188,14 @@ public class TradeOrderAggregate {
         return order;
     }
 
+    // ... (rest of the code remains the same)
+
     /**
      * 设置ID（创建后由仓储设置）
      */
     public void setId(Long id) {
         this.id = OrderId.of(id);
     }
-
-    /**
-     * 设置时间线（从事件表重建）
-     */
-    public void setTimeline(OrderTimeline timeline) {
-        this.timeline = timeline;
-    }
-
-    // ==================== 状态变更方法 ====================
 
     /**
      * 同意接单 - 进入进行中状态
@@ -243,6 +299,7 @@ public class TradeOrderAggregate {
     public void dispute() {
         validateStatusTransition(TradeOrderStatusEnum.DISPUTE);
         TradeOrderStatusEnum oldStatus = this.status;
+        recordPreAppealStatusIfAbsent();
         this.status = TradeOrderStatusEnum.DISPUTE;
         this.updatedAt = LocalDateTime.now();
         this.timeline = this.timeline.addEvent("DISPUTED", "发起申诉");
@@ -372,35 +429,29 @@ public class TradeOrderAggregate {
 
     // ==================== 业务方法 ====================
 
-    /**
-     * 是否可以操作（检查用户权限）
-     */
     public boolean canOperate(Long userId) {
         return isPublisher(userId) || isAcceptor(userId);
     }
 
-    /**
-     * 是否是发布者
-     */
     public boolean isPublisher(Long userId) {
         return this.publisherId.equals(userId);
     }
 
-    /**
-     * 是否是接单者
-     */
     public boolean isAcceptor(Long userId) {
         return this.acceptorId.equals(userId);
     }
 
-    /**
-     * 获取可用操作列表
-     */
     public List<String> getAvailableActions(Long userId) {
+        if (appealLocked != null && appealLocked == 1) {
+            return Collections.emptyList();
+        }
+        if (status == TradeOrderStatusEnum.DISPUTE) {
+            return Collections.emptyList();
+        }
+
         List<String> actions = new ArrayList<>();
 
         if (isPublisher(userId)) {
-            // 发布者可用操作
             if (status.canApprove()) {
                 actions.add("APPROVE");
                 actions.add("REJECT");
@@ -412,7 +463,6 @@ public class TradeOrderAggregate {
         }
 
         if (isAcceptor(userId)) {
-            // 接单者可用操作
             if (status.canSubmit()) {
                 actions.add("SUBMIT");
             }

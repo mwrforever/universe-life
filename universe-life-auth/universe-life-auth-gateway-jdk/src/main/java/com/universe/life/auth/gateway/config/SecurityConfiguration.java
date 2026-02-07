@@ -29,6 +29,9 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
+import java.util.Set;
+
 import static org.springframework.security.config.Customizer.withDefaults;
 
 /**
@@ -72,9 +75,12 @@ public class SecurityConfiguration {
         // 设置请求权限
         log.info("网关服务的过滤器链注册中：{}", authPathProperties);
         http.authorizeExchange(exchanges -> {
-            if (authPathProperties.getEnable()) {
+            if (Boolean.TRUE.equals(authPathProperties.getEnable())) {
+                Set<String> excludePath = authPathProperties.getExcludePath() == null
+                        ? Collections.emptySet()
+                        : authPathProperties.getExcludePath();
                 exchanges.pathMatchers(HttpMethod.OPTIONS, "/**").permitAll();
-                exchanges.pathMatchers(authPathProperties.getExcludePath().toArray(new String[0])).permitAll();
+                exchanges.pathMatchers(excludePath.toArray(new String[0])).permitAll();
                 exchanges.anyExchange().authenticated();
             } else {
                 exchanges.anyExchange().permitAll();

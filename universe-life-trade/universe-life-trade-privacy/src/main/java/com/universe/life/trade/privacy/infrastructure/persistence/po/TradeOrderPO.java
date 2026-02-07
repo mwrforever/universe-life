@@ -50,10 +50,31 @@ public class TradeOrderPO {
     private Long rewardAmount;
 
     /**
+     * 应付金额（分）
+     */
+    @TableField("payable_amount")
+    private Long payableAmount;
+
+    /**
+     * 已支付金额（分）
+     */
+    @TableField("paid_amount")
+    private Long paidAmount;
+
+    /**
      * 订单状态
      */
     @TableField("status")
     private TradeOrderStatusEnum status;
+
+    /**
+     * 申诉前订单状态（TradeOrderStatusEnum.code）
+     */
+    @TableField("pre_appeal_status")
+    private Integer preAppealStatus;
+
+    @TableField("appeal_locked")
+    private Integer appealLocked;
 
     /**
      * 提交内容

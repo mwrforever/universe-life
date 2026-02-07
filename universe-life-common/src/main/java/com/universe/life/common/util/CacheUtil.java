@@ -172,6 +172,15 @@ public class CacheUtil {
         }
     }
 
+    public boolean setIfAbsent(String key, String value, long timeout, TimeUnit unit) {
+        try {
+            Boolean success = stringRedisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit);
+            return Boolean.TRUE.equals(success);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // ==================== Hash结构操作 ====================
 
     /**

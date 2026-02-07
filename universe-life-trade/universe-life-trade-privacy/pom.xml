@@ -40,10 +40,21 @@
             <artifactId>universe-life-auth-resource-jdk</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.universe.life</groupId>
+            <artifactId>universe-life-trade-common-model</artifactId>
+        </dependency>
+
         <!-- Task服务API（Feign客户端） -->
         <dependency>
             <groupId>com.universe.life</groupId>
             <artifactId>universe-life-task-common-api</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.universe.life</groupId>
+            <artifactId>universe-life-aftercare-common-api</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
 

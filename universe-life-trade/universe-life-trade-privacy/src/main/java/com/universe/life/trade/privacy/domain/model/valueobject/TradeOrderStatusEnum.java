@@ -1,5 +1,6 @@
 package com.universe.life.trade.privacy.domain.model.valueobject;
 
+import com.baomidou.mybatisplus.annotation.IEnum;
 import lombok.Getter;
 
 import java.util.*;
@@ -25,7 +26,7 @@ import java.util.*;
  * @since 1.0.0
  */
 @Getter
-public enum TradeOrderStatusEnum {
+public enum TradeOrderStatusEnum implements IEnum<Integer> {
 
     // ==================== 审批阶段 ====================
     
@@ -113,6 +114,11 @@ public enum TradeOrderStatusEnum {
     /** 状态描述 */
     private final String desc;
 
+    @Override
+    public Integer getValue() {
+        return this.code;
+    }
+
     /**
      * 枚举构造函数
      */
@@ -151,9 +157,6 @@ public enum TradeOrderStatusEnum {
 
         // 已完成 → 终态，无转换
         TRANSITIONS.put(COMPLETED, EnumSet.noneOf(TradeOrderStatusEnum.class));
-
-        // 已拒绝 → 终态，无转换
-        TRANSITIONS.put(REJECTED, EnumSet.noneOf(TradeOrderStatusEnum.class));
 
         // 已放弃 → 终态，无转换
         TRANSITIONS.put(ABANDONED, EnumSet.noneOf(TradeOrderStatusEnum.class));

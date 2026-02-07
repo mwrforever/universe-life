@@ -215,7 +215,7 @@ CLAUDE.md
 api-documentation/
 doc/
 docs/
-*.md
+# *.md
 !README.md
 
 # Scripts
@@ -238,7 +238,7 @@ nul
 # Test code (排除测试代码)
 **/src/test/
 api
-md
+# md
 .kiro
 
 
