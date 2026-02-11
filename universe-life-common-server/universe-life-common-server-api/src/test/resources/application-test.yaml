@@ -1,0 +1,22 @@
+spring:
+  profiles:
+    active: test
+  data:
+    redis:
+      database: 1
+      host: 43.142.103.248
+      port: 6379
+      password: 1010520mao
+      timeout: 10000
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+
+# 禁用 Nacos 配置中心
+  config:
+    import: optional:nacos:
+
+logging:
+  level:
+    com.universe.life.common.server.api: DEBUG

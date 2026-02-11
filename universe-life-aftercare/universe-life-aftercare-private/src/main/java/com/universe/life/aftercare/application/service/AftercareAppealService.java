@@ -39,11 +39,11 @@ public class AftercareAppealService {
             throw new BusinessException.ParamException("参数不能为空");
         }
 
-        if (dto.getOrderId() == null) {
-            throw new BusinessException.ParamException("订单ID不能为空");
+        if (dto.getBizId() == null) {
+            throw new BusinessException.ParamException("业务ID不能为空");
         }
-        if (dto.getTaskId() == null) {
-            throw new BusinessException.ParamException("任务ID不能为空");
+        if (dto.getBizType() == null) {
+            throw new BusinessException.ParamException("业务类型不能为空");
         }
         if (dto.getAppellantId() == null) {
             throw new BusinessException.ParamException("申诉人ID不能为空");
@@ -55,13 +55,13 @@ public class AftercareAppealService {
             throw new BusinessException.ParamException("申诉原因不能为空");
         }
 
-        if (repository.existsPendingByOrderId(dto.getOrderId())) {
+        if (repository.existsPendingByBiz(dto.getBizType(), dto.getBizId())) {
             throw new BusinessException.DataAlreadyExistsException("已存在待处理的申诉");
         }
 
         AftercareAppealPO po = new AftercareAppealPO();
-        po.setOrderId(dto.getOrderId());
-        po.setTaskId(dto.getTaskId());
+        po.setBizId(dto.getBizId());
+        po.setBizType(dto.getBizType());
         po.setAppellantId(dto.getAppellantId());
         po.setAppealType(dto.getAppealType());
         po.setReason(dto.getReason());
@@ -72,8 +72,8 @@ public class AftercareAppealService {
 
         AppealCreatedEvent event = AppealCreatedEvent.builder()
                 .appealId(po.getId())
-                .orderId(po.getOrderId())
-                .taskId(po.getTaskId())
+                .bizId(po.getBizId())
+                .bizType(po.getBizType())
                 .appellantId(po.getAppellantId())
                 .appealType(po.getAppealType())
                 .createdAt(LocalDateTime.now())
@@ -93,19 +93,19 @@ public class AftercareAppealService {
         return po.getId();
     }
 
-    public boolean existsPendingByOrderId(Long orderId) {
-        if (orderId == null) {
+    public boolean existsPendingByBiz(Integer bizType, Long bizId) {
+        if (bizType == null || bizId == null) {
             return false;
         }
-        return repository.existsPendingByOrderId(orderId);
+        return repository.existsPendingByBiz(bizType, bizId);
     }
 
-    public AppealSummaryDTO getLatestSummaryByOrderId(Long orderId) {
-        if (orderId == null) {
+    public AppealSummaryDTO getLatestSummaryByBiz(Integer bizType, Long bizId) {
+        if (bizType == null || bizId == null) {
             return null;
         }
 
-        return repository.findLatestByOrderId(orderId)
+        return repository.findLatestByBiz(bizType, bizId)
                 .map(this::toSummaryDTO)
                 .orElse(null);
     }
@@ -145,8 +145,8 @@ public class AftercareAppealService {
 
         AppealHandledEvent event = AppealHandledEvent.builder()
                 .appealId(po.getId())
-                .orderId(po.getOrderId())
-                .taskId(po.getTaskId())
+                .bizId(po.getBizId())
+                .bizType(po.getBizType())
                 .appellantId(po.getAppellantId())
                 .appealType(po.getAppealType())
                 .result(po.getResult())
@@ -192,8 +192,8 @@ public class AftercareAppealService {
 
         AppealCancelledEvent event = AppealCancelledEvent.builder()
                 .appealId(po.getId())
-                .orderId(po.getOrderId())
-                .taskId(po.getTaskId())
+                .bizId(po.getBizId())
+                .bizType(po.getBizType())
                 .appellantId(po.getAppellantId())
                 .appealType(po.getAppealType())
                 .cancelledAt(LocalDateTime.now())
@@ -214,8 +214,8 @@ public class AftercareAppealService {
     private AftercareAppealVO toAppealVO(AftercareAppealPO po) {
         AftercareAppealVO vo = new AftercareAppealVO();
         vo.setAppealId(po.getId());
-        vo.setOrderId(po.getOrderId());
-        vo.setTaskId(po.getTaskId());
+        vo.setBizId(po.getBizId());
+        vo.setBizType(po.getBizType());
         vo.setAppellantId(po.getAppellantId());
         vo.setAppealType(po.getAppealType());
         vo.setAppealTypeText(getAppealTypeText(po.getAppealType()));

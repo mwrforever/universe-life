@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: universe-life-common-server-test
+  profiles:
+    active: test
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+
+universe-life:
+  data:
+    redis:
+      database: 1
+      host: 43.142.103.248
+      port: 6379
+      password: 1010520mao
+      timeout: 10000
+  auth:
+    enable: false
+  redisson:
+    password: 1010520mao
+    connection-pool-size: 10
+    connect-timeout: 5000
+    timeout: 2000
+    retry-attempts: 2
+    retry-interval: 1000
+    single:
+      enabled: true
+      address: redis://43.142.103.248:6379
+      database: 1

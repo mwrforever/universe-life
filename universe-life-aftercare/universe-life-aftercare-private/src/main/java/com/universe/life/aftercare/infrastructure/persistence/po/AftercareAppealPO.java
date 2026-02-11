@@ -12,11 +12,11 @@ public class AftercareAppealPO {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @TableField("order_id")
-    private Long orderId;
+    @TableField("biz_id")
+    private Long bizId;
 
-    @TableField("task_id")
-    private Long taskId;
+    @TableField("biz_type")
+    private Integer bizType;
 
     @TableField("appellant_id")
     private Long appellantId;

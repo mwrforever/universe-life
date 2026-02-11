@@ -1,11 +1,11 @@
 package com.universe.life.task.privacy.application.service;
 
 import com.universe.life.common.util.CacheUtil;
-import com.universe.life.task.privacy.application.assembler.TaskAssembler;
-import com.universe.life.task.privacy.application.dto.TaskCategoryDTO;
+import com.universe.life.task.privacy.application.assembler.TaskCategoryAssembler;
+import com.universe.life.task.privacy.interfaces.dto.response.TaskCategoryDTO;
 import com.universe.life.task.privacy.domain.exception.TaskBusinessException;
 import com.universe.life.task.privacy.domain.exception.TaskErrorCode;
-import com.universe.life.task.privacy.domain.model.TaskCategory;
+import com.universe.life.task.privacy.domain.model.valueobject.TaskCategory;
 import com.universe.life.task.privacy.domain.repository.TaskCategoryRepository;
 import com.universe.life.task.privacy.infrastructure.enums.CommonStatus;
 import com.universe.life.task.privacy.infrastructure.constants.RedisKeyConstants;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public class TaskCategoryService {
 
     private final TaskCategoryRepository taskCategoryRepository;
-    private final TaskAssembler taskAssembler;
+    private final TaskCategoryAssembler taskCategoryAssembler;
     private final CacheUtil cacheUtil;
 
     /**
@@ -76,7 +76,7 @@ public class TaskCategoryService {
     private List<TaskCategoryDTO> queryCategoriesFromDb(CommonStatus status) {
         List<TaskCategory> categories = taskCategoryRepository.findAll(status);
         return categories.stream()
-                .map(taskAssembler::toTaskCategoryDTO)
+                .map(taskCategoryAssembler::toTaskCategoryDTO)
                 .collect(Collectors.toList());
     }
 

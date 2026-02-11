@@ -7,6 +7,7 @@ import com.universe.life.pay.domain.repository.PayRecordRepository;
 import com.universe.life.pay.infrastructure.persistence.po.PayRecordPO;
 import com.universe.life.pay.model.dto.CreatePaymentDTO;
 import com.universe.life.pay.model.dto.CreatePaymentResultDTO;
+import com.universe.life.pay.model.enums.PayChannelEnum;
 import com.universe.life.pay.model.enums.PayStatusEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
@@ -51,6 +52,16 @@ public class PayApplicationService {
             PayChannelHandler handler = handlerRegistry.getRequired(existed.getChannel());
             PayChannelHandler.ChannelCreateResult channelResult = handler.create(existed);
 
+            if (existed.getChannel() != null && existed.getChannel() == PayChannelEnum.BALANCE.getCode()) {
+                String thirdTradeNo = channelResult == null ? null : channelResult.thirdTradeNo();
+                if (thirdTradeNo == null || thirdTradeNo.isBlank()) {
+                    thirdTradeNo = "BAL-" + existed.getRequestNo();
+                }
+                payRecordRepository.markSuccess(existed.getId(), thirdTradeNo, existed.getExtra());
+                existed.setStatus(PayStatusEnum.SUCCESS.getCode());
+                existed.setThirdTradeNo(thirdTradeNo);
+            }
+
             if (channelResult != null) {
                 boolean changed = false;
                 if ((existed.getThirdTradeNo() == null || existed.getThirdTradeNo().isBlank())
@@ -64,7 +75,9 @@ public class PayApplicationService {
                     changed = true;
                 }
                 if (changed) {
-                    existed.setStatus(PayStatusEnum.PAYING.getCode());
+                    if (existed.getChannel() == null || existed.getChannel() != PayChannelEnum.BALANCE.getCode()) {
+                        existed.setStatus(PayStatusEnum.PAYING.getCode());
+                    }
                     existed.setUpdatedAt(LocalDateTime.now());
                     payRecordRepository.save(existed);
                 }
@@ -122,6 +135,16 @@ public class PayApplicationService {
         PayChannelHandler handler = handlerRegistry.getRequired(dto.getChannel());
         PayChannelHandler.ChannelCreateResult channelResult = handler.create(record);
 
+        if (record.getChannel() != null && record.getChannel() == PayChannelEnum.BALANCE.getCode()) {
+            String thirdTradeNo = channelResult == null ? null : channelResult.thirdTradeNo();
+            if (thirdTradeNo == null || thirdTradeNo.isBlank()) {
+                thirdTradeNo = "BAL-" + record.getRequestNo();
+            }
+            payRecordRepository.markSuccess(record.getId(), thirdTradeNo, record.getExtra());
+            record.setStatus(PayStatusEnum.SUCCESS.getCode());
+            record.setThirdTradeNo(thirdTradeNo);
+        }
+
         if (channelResult != null) {
             boolean changed = false;
             if (channelResult.thirdTradeNo() != null && !channelResult.thirdTradeNo().isBlank()) {
@@ -133,7 +156,9 @@ public class PayApplicationService {
                 changed = true;
             }
             if (changed) {
-                record.setStatus(PayStatusEnum.PAYING.getCode());
+                if (record.getChannel() == null || record.getChannel() != PayChannelEnum.BALANCE.getCode()) {
+                    record.setStatus(PayStatusEnum.PAYING.getCode());
+                }
                 record.setUpdatedAt(LocalDateTime.now());
                 payRecordRepository.save(record);
             }

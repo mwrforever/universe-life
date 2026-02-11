@@ -7,7 +7,8 @@ public enum PayChannelEnum {
 
     WECHAT(0, "微信"),
     ALIPAY(1, "支付宝"),
-    BANK_CARD(2, "银行卡");
+    BANK_CARD(2, "银行卡"),
+    BALANCE(3, "余额");
 
     private final int code;
     private final String desc;

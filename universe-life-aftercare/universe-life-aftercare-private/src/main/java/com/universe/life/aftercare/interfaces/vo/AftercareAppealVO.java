@@ -13,11 +13,11 @@ public class AftercareAppealVO {
     @Schema(description = "申诉ID")
     private Long appealId;
 
-    @Schema(description = "订单ID")
-    private Long orderId;
+    @Schema(description = "业务ID")
+    private Long bizId;
 
-    @Schema(description = "任务ID")
-    private Long taskId;
+    @Schema(description = "业务类型：1订单 2任务")
+    private Integer bizType;
 
     @Schema(description = "申诉人ID")
     private Long appellantId;

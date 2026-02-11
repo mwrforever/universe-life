@@ -11,9 +11,9 @@ public interface AftercareAppealRepository {
 
     Optional<AftercareAppealPO> findById(Long id);
 
-    boolean existsPendingByOrderId(Long orderId);
+    boolean existsPendingByBiz(Integer bizType, Long bizId);
 
-    Optional<AftercareAppealPO> findLatestByOrderId(Long orderId);
+    Optional<AftercareAppealPO> findLatestByBiz(Integer bizType, Long bizId);
 
     Page<AftercareAppealPO> pagePending(int pageNum, int pageSize);
 }

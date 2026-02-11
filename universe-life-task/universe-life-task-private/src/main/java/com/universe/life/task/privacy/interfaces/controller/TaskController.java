@@ -5,17 +5,16 @@ import com.universe.life.auth.resource.util.SecurityUtil;
 import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import com.universe.life.auth.common.domain.Result;
 import com.universe.life.common.domain.PageResult;
+import com.universe.life.task.privacy.application.assembler.TaskAssembler;
+import com.universe.life.task.privacy.application.assembler.TaskCategoryAssembler;
 import com.universe.life.task.privacy.application.command.CancelTaskCommand;
 import com.universe.life.task.privacy.application.command.CreateTaskCommand;
 import com.universe.life.task.privacy.application.command.UpdateTaskCommand;
 import com.universe.life.task.privacy.application.query.TaskHallQuery;
-import com.universe.life.task.privacy.application.dto.TaskCategoryDTO;
-import com.universe.life.task.privacy.application.dto.TaskDTO;
+import com.universe.life.task.privacy.interfaces.dto.response.TaskCategoryDTO;
+import com.universe.life.task.privacy.interfaces.dto.response.TaskDTO;
 import com.universe.life.task.privacy.application.service.TaskApplicationService;
 import com.universe.life.task.privacy.application.service.TaskCategoryService;
-import com.universe.life.task.privacy.interfaces.assembler.TaskCategoryVOAssembler;
-import com.universe.life.task.privacy.interfaces.assembler.TaskRequestAssembler;
-import com.universe.life.task.privacy.interfaces.assembler.TaskVOAssembler;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskCreateRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskHallQueryRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.TaskUpdateRequest;
@@ -49,9 +48,8 @@ public class TaskController {
 
     private final TaskApplicationService taskApplicationService;
     private final TaskCategoryService taskCategoryService;
-    private final TaskCategoryVOAssembler taskCategoryVOAssembler;
-    private final TaskRequestAssembler requestAssembler;
-    private final TaskVOAssembler taskVOAssembler;
+    private final TaskAssembler taskAssembler;
+    private final TaskCategoryAssembler taskCategoryAssembler;
 
     /**
      * 任务大厅列表
@@ -63,13 +61,13 @@ public class TaskController {
                 request.getCategoryId(), request.getMinReward(), request.getMaxReward());
 
         // 1. Controller层负责Request到Query的转换
-        TaskHallQuery query = requestAssembler.toHallQuery(request);
+        TaskHallQuery query = taskAssembler.toHallQuery(request);
 
         // 2. 调用应用服务
         Page<TaskDTO> page = taskApplicationService.pageHallTasks(query);
 
         List<TaskHallSummaryVO> voList = page.getRecords().stream()
-                .map(taskVOAssembler::toTaskHallSummaryVO)
+                .map(taskAssembler::toTaskHallSummaryVO)
                 .collect(Collectors.toList());
 
         PageResult<TaskHallSummaryVO> result = PageResult.of(voList, page);
@@ -87,7 +85,7 @@ public class TaskController {
         log.info("获取任务详情: taskId={}", taskId);
 
         TaskDTO taskDTO = taskApplicationService.getTaskDetail(taskId);
-        TaskFullDetailVO vo = taskVOAssembler.toTaskFullDetailVO(taskDTO);
+        TaskFullDetailVO vo = taskAssembler.toTaskFullDetailVO(taskDTO);
         
         // TODO: 补充发布者信息、审核记录、权限判断等
         
@@ -112,7 +110,7 @@ public class TaskController {
         Page<TaskDTO> page = taskApplicationService.pagePublishedTasks(publisherId, taskStatus, pageNum, pageSize);
         
         List<TaskPublishedSummaryVO> voList = page.getRecords().stream()
-                .map(taskVOAssembler::toTaskPublishedSummaryVO)
+                .map(taskAssembler::toTaskPublishedSummaryVO)
                 .collect(Collectors.toList());
         
         PageResult<TaskPublishedSummaryVO> result = PageResult.of(voList, page);
@@ -130,7 +128,7 @@ public class TaskController {
         log.info("创建任务: publisherId={}, title={}", publisherId, request.getTitle());
 
         // 1. Controller层负责Request到Command的转换
-        CreateTaskCommand command = requestAssembler.toCreateCommand(request);
+        CreateTaskCommand command = taskAssembler.toCreateCommand(request);
 
         // 2. 调用应用服务
         Long taskId = taskApplicationService.createTask(command, publisherId);
@@ -152,7 +150,7 @@ public class TaskController {
         log.info("更新任务: taskId={}, userId={}", taskId, userId);
 
         // 1. Controller层负责Request到Command的转换
-        UpdateTaskCommand command = requestAssembler.toUpdateCommand(request);
+        UpdateTaskCommand command = taskAssembler.toUpdateCommand(request);
 
         // 2. 调用应用服务
         taskApplicationService.updateTask(taskId, command, userId);
@@ -173,7 +171,7 @@ public class TaskController {
         log.info("取消任务: taskId={}, userId={}", taskId, userId);
 
         // 1. Controller层负责构建CancelTaskCommand
-        CancelTaskCommand command = requestAssembler.toCancelCommand(taskId, userId, null);
+        CancelTaskCommand command = taskAssembler.toCancelCommand(taskId, userId, null);
 
         // 2. 调用应用服务
         taskApplicationService.cancelTask(command);
@@ -189,7 +187,7 @@ public class TaskController {
         log.info("查询任务分类列表");
 
         List<TaskCategoryDTO> categories = taskCategoryService.listCategories();
-        List<TaskCategoryVO> voList = taskCategoryVOAssembler.toTaskCategoryVO(categories);
+        List<TaskCategoryVO> voList = taskCategoryAssembler.toTaskCategoryVO(categories);
         
         return Result.success(voList);
     }

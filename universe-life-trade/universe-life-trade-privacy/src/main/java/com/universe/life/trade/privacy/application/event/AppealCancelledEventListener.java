@@ -1,6 +1,7 @@
 package com.universe.life.trade.privacy.application.event;
 
 import com.universe.life.aftercare.model.event.AppealCancelledEvent;
+import com.universe.life.aftercare.model.enums.AftercareBizType;
 import com.universe.life.common.util.CacheUtil;
 import com.universe.life.trade.privacy.domain.model.aggregate.TradeOrderAggregate;
 import com.universe.life.trade.privacy.domain.repository.TradeOrderRepository;
@@ -31,7 +32,7 @@ public class AppealCancelledEventListener {
 
     private String buildDedupKey(AppealCancelledEvent event) {
         String cancelledAt = event.getCancelledAt() == null ? "" : event.getCancelledAt().toString();
-        return "trade:mq:dedup:appeal:cancelled:order:" + event.getOrderId()
+        return "trade:mq:dedup:appeal:cancelled:order:" + event.getBizId()
                 + ":appeal:" + event.getAppealId()
                 + ":at:" + cancelledAt;
     }
@@ -52,11 +53,15 @@ public class AppealCancelledEventListener {
     )
     @Transactional(rollbackFor = Exception.class)
     public void handleAppealCancelled(AppealCancelledEvent event) {
-        if (event == null || event.getOrderId() == null) {
+        if (event == null || event.getBizId() == null || event.getBizType() == null) {
             return;
         }
 
-        Long orderId = event.getOrderId();
+        if (!AftercareBizType.ORDER.equals(AftercareBizType.of(event.getBizType()))) {
+            return;
+        }
+
+        Long orderId = event.getBizId();
         String dedupKey = buildDedupKey(event);
         if (!cacheUtil.setIfAbsent(dedupKey, "1", 24, TimeUnit.HOURS)) {
             log.info("申诉撤销事件重复消费(幂等跳过): appealId={}, orderId={}, dedupKey={}",

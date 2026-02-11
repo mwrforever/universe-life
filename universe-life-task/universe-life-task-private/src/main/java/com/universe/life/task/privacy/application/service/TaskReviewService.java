@@ -7,7 +7,7 @@ import com.universe.life.task.privacy.infrastructure.enums.TaskReviewStatus;
 import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import com.universe.life.task.privacy.domain.exception.TaskInvalidStatusException;
 import com.universe.life.task.privacy.domain.exception.TaskNotFoundException;
-import com.universe.life.task.privacy.domain.model.Task;
+import com.universe.life.task.privacy.domain.model.aggregate.Task;
 import com.universe.life.task.privacy.domain.repository.TaskRepository;
 import com.universe.life.task.privacy.domain.repository.TaskReviewRecordRepository;
 import com.universe.life.task.privacy.infrastructure.constants.RedisKeyConstants;

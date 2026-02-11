@@ -6,7 +6,7 @@ import com.universe.life.task.privacy.domain.event.OrderCompletedEvent;
 import com.universe.life.task.privacy.domain.event.OrderCreatedEvent;
 import com.universe.life.task.privacy.domain.event.OrderRejectedEvent;
 import com.universe.life.task.privacy.domain.exception.TaskNotFoundException;
-import com.universe.life.task.privacy.domain.model.Task;
+import com.universe.life.task.privacy.domain.model.aggregate.Task;
 import com.universe.life.task.privacy.domain.repository.TaskRepository;
 import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import com.universe.life.task.privacy.infrastructure.constants.RedisKeyConstants;

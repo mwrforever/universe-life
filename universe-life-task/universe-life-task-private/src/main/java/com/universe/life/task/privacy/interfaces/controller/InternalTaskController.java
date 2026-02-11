@@ -3,7 +3,7 @@ package com.universe.life.task.privacy.interfaces.controller;
 import com.universe.life.auth.common.domain.Result;
 import com.universe.life.task.model.dto.TaskInfoDTO;
 import com.universe.life.task.model.enums.TaskStatus;
-import com.universe.life.task.privacy.domain.model.Task;
+import com.universe.life.task.privacy.domain.model.aggregate.Task;
 import com.universe.life.task.privacy.domain.repository.TaskRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

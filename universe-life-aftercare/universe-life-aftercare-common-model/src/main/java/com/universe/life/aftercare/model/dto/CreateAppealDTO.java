@@ -9,11 +9,11 @@ import java.util.List;
 @Schema(description = "创建申诉DTO（服务间调用）")
 public class CreateAppealDTO {
 
-    @Schema(description = "交易订单ID", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Long orderId;
+    @Schema(description = "业务ID", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long bizId;
 
-    @Schema(description = "任务ID", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Long taskId;
+    @Schema(description = "业务类型：1订单 2任务", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer bizType;
 
     @Schema(description = "申诉人ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long appellantId;

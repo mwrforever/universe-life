@@ -1,10 +1,10 @@
 package com.universe.life.task.privacy.interfaces.controller;
 
 import com.universe.life.auth.common.domain.Result;
-import com.universe.life.task.privacy.application.dto.TaskCategoryDTO;
+import com.universe.life.task.privacy.application.assembler.TaskCategoryAssembler;
+import com.universe.life.task.privacy.interfaces.dto.response.TaskCategoryDTO;
 import com.universe.life.task.privacy.application.service.TaskCategoryService;
 import com.universe.life.task.privacy.infrastructure.enums.CommonStatus;
-import com.universe.life.task.privacy.interfaces.assembler.TaskCategoryVOAssembler;
 import com.universe.life.task.privacy.interfaces.dto.request.CreateCategoryRequest;
 import com.universe.life.task.privacy.interfaces.dto.request.UpdateCategoryRequest;
 import com.universe.life.task.privacy.interfaces.vo.TaskCategoryVO;
@@ -33,7 +33,7 @@ import java.util.List;
 public class AdminCategoryController {
 
     private final TaskCategoryService taskCategoryService;
-    private final TaskCategoryVOAssembler taskCategoryVOAssembler;
+    private final TaskCategoryAssembler taskCategoryAssembler;
 
     /**
      * 分类列表（包含已禁用）
@@ -49,7 +49,7 @@ public class AdminCategoryController {
 
         List<TaskCategoryDTO> categories = taskCategoryService.listCategories(commonStatus);
         
-        List<TaskCategoryVO> voList = taskCategoryVOAssembler.toTaskCategoryVO(categories);
+        List<TaskCategoryVO> voList = taskCategoryAssembler.toTaskCategoryVO(categories);
         
         return Result.success(voList);
     }

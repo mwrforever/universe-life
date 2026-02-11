@@ -1,6 +1,7 @@
 package com.universe.life.trade.privacy.application.event;
 
 import com.universe.life.aftercare.model.event.AppealCreatedEvent;
+import com.universe.life.aftercare.model.enums.AftercareBizType;
 import com.universe.life.common.util.CacheUtil;
 import com.universe.life.trade.privacy.domain.model.aggregate.TradeOrderAggregate;
 import com.universe.life.trade.privacy.domain.repository.TradeOrderRepository;
@@ -42,12 +43,16 @@ public class AppealEventListener {
     )
     @Transactional(rollbackFor = Exception.class)
     public void handleAppealCreated(AppealCreatedEvent event) {
-        if (event == null || event.getOrderId() == null) {
+        if (event == null || event.getBizId() == null || event.getBizType() == null) {
             return;
         }
 
-        Long orderId = event.getOrderId();
-        log.info("收到申诉创建事件: appealId={}, orderId={}, taskId={}", event.getAppealId(), orderId, event.getTaskId());
+        if (!AftercareBizType.ORDER.equals(AftercareBizType.of(event.getBizType()))) {
+            return;
+        }
+
+        Long orderId = event.getBizId();
+        log.info("收到申诉创建事件: appealId={}, bizType={}, bizId={}", event.getAppealId(), event.getBizType(), event.getBizId());
 
         TradeOrderAggregate order = orderRepository.findById(orderId).orElse(null);
         if (order == null) {

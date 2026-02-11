@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.universe.life.aftercare.client.AftercareAppealClient;
 import com.universe.life.aftercare.model.dto.AppealSummaryDTO;
 import com.universe.life.aftercare.model.dto.CreateAppealDTO;
+import com.universe.life.aftercare.model.enums.AftercareBizType;
 import com.universe.life.auth.common.domain.Result;
 import com.universe.life.common.domain.PageResult;
 import com.universe.life.common.util.CacheUtil;
@@ -446,8 +447,8 @@ public class TradeOrderApplicationService {
 
         // 3. 创建申诉记录（售后服务）
         CreateAppealDTO createAppealDTO = new CreateAppealDTO();
-        createAppealDTO.setOrderId(cmd.getOrderId());
-        createAppealDTO.setTaskId(order.getTaskId());
+        createAppealDTO.setBizType(AftercareBizType.ORDER.getCode());
+        createAppealDTO.setBizId(cmd.getOrderId());
         createAppealDTO.setAppellantId(cmd.getOperatorId());
         createAppealDTO.setAppealType(cmd.getAppealType());
         createAppealDTO.setReason(cmd.getReason());
@@ -549,7 +550,7 @@ public class TradeOrderApplicationService {
     }
 
     private AppealSummaryVO buildAppealSummary(Long orderId) {
-        Result<AppealSummaryDTO> result = aftercareAppealClient.getLatestAppealSummary(orderId);
+        Result<AppealSummaryDTO> result = aftercareAppealClient.getLatestAppealSummary(AftercareBizType.ORDER.getCode(), orderId);
         if (result == null || result.code() == null || result.code() != 1) {
             return null;
         }

@@ -12,9 +12,9 @@ public interface AftercareAppealClient {
     @PostMapping("/internal/appeals")
     Result<Long> createAppeal(@RequestBody CreateAppealDTO dto);
 
-    @GetMapping("/internal/appeals/orders/{orderId}/pending")
-    Result<Boolean> existsPendingAppeal(@PathVariable("orderId") Long orderId);
+    @GetMapping("/internal/appeals/biz/{bizType}/{bizId}/pending")
+    Result<Boolean> existsPendingAppeal(@PathVariable("bizType") Integer bizType, @PathVariable("bizId") Long bizId);
 
-    @GetMapping("/internal/appeals/orders/{orderId}/latest-summary")
-    Result<AppealSummaryDTO> getLatestAppealSummary(@PathVariable("orderId") Long orderId);
+    @GetMapping("/internal/appeals/biz/{bizType}/{bizId}/latest-summary")
+    Result<AppealSummaryDTO> getLatestAppealSummary(@PathVariable("bizType") Integer bizType, @PathVariable("bizId") Long bizId);
 }

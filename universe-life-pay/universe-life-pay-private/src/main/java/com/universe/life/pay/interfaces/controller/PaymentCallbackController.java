@@ -29,7 +29,7 @@ public class PaymentCallbackController {
 
     @PostMapping("/{channel}")
     public Result<Void> callback(
-            @PathVariable("channel") Integer channel,
+            @PathVariable Integer channel,
             @RequestBody(required = false) String body,
             @RequestParam(required = false) Map<String, String> params,
             @RequestHeader HttpHeaders headers
@@ -64,7 +64,7 @@ public class PaymentCallbackController {
         }
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> e : params.entrySet()) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append('&');
             }
             sb.append(e.getKey()).append('=');

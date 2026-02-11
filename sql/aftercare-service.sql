@@ -14,8 +14,8 @@ USE universe_life_aftercare;
 CREATE TABLE IF NOT EXISTS `aftercare_appeal`
 (
     `id`              BIGINT          NOT NULL AUTO_INCREMENT COMMENT '主键',
-    `order_id`        BIGINT          NOT NULL COMMENT '交易订单ID',
-    `task_id`         BIGINT          NOT NULL COMMENT '任务ID',
+    `biz_id`          BIGINT          NOT NULL COMMENT '业务ID',
+    `biz_type`        TINYINT         NOT NULL COMMENT '业务类型：1订单 2任务',
     `appellant_id`    BIGINT          NOT NULL COMMENT '申诉人ID',
     `appeal_type`     TINYINT         NOT NULL COMMENT '申诉类型：1成果不符合要求 2发布者恶意拒绝 3其他',
     `reason`          TEXT            NOT NULL COMMENT '申诉原因',
@@ -30,8 +30,7 @@ CREATE TABLE IF NOT EXISTS `aftercare_appeal`
     `deleted`         TINYINT         NOT NULL DEFAULT 0 COMMENT '逻辑删除：0未删除 1已删除',
     `version`         BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
     PRIMARY KEY (`id`),
-    KEY `idx_order_status` (`order_id`, `status`, `deleted`),
-    KEY `idx_task_status` (`task_id`, `status`, `deleted`),
+    KEY `idx_biz_status` (`biz_type`, `biz_id`, `status`, `deleted`),
     KEY `idx_appellant_status` (`appellant_id`, `status`, `deleted`),
     KEY `idx_status_created` (`status`, `deleted`, `created_at`)
 ) ENGINE = InnoDB

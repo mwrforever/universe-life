@@ -32,18 +32,20 @@ public class AftercareAppealRepositoryImpl implements AftercareAppealRepository 
     }
 
     @Override
-    public boolean existsPendingByOrderId(Long orderId) {
+    public boolean existsPendingByBiz(Integer bizType, Long bizId) {
         LambdaQueryWrapper<AftercareAppealPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(AftercareAppealPO::getOrderId, orderId)
+        wrapper.eq(AftercareAppealPO::getBizType, bizType)
+                .eq(AftercareAppealPO::getBizId, bizId)
                 .eq(AftercareAppealPO::getStatus, 0)
                 .eq(AftercareAppealPO::getDeleted, 0);
         return mapper.selectCount(wrapper) > 0;
     }
 
     @Override
-    public Optional<AftercareAppealPO> findLatestByOrderId(Long orderId) {
+    public Optional<AftercareAppealPO> findLatestByBiz(Integer bizType, Long bizId) {
         LambdaQueryWrapper<AftercareAppealPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(AftercareAppealPO::getOrderId, orderId)
+        wrapper.eq(AftercareAppealPO::getBizType, bizType)
+                .eq(AftercareAppealPO::getBizId, bizId)
                 .eq(AftercareAppealPO::getDeleted, 0)
                 .orderByDesc(AftercareAppealPO::getCreatedAt)
                 .last("LIMIT 1");

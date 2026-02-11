@@ -1,7 +1,8 @@
 package com.universe.life.task.privacy.infrastructure.persistence.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.universe.life.task.privacy.domain.model.TaskCategory;
+import com.universe.life.task.privacy.application.assembler.TaskCategoryAssembler;
+import com.universe.life.task.privacy.domain.model.valueobject.TaskCategory;
 import com.universe.life.task.privacy.domain.repository.TaskCategoryRepository;
 import com.universe.life.task.privacy.infrastructure.enums.CommonStatus;
 import com.universe.life.task.privacy.infrastructure.persistence.mapper.TaskCategoryMapper;
@@ -24,22 +25,23 @@ import java.util.stream.Collectors;
 public class TaskCategoryRepositoryImpl implements TaskCategoryRepository {
 
     private final TaskCategoryMapper categoryMapper;
+    private final TaskCategoryAssembler taskCategoryAssembler;
 
     @Override
     public TaskCategory save(TaskCategory category) {
-        TaskCategoryPO po = toCategoryPO(category);
+        TaskCategoryPO po = taskCategoryAssembler.toTaskCategoryPO(category);
         if (po.getCategoryId() == null) {
             categoryMapper.insert(po);
         } else {
             categoryMapper.updateById(po);
         }
-        return toCategory(po);
+        return taskCategoryAssembler.toTaskCategory(po);
     }
 
     @Override
     public Optional<TaskCategory> findById(Long categoryId) {
         TaskCategoryPO po = categoryMapper.selectById(categoryId);
-        return Optional.ofNullable(po).map(this::toCategory);
+        return Optional.ofNullable(po).map(taskCategoryAssembler::toTaskCategory);
     }
 
     @Override
@@ -51,7 +53,7 @@ public class TaskCategoryRepositoryImpl implements TaskCategoryRepository {
         wrapper.orderByAsc(TaskCategoryPO::getSort);
         
         List<TaskCategoryPO> poList = categoryMapper.selectList(wrapper);
-        return poList.stream().map(this::toCategory).collect(Collectors.toList());
+        return poList.stream().map(taskCategoryAssembler::toTaskCategory).collect(Collectors.toList());
     }
 
     @Override
@@ -59,7 +61,7 @@ public class TaskCategoryRepositoryImpl implements TaskCategoryRepository {
         LambdaQueryWrapper<TaskCategoryPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(TaskCategoryPO::getName, name);
         TaskCategoryPO po = categoryMapper.selectOne(wrapper);
-        return Optional.ofNullable(po).map(this::toCategory);
+        return Optional.ofNullable(po).map(taskCategoryAssembler::toTaskCategory);
     }
 
     @Override
@@ -67,7 +69,7 @@ public class TaskCategoryRepositoryImpl implements TaskCategoryRepository {
         LambdaQueryWrapper<TaskCategoryPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(TaskCategoryPO::getCode, code);
         TaskCategoryPO po = categoryMapper.selectOne(wrapper);
-        return Optional.ofNullable(po).map(this::toCategory);
+        return Optional.ofNullable(po).map(taskCategoryAssembler::toTaskCategory);
     }
 
     @Override
@@ -90,29 +92,4 @@ public class TaskCategoryRepositoryImpl implements TaskCategoryRepository {
         return categoryMapper.selectCount(wrapper) > 0;
     }
 
-    // ==================== 对象转换 ====================
-
-    private TaskCategory toCategory(TaskCategoryPO po) {
-        return TaskCategory.builder()
-                .categoryId(po.getCategoryId())
-                .name(po.getName())
-                .code(po.getCode())
-                .sort(po.getSort())
-                .status(po.getStatus())
-                .createdAt(po.getCreatedAt())
-                .updatedAt(po.getUpdatedAt())
-                .build();
-    }
-
-    private TaskCategoryPO toCategoryPO(TaskCategory category) {
-        return TaskCategoryPO.builder()
-                .categoryId(category.getCategoryId())
-                .name(category.getName())
-                .code(category.getCode())
-                .sort(category.getSort())
-                .status(category.getStatus())
-                .createdAt(category.getCreatedAt())
-                .updatedAt(category.getUpdatedAt())
-                .build();
-    }
 }

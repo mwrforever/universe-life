@@ -3,7 +3,7 @@ package com.universe.life.task.privacy.infrastructure.persistence.repository;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.universe.life.task.privacy.domain.model.Task;
+import com.universe.life.task.privacy.domain.model.aggregate.Task;
 import com.universe.life.task.privacy.domain.repository.TaskRepository;
 import com.universe.life.task.privacy.infrastructure.enums.TaskStatus;
 import com.universe.life.task.privacy.infrastructure.persistence.mapper.TaskMapper;

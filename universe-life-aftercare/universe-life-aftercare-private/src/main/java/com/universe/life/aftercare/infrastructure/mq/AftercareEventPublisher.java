@@ -29,7 +29,7 @@ public class AftercareEventPublisher {
                     .to(TRADE_EXCHANGE, APPEAL_CREATED_ROUTING_KEY)
                     .persistent(true)
                     .send(event);
-            log.info("发布申诉创建事件: appealId={}, orderId={}", event.getAppealId(), event.getOrderId());
+            log.info("发布申诉创建事件: appealId={}, bizType={}, bizId={}", event.getAppealId(), event.getBizType(), event.getBizId());
         } catch (Exception e) {
             log.error("发布申诉创建事件失败: {}", e.getMessage(), e);
         }
@@ -41,7 +41,7 @@ public class AftercareEventPublisher {
                     .to(TRADE_EXCHANGE, APPEAL_HANDLED_ROUTING_KEY)
                     .persistent(true)
                     .send(event);
-            log.info("发布申诉处理事件: appealId={}, orderId={}, result={}", event.getAppealId(), event.getOrderId(), event.getResult());
+            log.info("发布申诉处理事件: appealId={}, bizType={}, bizId={}, result={}", event.getAppealId(), event.getBizType(), event.getBizId(), event.getResult());
         } catch (Exception e) {
             log.error("发布申诉处理事件失败: {}", e.getMessage(), e);
         }
@@ -53,7 +53,7 @@ public class AftercareEventPublisher {
                     .to(TRADE_EXCHANGE, APPEAL_CANCELLED_ROUTING_KEY)
                     .persistent(true)
                     .send(event);
-            log.info("发布申诉撤销事件: appealId={}, orderId={}", event.getAppealId(), event.getOrderId());
+            log.info("发布申诉撤销事件: appealId={}, bizType={}, bizId={}", event.getAppealId(), event.getBizType(), event.getBizId());
         } catch (Exception e) {
             log.error("发布申诉撤销事件失败: {}", e.getMessage(), e);
         }

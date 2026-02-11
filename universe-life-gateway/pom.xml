@@ -28,6 +28,12 @@
     </properties>
     <dependencies>
 
+        <!-- Spring Cloud Gateway 核心依赖 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.universe.life</groupId>
             <artifactId>universe-life-auth-gateway-jdk</artifactId>

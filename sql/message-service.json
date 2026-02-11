@@ -1,0 +1,163 @@
+{
+  "database": "universe_life_message",
+  "collection": "im_message",
+  "validator": {
+    "$jsonSchema": {
+      "bsonType": "object",
+      "required": [
+        "contextBizType",
+        "contextBizId",
+        "sessionId",
+        "sessionType",
+        "msgSeq",
+        "senderId",
+        "senderRole",
+        "msgType",
+        "direction",
+        "content",
+        "sentAt",
+        "createdAt"
+      ],
+      "properties": {
+        "contextBizType": {
+          "bsonType": ["int", "null"],
+          "enum": [1, 2, null],
+          "description": "上下文业务类型：1-任务 2-申诉（独立会话可为空）"
+        },
+        "contextBizId": {
+          "bsonType": ["long", "int", "string", "null"],
+          "description": "上下文业务ID：task_id / aftercare_appeal.id（独立会话可为空）"
+        },
+        "sessionId": {
+          "bsonType": ["long", "int", "string"],
+          "description": "MySQL 会话ID（im_session.id）"
+        },
+        "sessionType": {
+          "bsonType": "int",
+          "enum": [1, 2],
+          "description": "会话类型：1-业务双方沟通 2-客服调解"
+        },
+        "msgSeq": {
+          "bsonType": ["long", "int"],
+          "description": "会话内消息序号（与 MySQL im_message_index.msg_seq 一致）"
+        },
+        "senderId": {
+          "bsonType": ["long", "int", "string"],
+          "description": "发送者ID"
+        },
+        "senderRole": {
+          "bsonType": "int",
+          "enum": [1, 2, 3, 4],
+          "description": "发送者角色：1-发布方 2-接单方 3-平台客服 4-系统"
+        },
+        "msgType": {
+          "bsonType": "int",
+          "enum": [1, 2, 3, 4, 5, 6],
+          "description": "消息类型：1-文本 2-图片 3-文件 4-商品卡片 5-订单卡片 6-系统事件"
+        },
+        "direction": {
+          "bsonType": "int",
+          "enum": [1, 2, 3],
+          "description": "方向：1-参与方A->参与方B 2-参与方B->参与方A 3-系统"
+        },
+        "clientMsgId": {
+          "bsonType": ["string", "null"],
+          "description": "客户端幂等ID（与 MySQL im_message_index.client_msg_id 对应）"
+        },
+        "content": {
+          "bsonType": "object",
+          "required": ["text"],
+          "properties": {
+            "text": {
+              "bsonType": "string",
+              "description": "文本/摘要（所有消息至少提供可检索文本；非文本消息可放占位摘要）"
+            },
+            "media": {
+              "bsonType": ["object", "null"],
+              "properties": {
+                "url": { "bsonType": "string" },
+                "mime": { "bsonType": ["string", "null"] },
+                "size": { "bsonType": ["long", "int", "null"] },
+                "width": { "bsonType": ["int", "null"] },
+                "height": { "bsonType": ["int", "null"] },
+                "sha256": { "bsonType": ["string", "null"] }
+              },
+              "description": "图片/文件等富媒体信息"
+            },
+            "product": {
+              "bsonType": ["object", "null"],
+              "properties": {
+                "productId": { "bsonType": ["long", "int", "string"] },
+                "title": { "bsonType": ["string", "null"] },
+                "coverUrl": { "bsonType": ["string", "null"] },
+                "price": { "bsonType": ["long", "int", "null"], "description": "单位：分" }
+              },
+              "description": "商品卡片"
+            },
+            "order": {
+              "bsonType": ["object", "null"],
+              "properties": {
+                "orderId": { "bsonType": ["long", "int", "string"] },
+                "orderNo": { "bsonType": ["string", "null"] },
+                "status": { "bsonType": ["int", "string", "null"] }
+              },
+              "description": "订单卡片"
+            },
+            "event": {
+              "bsonType": ["object", "null"],
+              "properties": {
+                "eventType": { "bsonType": "string" },
+                "payload": { "bsonType": ["object", "null"] }
+              },
+              "description": "系统事件（如分配/转接/结束会话）"
+            }
+          }
+        },
+        "sentAt": {
+          "bsonType": "date",
+          "description": "发送时间"
+        },
+        "createdAt": {
+          "bsonType": "date",
+          "description": "入库时间"
+        },
+        "revoked": {
+          "bsonType": "bool",
+          "description": "是否撤回"
+        },
+        "ext": {
+          "bsonType": ["object", "null"],
+          "description": "扩展字段（埋点/风控/上下文）"
+        }
+      }
+    }
+  },
+  "indexes": [
+    {
+      "keys": { "sessionId": 1, "msgSeq": 1 },
+      "options": { "unique": true, "name": "uk_session_seq" }
+    },
+    {
+      "keys": { "contextBizType": 1, "contextBizId": 1, "sessionId": 1, "msgSeq": 1 },
+      "options": {
+        "name": "idx_context_session_seq",
+        "partialFilterExpression": { "contextBizType": { "$type": "int" } }
+      }
+    },
+    {
+      "keys": { "sessionId": 1, "sentAt": -1 },
+      "options": { "name": "idx_session_sentAt" }
+    },
+    {
+      "keys": { "senderId": 1, "sentAt": -1 },
+      "options": { "name": "idx_sender_sentAt" }
+    },
+    {
+      "keys": { "clientMsgId": 1 },
+      "options": {
+        "name": "idx_clientMsgId",
+        "partialFilterExpression": { "clientMsgId": { "$type": "string" } }
+      }
+    }
+  ]
+}

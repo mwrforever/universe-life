@@ -21,14 +21,14 @@ public class InternalAppealController {
         return Result.success(appealService.createAppeal(dto));
     }
 
-    @GetMapping("/orders/{orderId}/pending")
-    public Result<Boolean> existsPendingAppeal(@PathVariable Long orderId) {
-        return Result.success(appealService.existsPendingByOrderId(orderId));
+    @GetMapping("/biz/{bizType}/{bizId}/pending")
+    public Result<Boolean> existsPendingAppeal(@PathVariable Integer bizType, @PathVariable Long bizId) {
+        return Result.success(appealService.existsPendingByBiz(bizType, bizId));
     }
 
-    @GetMapping("/orders/{orderId}/latest-summary")
-    public Result<AppealSummaryDTO> getLatestAppealSummary(@PathVariable Long orderId) {
-        return Result.success(appealService.getLatestSummaryByOrderId(orderId));
+    @GetMapping("/biz/{bizType}/{bizId}/latest-summary")
+    public Result<AppealSummaryDTO> getLatestAppealSummary(@PathVariable Integer bizType, @PathVariable Long bizId) {
+        return Result.success(appealService.getLatestSummaryByBiz(bizType, bizId));
     }
 
     @DeleteMapping("/{appealId}")

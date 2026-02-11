@@ -18,9 +18,9 @@ public class AppealCancelledEvent implements Serializable {
 
     private Long appealId;
 
-    private Long orderId;
+    private Long bizId;
 
-    private Long taskId;
+    private Integer bizType;
 
     private Long appellantId;
 

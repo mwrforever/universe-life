@@ -2,7 +2,7 @@ package com.universe.life.task.privacy.application.event;
 
 import com.universe.life.common.util.RabbitMqSender;
 import com.universe.life.task.privacy.domain.event.*;
-import com.universe.life.task.privacy.domain.model.Task;
+import com.universe.life.task.privacy.domain.model.aggregate.Task;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

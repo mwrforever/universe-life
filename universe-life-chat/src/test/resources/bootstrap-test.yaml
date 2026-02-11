@@ -1,0 +1,10 @@
+# Test Bootstrap Configuration
+spring:
+  application:
+    name: universe-life-chat-test
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false

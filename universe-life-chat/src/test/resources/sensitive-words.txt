@@ -1,0 +1,11 @@
+# Test Sensitive Words
+# This file contains sensitive words for testing purposes only
+
+badword
+spam
+abuse
+hate
+violence
+illegal
+scam
+fraud

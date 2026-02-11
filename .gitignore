@@ -235,10 +235,12 @@ scripts/
 nul
 
 # Test code (排除测试代码)
-**/src/test/
+!**/src/test/
+!**/src/test/java/
+!**/src/test/java/**
 api
- md
- **/*.md
+md
+**/*.md
 
 .kiro
 
