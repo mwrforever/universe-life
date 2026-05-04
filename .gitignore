@@ -239,8 +239,8 @@ nul
 !**/src/test/java/
 !**/src/test/java/**
 api
-md
 **/*.md
+./md/**
 
 .kiro
 
